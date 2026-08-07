@@ -1,10 +1,27 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { StatusBadge } from '../components/StatusBadge';
 import { TaskItem } from '../components/TaskItem';
 import type { TaskItemProps } from '../components/TaskItem';
-import { Brain, Pause, Plus, ShieldCheck, Cpu, Search, Target, Megaphone, Send, BarChart2, FileText } from 'lucide-react';
+import { Brain, Plus, FileText } from 'lucide-react';
+import { WorkflowFlowGraph } from '../components/WorkflowFlowGraph';
+import { DirectiveModal } from '../components/DirectiveModal';
+import { ExecutiveReportModal } from '../components/ExecutiveReportModal';
+import { CEOApiService } from '../services/ceoApi';
+import type { ExecutionStateData, ExecutiveReportData } from '../services/ceoApi';
 
-const mockTasks: TaskItemProps[] = [
+const defaultStages = [
+  { name: 'CLIENT BRIEF', agent_name: 'Client Onboarding Agent', status: 'COMPLETED' as const },
+  { name: 'CEO AGENT', agent_name: 'CEO Agent', status: 'RUNNING' as const },
+  { name: 'BUSINESS', agent_name: 'Business Analysis Agent', status: 'WAITING' as const },
+  { name: 'SEO', agent_name: 'SEO Audit Agent', status: 'WAITING' as const },
+  { name: 'COMPETITOR', agent_name: 'Competitor Research Agent', status: 'WAITING' as const },
+  { name: 'MARKETING', agent_name: 'Marketing Strategy Agent', status: 'WAITING' as const },
+  { name: 'CAMPAIGN', agent_name: 'Campaign Planner Agent', status: 'WAITING' as const },
+  { name: 'ANALYTICS', agent_name: 'Analytics Agent', status: 'WAITING' as const },
+  { name: 'REPORT', agent_name: 'Report Generator Agent', status: 'WAITING' as const },
+];
+
+const defaultTasks: TaskItemProps[] = [
   {
     title: 'Synthesize Northwind competitive matrix',
     agent: 'COMPETITOR SCOUT',
@@ -42,19 +59,44 @@ const mockTasks: TaskItemProps[] = [
   },
 ];
 
-const workflowStages = [
-  { name: 'CLIENT BRIEF', icon: ShieldCheck },
-  { name: 'CEO AGENT', icon: Brain, active: true },
-  { name: 'BUSINESS', icon: Cpu },
-  { name: 'SEO', icon: Search },
-  { name: 'COMPETITOR', icon: Target, highlighted: true },
-  { name: 'MARKETING', icon: Megaphone },
-  { name: 'CAMPAIGN', icon: Send },
-  { name: 'ANALYTICS', icon: BarChart2 },
-  { name: 'REPORT', icon: FileText },
-];
-
 export const CEOAgentPage: React.FC = () => {
+  const [executionState, setExecutionState] = useState<ExecutionStateData | null>(null);
+  const [isDirectiveOpen, setIsDirectiveOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
+  const [reportData, setReportData] = useState<ExecutiveReportData | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = CEOApiService.subscribeToStream((state) => {
+      setExecutionState(state);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleDirectiveSubmit = async (directive: string, clientName: string) => {
+    await CEOApiService.submitDirective(directive, clientName);
+  };
+
+  const handleOpenReport = async () => {
+    const report = await CEOApiService.fetchReport();
+    if (report) {
+      setReportData(report);
+      setIsReportOpen(true);
+    }
+  };
+
+  const currentThought = executionState?.current_thought || 'Reviewing Northwind Capital brief – enterprise FinTech, EMEA focus.';
+  const confidence = executionState?.overall_confidence || 92;
+  const stages = executionState?.stages || defaultStages;
+  const tasks = executionState?.tasks
+    ? executionState.tasks.map((t) => ({
+        title: t.title,
+        agent: t.agent_name.toUpperCase(),
+        eta: t.eta,
+        priority: t.priority,
+        status: t.status,
+      }))
+    : defaultTasks;
+
   return (
     <div style={{ padding: '32px 40px', maxWidth: '1600px', margin: '0 auto' }}>
       {/* Top Header */}
@@ -97,12 +139,13 @@ export const CEOAgentPage: React.FC = () => {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button
+            onClick={handleOpenReport}
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              backgroundColor: 'rgba(0, 229, 153, 0.1)',
+              border: '1px solid rgba(0, 229, 153, 0.3)',
               borderRadius: '8px',
               padding: '8px 16px',
-              color: '#e5e7eb',
+              color: '#00e599',
               fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -111,9 +154,10 @@ export const CEOAgentPage: React.FC = () => {
               gap: '6px',
             }}
           >
-            <Pause size={14} /> Pause
+            <FileText size={14} /> Executive Report
           </button>
           <button
+            onClick={() => setIsDirectiveOpen(true)}
             style={{
               background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
               border: 'none',
@@ -176,7 +220,7 @@ export const CEOAgentPage: React.FC = () => {
               gap: '6px',
             }}
           >
-            <span style={{ color: '#00e599' }}>›</span> Reviewing Northwind Capital brief – enterprise FinTech, EMEA focus.
+            <span style={{ color: '#00e599' }}>›</span> {currentThought}
             <span
               style={{
                 display: 'inline-block',
@@ -191,7 +235,7 @@ export const CEOAgentPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Multi-Agent Execution Graph */}
+      {/* Multi-Agent Execution Graph (React Flow Visualizer) */}
       <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
         <div
           style={{
@@ -212,86 +256,18 @@ export const CEOAgentPage: React.FC = () => {
                 marginBottom: '4px',
               }}
             >
-              MULTI-AGENT EXECUTION
+              MULTI-AGENT EXECUTION GRAPH
             </div>
             <div style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff' }}>
-              Workflow • Lumen Studios Q1
+              Workflow • {executionState?.client_name || 'Lumen Studios Q1'}
             </div>
           </div>
           <div style={{ fontSize: '11px', fontFamily: "'JetBrains Mono', monospace", color: '#6b7280' }}>
-            4 / 9 stages
+            {executionState?.completed_count || 4} / 9 stages
           </div>
         </div>
 
-        {/* Stages Track */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(9, 1fr)', gap: '8px', position: 'relative' }}>
-          {workflowStages.map((stage) => {
-            const Icon = stage.icon;
-            return (
-              <div
-                key={stage.name}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '8px',
-                  opacity: stage.active || stage.highlighted ? 1 : 0.4,
-                }}
-              >
-                <div
-                  style={{
-                    width: '44px',
-                    height: '44px',
-                    borderRadius: '12px',
-                    backgroundColor: stage.highlighted
-                      ? 'rgba(0, 229, 153, 0.15)'
-                      : stage.active
-                      ? 'rgba(168, 85, 247, 0.15)'
-                      : 'rgba(255, 255, 255, 0.03)',
-                    border: stage.highlighted
-                      ? '1px solid rgba(0, 229, 153, 0.4)'
-                      : stage.active
-                      ? '1px solid rgba(168, 85, 247, 0.4)'
-                      : '1px solid rgba(255, 255, 255, 0.06)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: stage.highlighted ? '#00e599' : stage.active ? '#c084fc' : '#6b7280',
-                    position: 'relative',
-                  }}
-                >
-                  <Icon size={18} />
-                  {stage.highlighted && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '-3px',
-                        right: '-3px',
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        backgroundColor: '#00e599',
-                        boxShadow: '0 0 8px #00e599',
-                      }}
-                    />
-                  )}
-                </div>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontFamily: "'JetBrains Mono', monospace",
-                    color: '#6b7280',
-                    textAlign: 'center',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                  }}
-                >
-                  {stage.name}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <WorkflowFlowGraph stages={stages} />
       </div>
 
       {/* Bottom Grid: Task Queue + Confidence gauge */}
@@ -301,11 +277,11 @@ export const CEOAgentPage: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff' }}>Task queue</div>
             <div style={{ fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", color: '#6b7280' }}>
-              5 TASKS
+              {tasks.length} TASKS
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {mockTasks.map((t) => (
+            {tasks.map((t) => (
               <TaskItem key={t.title} {...t} />
             ))}
           </div>
@@ -347,7 +323,7 @@ export const CEOAgentPage: React.FC = () => {
                 strokeWidth="8"
                 fill="transparent"
                 strokeDasharray="440"
-                strokeDashoffset="40"
+                strokeDashoffset={440 - (440 * confidence) / 100}
                 strokeLinecap="round"
               />
               <defs>
@@ -358,7 +334,7 @@ export const CEOAgentPage: React.FC = () => {
               </defs>
             </svg>
             <div style={{ position: 'absolute', textAlign: 'center' }}>
-              <div style={{ fontSize: '38px', fontWeight: 700, color: '#ffffff' }}>92</div>
+              <div style={{ fontSize: '38px', fontWeight: 700, color: '#ffffff' }}>{confidence}</div>
               <div style={{ fontSize: '9px', fontFamily: "'JetBrains Mono', monospace", color: '#00e599', letterSpacing: '0.1em' }}>
                 HIGH
               </div>
@@ -368,20 +344,32 @@ export const CEOAgentPage: React.FC = () => {
           {/* Stats below dial */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', width: '100%', marginTop: '32px', textAlign: 'center' }}>
             <div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>3</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>{executionState?.running_count ?? 3}</div>
               <div style={{ fontSize: '9px', fontFamily: "'JetBrains Mono', monospace", color: '#6b7280' }}>RUNNING</div>
             </div>
             <div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>12</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>{executionState?.completed_count ?? 12}</div>
               <div style={{ fontSize: '9px', fontFamily: "'JetBrains Mono', monospace", color: '#6b7280' }}>COMPLETED</div>
             </div>
             <div>
-              <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>4</div>
+              <div style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>{executionState?.waiting_count ?? 4}</div>
               <div style={{ fontSize: '9px', fontFamily: "'JetBrains Mono', monospace", color: '#6b7280' }}>WAITING</div>
             </div>
           </div>
         </div>
       </div>
+
+      <DirectiveModal
+        isOpen={isDirectiveOpen}
+        onClose={() => setIsDirectiveOpen(false)}
+        onSubmit={handleDirectiveSubmit}
+      />
+
+      <ExecutiveReportModal
+        isOpen={isReportOpen}
+        onClose={() => setIsReportOpen(false)}
+        report={reportData}
+      />
     </div>
   );
 };
