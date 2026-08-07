@@ -1,0 +1,92 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* Color Palette - Ultra-dark StrtOS palette */
+  --bg-dark: #08080a;
+  --bg-card: rgba(18, 18, 22, 0.7);
+  --bg-card-hover: rgba(26, 26, 32, 0.8);
+  --bg-sidebar: #0b0b0e;
+  --bg-topbar: rgba(11, 11, 14, 0.85);
+
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-card: rgba(255, 255, 255, 0.08);
+  --border-card-active: rgba(255, 255, 255, 0.15);
+
+  /* Status Colors */
+  --status-thinking: #a855f7;
+  --status-thinking-bg: rgba(168, 85, 247, 0.12);
+  --status-running: #00e599;
+  --status-running-bg: rgba(0, 229, 153, 0.12);
+  --status-completed: #10b981;
+  --status-completed-bg: rgba(16, 185, 129, 0.12);
+  --status-waiting: #f59e0b;
+  --status-waiting-bg: rgba(245, 158, 11, 0.12);
+  --status-idle: #64748b;
+  --status-idle-bg: rgba(100, 116, 139, 0.12);
+
+  /* Accents */
+  --accent-purple: #6366f1;
+  --accent-violet: #8b5cf6;
+  --accent-blue: #3b82f6;
+
+  /* Text Colors */
+  --text-primary: #f3f4f6;
+  --text-secondary: #9ca3af;
+  --text-muted: #4b5563;
+
+  /* Fonts */
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Glassmorphism helpers */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  transition: all 0.2s ease-in-out;
+}
+
+.glass-card:hover {
+  border-color: var(--border-card-active);
+  background: var(--bg-card-hover);
+}
+
+.font-mono-code {
+  font-family: var(--font-mono);
+}
