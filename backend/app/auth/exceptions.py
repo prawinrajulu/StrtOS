@@ -1,25 +1,25 @@
-from fastapi import HTTPException, status
+from app.core.exceptions import BaseStrtOSException
 
-class AuthException(HTTPException):
-    def __init__(self, detail: str, status_code: int = status.HTTP_400_BAD_REQUEST):
-        super().__init__(status_code=status_code, detail=detail)
+class AuthException(BaseStrtOSException):
+    def __init__(self, message: str = "Authentication failed.", status_code: int = 400, details: dict = None):
+        super().__init__(message=message, status_code=status_code, details=details)
 
 class InvalidCredentialsException(AuthException):
     def __init__(self):
-        super().__init__(detail="Invalid email or password.", status_code=status.HTTP_401_UNAUTHORIZED)
+        super().__init__(message="Invalid email or password.", status_code=401)
 
 class TokenExpiredException(AuthException):
     def __init__(self):
-        super().__init__(detail="Token has expired.", status_code=status.HTTP_401_UNAUTHORIZED)
+        super().__init__(message="Token has expired.", status_code=401)
 
 class InvalidTokenException(AuthException):
     def __init__(self):
-        super().__init__(detail="Invalid token provided.", status_code=status.HTTP_401_UNAUTHORIZED)
+        super().__init__(message="Invalid token provided.", status_code=401)
 
 class UserAlreadyExistsException(AuthException):
     def __init__(self):
-        super().__init__(detail="User with this email already exists.", status_code=status.HTTP_409_CONFLICT)
+        super().__init__(message="User with this email already exists.", status_code=409)
 
 class AccessDeniedException(AuthException):
     def __init__(self, detail: str = "Access denied: insufficient permissions."):
-        super().__init__(detail=detail, status_code=status.HTTP_403_FORBIDDEN)
+        super().__init__(message=detail, status_code=403)
