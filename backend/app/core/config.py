@@ -55,7 +55,7 @@ class Settings(BaseSettings):
     GOOGLE_MAPS_API_KEY: str = ""
 
     model_config = SettingsConfigDict(
-        env_file=(".env.development", ".env"),
+        env_file=("../.env", "../.env.development", ".env", ".env.development"),
         env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore"
