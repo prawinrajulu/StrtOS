@@ -131,7 +131,7 @@ class CEOOrchestratorEngine:
     async def _broadcast_state(self):
         await event_bus.publish("STATE_UPDATE", self.current_state.model_dump())
 
-    def get_executive_report((self) -> ExecutiveReport:
+    def get_executive_report(self) -> ExecutiveReport:
         b_out = self.specialist_outputs.get("Business Analysis Agent", SpecialistOutput(agent_name="Business Analysis Agent", title="Business Analysis", findings=["TAM analyzed."]))
         s_out = self.specialist_outputs.get("SEO Audit Agent", SpecialistOutput(agent_name="SEO Audit Agent", title="SEO Audit", findings=["Technical SEO healthy."]))
         c_out = self.specialist_outputs.get("Competitor Research Agent", SpecialistOutput(agent_name="Competitor Research Agent", title="Competitor Analysis", findings=["12 competitors mapped."]))

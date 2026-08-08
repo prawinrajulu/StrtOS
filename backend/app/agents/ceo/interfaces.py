@@ -13,7 +13,7 @@ class SpecialistAgentInterface:
         self.domain = domain
 
     async def execute_task(self, task: CEOTaskItem, context: Dict[str, Any]) -> Dict[str, Any]:
-        await asyncio.sleep(1.5)  # Simulate execution latency
+        await asyncio.sleep(0.1)  # Fast execution for smooth async pipeline progression
         return {
             "agent_name": self.agent_name,
             "domain": self.domain,
@@ -44,3 +44,10 @@ SPECIALIST_INTERFACES.update({
     "Opportunity Intelligence Agent": SpecialistAgentInterface("Opportunity Intelligence Agent", "OPPORTUNITY_INTELLIGENCE"),
     "Report Generator Agent": SpecialistAgentInterface("Report Generator Agent", "REPORT_GENERATION")
 })
+
+# Explicitly import and register implemented real specialist agents
+import app.agents.business_analysis.interfaces
+import app.agents.seo_audit.interfaces
+import app.agents.competitor_research.interfaces
+import app.agents.marketing_strategy.interfaces
+import app.agents.campaign_planner.interfaces

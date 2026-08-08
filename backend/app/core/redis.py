@@ -6,12 +6,13 @@ from app.core.logging import logger
 
 class RedisManager:
     """
-    Enterprise Redis Connection & Event Pub/Sub Manager.
-    Supports Connection Pooling, Health Check, Pub/Sub Publishing and Subscribing.
+    Enterprise Redis Connection, Key-Value Caching, & Event Pub/Sub Manager.
+    Supports Connection Pooling, Key Blacklisting, Pub/Sub Publishing and Subscribing.
     """
     def __init__(self):
         self.redis: Optional[aioredis.Redis] = None
         self.pubsub: Optional[aioredis.client.PubSub] = None
+        self.memory_fallback: dict = {}
 
     async def connect(self):
         try:
@@ -37,6 +38,23 @@ class RedisManager:
             return await self.redis.ping()
         except Exception:
             return False
+
+    async def get(self, key: str) -> Optional[str]:
+        if self.redis:
+            try:
+                return await self.redis.get(key)
+            except Exception:
+                pass
+        return self.memory_fallback.get(key)
+
+    async def set(self, key: str, value: str, expire_seconds: int = 3600):
+        if self.redis:
+            try:
+                await self.redis.set(key, value, ex=expire_seconds)
+                return
+            except Exception:
+                pass
+        self.memory_fallback[key] = value
 
     async def publish_event(self, channel: str, message: str):
         if self.redis:

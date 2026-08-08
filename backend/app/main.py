@@ -9,7 +9,7 @@ from app.core.middleware import RequestCorrelationMiddleware
 from app.core.exceptions import BaseStrtOSException
 
 # API v1 Routers
-from app.api.v1.auth import router as auth_router
+from app.auth.routes import router as auth_router
 from app.api.v1.ceo import router as ceo_router
 from app.api.v1.clients import router as clients_router
 from app.api.v1.dashboard import router as dashboard_router

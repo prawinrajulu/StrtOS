@@ -42,20 +42,19 @@ class DecisionEngine:
         await asyncio.sleep(0.2)
         required_agents = [
             "Business Analysis Agent",
-            "Competitor Research Agent",
             "SEO Audit Agent",
+            "Competitor Research Agent",
             "Marketing Strategy Agent",
-            "Campaign Planner Agent",
-            "Analytics Agent"
+            "Campaign Planner Agent"
         ]
         
-        # Stages execution sequence (supporting parallel stages as lists)
+        # Stages execution sequence (supporting sequential context propagation)
         execution_order = [
             ["Business Analysis Agent"],
-            ["Competitor Research Agent", "SEO Audit Agent"],
+            ["SEO Audit Agent"],
+            ["Competitor Research Agent"],
             ["Marketing Strategy Agent"],
-            ["Campaign Planner Agent"],
-            ["Analytics Agent"]
+            ["Campaign Planner Agent"]
         ]
 
         return WorkflowDecision(
@@ -63,7 +62,7 @@ class DecisionEngine:
             required_agents=required_agents,
             execution_order=execution_order,
             priority=PriorityLevel.HIGH,
-            estimated_duration_minutes=12,
+            estimated_duration_minutes=10,
             risk_assessment="LOW",
             confidence_score=96.0
         )
@@ -82,7 +81,6 @@ class WorkflowPlanner:
             ("COMPETITOR", "Competitor Research Agent"),
             ("MARKETING", "Marketing Strategy Agent"),
             ("CAMPAIGN", "Campaign Planner Agent"),
-            ("ANALYTICS", "Analytics Agent"),
             ("REPORT", "Report Generator Agent"),
         ]
         return [
@@ -96,7 +94,7 @@ class WorkflowPlanner:
         ]
 
 class TaskPlanner:
-    """Generates and prioritizes the task queue."""
+    """Generates and prioritizes the task queue with explicit agent dependency links."""
     def __init__(self):
         logger.info("Initialized TaskPlanner.")
 
@@ -125,7 +123,7 @@ class TaskPlanner:
                 title="Rival Competitor Gap Matrix",
                 agent_name="Competitor Research Agent",
                 priority=PriorityLevel.HIGH,
-                dependencies=["t-101"],
+                dependencies=["t-102"],
                 status=TaskStatus.WAITING,
                 eta="ETA 2 MIN"
             ),
@@ -134,7 +132,7 @@ class TaskPlanner:
                 title="Growth & Brand Positioning Strategy",
                 agent_name="Marketing Strategy Agent",
                 priority=PriorityLevel.HIGH,
-                dependencies=["t-102", "t-103"],
+                dependencies=["t-103"],
                 status=TaskStatus.WAITING,
                 eta="ETA 3 MIN"
             ),
@@ -146,16 +144,7 @@ class TaskPlanner:
                 dependencies=["t-104"],
                 status=TaskStatus.WAITING,
                 eta="ETA 3 MIN"
-            ),
-            CEOTaskItem(
-                task_id="t-106",
-                title="Attribution Model & Tracking Setup",
-                agent_name="Analytics Agent",
-                priority=PriorityLevel.LOW,
-                dependencies=["t-105"],
-                status=TaskStatus.WAITING,
-                eta="ETA 4 MIN"
-            ),
+            )
         ]
 
 class ExecutionMonitor:
@@ -174,7 +163,7 @@ class WorkflowValidator:
         logger.info("Initialized WorkflowValidator.")
 
     async def validate_output(self, output: Dict[str, Any]) -> bool:
-        if not output or "findings" not in output or not output.get("findings"):
+        if not output or "status" not in output or output.get("status") not in ["COMPLETED", "SUCCESS"]:
             return False
         return True
 
@@ -197,18 +186,46 @@ class ExecutiveReporter:
 
     async def generate_report(self, state: WorkflowState) -> Dict[str, Any]:
         outputs = state.agent_outputs
+        
+        biz = outputs.get("Business Analysis Agent", {})
+        seo = outputs.get("SEO Audit Agent", {})
+        comp = outputs.get("Competitor Research Agent", {})
+        mkt = outputs.get("Marketing Strategy Agent", {})
+        camp = outputs.get("Campaign Planner Agent", {})
+
         return {
             "workflow_id": state.workflow_id,
             "client_name": state.client_name,
             "directive": state.directive,
             "overall_confidence": int(state.overall_confidence),
-            "generated_at": "2026-08-07T21:35:00Z",
-            "business_summary": outputs.get("Business Analysis Agent", {"title": "Business TAM Analysis", "findings": ["TAM analyzed successfully."]}),
-            "seo_summary": outputs.get("SEO Audit Agent", {"title": "SEO Technical Audit", "findings": ["1,284 pages crawled with 94.2% health score."]}),
-            "competitor_summary": outputs.get("Competitor Research Agent", {"title": "Competitor Analysis", "findings": ["12 direct competitors mapped."]}),
-            "marketing_summary": outputs.get("Marketing Strategy Agent", {"title": "Marketing Strategy", "findings": ["Multi-channel acquisition target CAC: $24."]}),
-            "campaign_summary": outputs.get("Campaign Planner Agent", {"title": "Campaign Plan", "findings": ["Budget split: 45% Search, 35% Social, 20% Retargeting."]}),
-            "analytics_summary": outputs.get("Analytics Agent", {"title": "Analytics Attribution", "findings": ["Multi-touch attribution operational."]}),
+            "generated_at": datetime.utcnow().isoformat() if 'datetime' in globals() else "2026-08-07T22:10:00Z",
+            "business_summary": {
+                "business_name": biz.get("full_result", {}).get("business_name", state.client_name),
+                "industry": biz.get("full_result", {}).get("industry", "Food & Beverage"),
+                "digital_maturity": biz.get("full_result", {}).get("digital_maturity_score", 78),
+                "findings": biz.get("findings", ["Completed Business TAM Analysis."])
+            },
+            "seo_summary": {
+                "website_url": seo.get("full_result", {}).get("website_url", "https://restaurant-example.com"),
+                "overall_seo_score": seo.get("full_result", {}).get("overall_seo_score", 88),
+                "lcp": seo.get("full_result", {}).get("core_web_vitals", {}).get("lcp", "1.1s"),
+                "findings": seo.get("findings", ["Completed Technical SEO Audit."])
+            },
+            "competitor_summary": {
+                "direct_competitors_count": len(comp.get("full_result", {}).get("direct_competitors", [])),
+                "market_position": comp.get("full_result", {}).get("market_position_summary", "Mapped competitors."),
+                "findings": comp.get("findings", ["Completed Competitor Research."])
+            },
+            "marketing_summary": {
+                "brand_positioning": mkt.get("full_result", {}).get("brand_positioning", "Premium service alternative."),
+                "roi_projection": mkt.get("full_result", {}).get("roi_projection", "4.2x ROAS"),
+                "findings": mkt.get("findings", ["Completed Marketing Strategy."])
+            },
+            "campaign_summary": {
+                "timeline": camp.get("full_result", {}).get("campaign_timeline", "90 Days"),
+                "expected_outcome": camp.get("full_result", {}).get("expected_outcome", "Acquire high-intent customers."),
+                "findings": camp.get("findings", ["Completed Campaign Plan."])
+            },
             "ceo_final_recommendations": [
                 "Launch geo-targeted local search campaigns immediately to capture existing high-intent demand.",
                 "Execute micro-influencer tasting events to establish local community trust.",
@@ -219,7 +236,7 @@ class ExecutiveReporter:
 class CEOOrchestrator:
     """
     Chief Executive AI Agent Orchestrator.
-    Combines all CEO sub-engines and delegates tasks to Specialist Agent Interfaces.
+    Combines all CEO sub-engines and delegates tasks to Specialist Agent Interfaces in a unified end-to-end pipeline.
     """
     def __init__(self):
         self.intent_engine = IntentEngine()
@@ -273,28 +290,62 @@ class CEOOrchestrator:
         state.status = WorkflowStatus.RUNNING
         confidences: List[float] = []
 
+        # Shared Context Manager Data Object passed sequentially
+        shared_context: Dict[str, Any] = {
+            "workflow_id": state.workflow_id,
+            "client_name": state.client_name,
+            "directive": state.directive,
+            "industry": state.intent.industry if state.intent else "General Commercial",
+            "business_goal": state.intent.primary_goal if state.intent else "Growth",
+            "website_url": "https://restaurant-example.com",
+            "budget": "$10,000 / mo",
+            "timeline": "90 Days"
+        }
+
         for task in state.tasks:
-            # Update Thought
+            # Update Thought & State
             state.current_thought = f"Delegating '{task.title}' to {task.agent_name}..."
             task.status = TaskStatus.RUNNING
             self._update_stage_status(state, task.agent_name, "RUNNING")
             await self.execution_monitor.publish_event("task.started", {"workflow_id": state.workflow_id, "task": task.model_dump()})
             await self.execution_monitor.publish_event("workflow.running", state.model_dump())
 
-            # Execute via Specialist Interface
-            interface = SPECIALIST_INTERFACES.get(task.agent_name)
-            if interface:
-                output = await interface.execute_task(task, {"client_name": state.client_name, "directive": state.directive})
-                
-                # Validate output
-                if await self.validator.validate_output(output):
-                    task.result = output
-                    state.agent_outputs[task.agent_name] = output
-                    confidences.append(output.get("confidence", 95.0))
-                else:
-                    task.status = TaskStatus.FAILED
-                    await self.execution_monitor.publish_event("task.failed", {"task_id": task.task_id})
-                    continue
+            # Execute with Retry Loop
+            success = False
+            for attempt in range(task.max_retries + 1):
+                interface = SPECIALIST_INTERFACES.get(task.agent_name)
+                if interface:
+                    try:
+                        output = await interface.execute_task(task, shared_context)
+                        if await self.validator.validate_output(output):
+                            task.result = output
+                            state.agent_outputs[task.agent_name] = output
+                            confidences.append(output.get("confidence", 95.0))
+                            
+                            # Propagate output to shared context for downstream agents
+                            if task.agent_name == "Business Analysis Agent":
+                                shared_context["business_analysis_result"] = output.get("full_result", output)
+                            elif task.agent_name == "SEO Audit Agent":
+                                shared_context["seo_audit_result"] = output.get("full_result", output)
+                            elif task.agent_name == "Competitor Research Agent":
+                                shared_context["competitor_research_result"] = output.get("full_result", output)
+                            elif task.agent_name == "Marketing Strategy Agent":
+                                shared_context["marketing_strategy_result"] = output.get("full_result", output)
+                            elif task.agent_name == "Campaign Planner Agent":
+                                shared_context["campaign_planner_result"] = output.get("full_result", output)
+
+                            success = True
+                            break
+                    except Exception as e:
+                        logger.error(f"Error executing {task.agent_name} (Attempt {attempt+1}): {str(e)}")
+                        task.retry_count = attempt + 1
+                        task.status = TaskStatus.RETRYING
+                        await asyncio.sleep(0.5)
+
+            if not success:
+                task.status = TaskStatus.FAILED
+                await self.execution_monitor.publish_event("task.failed", {"task_id": task.task_id})
+                continue
 
             # Mark Task & Stage Completed
             task.status = TaskStatus.COMPLETED
@@ -309,7 +360,7 @@ class CEOOrchestrator:
         # Final Report Generation
         state.current_thought = "Validating specialist outputs and synthesizing Executive Report..."
         await self.execution_monitor.publish_event("workflow.running", state.model_dump())
-        await asyncio.sleep(1.0)
+        await asyncio.sleep(0.5)
 
         report = await self.reporter.generate_report(state)
         state.executive_report = report
