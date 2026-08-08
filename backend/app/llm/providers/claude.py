@@ -1,13 +1,13 @@
 import time
-import os
 import asyncio
 from app.llm.providers.base_provider import BaseLLMProvider, LLMRequest, LLMResponse
 
 class ClaudeProvider(BaseLLMProvider):
-    """Anthropic Claude LLM Provider."""
+    """Anthropic Claude Provider."""
     def __init__(self, model_name: str = "claude-3-5-sonnet"):
+        from app.core.config import settings
         super().__init__(model_name)
-        self.api_key = os.getenv("ANTHROPIC_API_KEY", "")
+        self.api_key = settings.ANTHROPIC_API_KEY
 
     async def generate(self, request: LLMRequest) -> LLMResponse:
         start_time = time.time()

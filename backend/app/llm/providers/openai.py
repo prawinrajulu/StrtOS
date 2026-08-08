@@ -6,8 +6,9 @@ from app.llm.providers.base_provider import BaseLLMProvider, LLMRequest, LLMResp
 class OpenAIProvider(BaseLLMProvider):
     """OpenAI GPT-4o Provider."""
     def __init__(self, model_name: str = "gpt-4o"):
+        from app.core.config import settings
         super().__init__(model_name)
-        self.api_key = os.getenv("OPENAI_API_KEY", "")
+        self.api_key = settings.OPENAI_API_KEY
 
     async def generate(self, request: LLMRequest) -> LLMResponse:
         start_time = time.time()

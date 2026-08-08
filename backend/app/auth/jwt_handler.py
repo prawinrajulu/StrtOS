@@ -6,11 +6,13 @@ import os
 from app.auth.exceptions import TokenExpiredException, InvalidTokenException
 from app.core.redis import redis_manager
 
-JWT_SECRET = os.getenv("JWT_SECRET", "strtos-enterprise-secret-key-change-in-prod-2026")
-JWT_ALGORITHM = "HS256"
+from app.core.config import settings
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 15
-REFRESH_TOKEN_EXPIRE_DAYS = 7
+JWT_SECRET = settings.JWT_SECRET_KEY
+JWT_ALGORITHM = settings.JWT_ALGORITHM
+
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
 class JWTHandler:
     """Enterprise JWT Access & Refresh Token Generator, Verifier, and Redis Blacklist Manager."""

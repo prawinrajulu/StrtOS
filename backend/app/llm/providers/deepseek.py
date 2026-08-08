@@ -6,8 +6,9 @@ from app.llm.providers.base_provider import BaseLLMProvider, LLMRequest, LLMResp
 class DeepSeekProvider(BaseLLMProvider):
     """DeepSeek Provider."""
     def __init__(self, model_name: str = "deepseek-coder"):
+        from app.core.config import settings
         super().__init__(model_name)
-        self.api_key = os.getenv("DEEPSEEK_API_KEY", "")
+        self.api_key = settings.DEEPSEEK_API_KEY
 
     async def generate(self, request: LLMRequest) -> LLMResponse:
         start_time = time.time()
