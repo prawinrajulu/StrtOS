@@ -28,11 +28,15 @@ class BusinessAnalysisService:
         web_data = await tool_registry.execute_tool("firecrawl", {"url": payload.website or "https://example.com"})
         search_data = await tool_registry.execute_tool("tavily", {"query": f"{payload.industry} TAM benchmarks and digital growth"})
 
-        # Construct prompt for LLM Router (Gemini model)
+        markdown_snippet = web_data.get("markdown_content", "Web content analyzed.")
+        tavily_results = search_data.get("results", [])
+        search_snippet = tavily_results[0].get("snippet", "Market benchmarks retrieved.") if tavily_results else "Market benchmarks retrieved."
+
+        # Construct prompt for LLM Router
         prompt = f"""
         Analyze business: {payload.business_name} in industry: {payload.industry}.
-        Web Crawl Findings: {web_data['markdown_content']}
-        Search TAM Benchmarks: {search_data['results'][0]['snippet']}
+        Web Content: {markdown_snippet}
+        Market Data: {search_snippet}
         """
 
         llm_request = LLMRequest(prompt=prompt, system_prompt="You are a senior business analyst.")

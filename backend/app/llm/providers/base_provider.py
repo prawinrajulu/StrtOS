@@ -10,9 +10,13 @@ class LLMRequest(BaseModel):
     json_mode: bool = True
 
 class LLMResponse(BaseModel):
-    content: str
+    content: str = ""
     provider: str
     model: str
+    status: str = "SUCCESS" # SUCCESS | UNAAVAILABLE | ERROR
+    error_code: Optional[str] = None
+    error_message: Optional[str] = None
+    retryable: bool = False
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0

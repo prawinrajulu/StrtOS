@@ -1,3 +1,4 @@
+import time
 import asyncio
 from typing import Dict, Any
 from app.tools.base_tool import BaseTool
@@ -10,22 +11,37 @@ class TavilyTool(BaseTool):
         self.api_key = settings.TAVILY_API_KEY
 
     async def execute(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        start_time = time.time()
         query = params.get("query", "market research")
         if not self.api_key:
-            return {"query": query, "results": [], "warning": "TAVILY_API_KEY not configured"}
+            return {
+                "tool": "tavily",
+                "status": "UNAVAILABLE",
+                "error_code": "NOT_CONFIGURED",
+                "error_message": "TAVILY_API_KEY not configured",
+                "query": query,
+                "results": [],
+                "latency_ms": int((time.time() - start_time) * 1000)
+            }
 
         try:
             from tavily import TavilyClient
             client = TavilyClient(api_key=self.api_key)
-            # Execute synchronous SDK call in thread pool for async compatibility
             res = await asyncio.to_thread(client.search, query=query)
-            return {"query": query, "results": res.get("results", [])}
+            return {
+                "tool": "tavily",
+                "status": "SUCCESS",
+                "query": query,
+                "results": res.get("results", []),
+                "latency_ms": int((time.time() - start_time) * 1000)
+            }
         except Exception as e:
             return {
+                "tool": "tavily",
+                "status": "UNAVAILABLE",
+                "error_code": "EXECUTION_ERROR",
+                "error_message": str(e),
                 "query": query,
-                "results": [
-                    {"title": f"Search Query: {query}", "snippet": f"Tavily Live Integration Ready. Query: {query}", "url": "https://tavily.com"}
-                ],
-                "status": "configured",
-                "info": str(e)
+                "results": [],
+                "latency_ms": int((time.time() - start_time) * 1000)
             }

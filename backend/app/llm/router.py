@@ -34,15 +34,30 @@ class LLMRouter:
         logger.info("Initialized LLMRouter with 6 providers.")
 
     async def route_and_generate(self, agent_name: str, request: LLMRequest) -> LLMResponse:
-        primary_provider_key = self.routing_matrix.get(agent_name, "gemini")
-        provider = self.providers.get(primary_provider_key, self.providers["gemini"])
+        primary_key = self.routing_matrix.get(agent_name, "gemini")
+        fallback_keys = ["gemini", "openai", "claude", "deepseek", "qwen", "openrouter"]
+        ordered_keys = [primary_key] + [k for k in fallback_keys if k != primary_key]
 
-        try:
-            logger.info(f"Routing {agent_name} request to primary provider: {primary_provider_key.upper()}")
-            return await provider.generate(request)
-        except Exception as e:
-            logger.error(f"Primary provider {primary_provider_key} failed: {str(e)}. Falling back to Gemini...")
-            fallback_provider = self.providers["gemini"]
-            return await fallback_provider.generate(request)
+        for provider_key in ordered_keys:
+            provider = self.providers.get(provider_key)
+            if not provider:
+                continue
+
+            logger.info(f"Attempting LLM generation for {agent_name} using provider: {provider_key.upper()}")
+            resp = await provider.generate(request)
+            if resp.status == "SUCCESS":
+                return resp
+            else:
+                logger.warning(f"Provider {provider_key.upper()} failed for {agent_name}: {resp.error_message}. Trying fallback...")
+
+        logger.error(f"All LLM providers failed for {agent_name}.")
+        return LLMResponse(
+            provider="LLMRouter",
+            model="none",
+            status="UNAVAILABLE",
+            error_code="ALL_PROVIDERS_UNAVAILABLE",
+            error_message=f"No configured LLM provider available for {agent_name}.",
+            retryable=True
+        )
 
 llm_router = LLMRouter()
