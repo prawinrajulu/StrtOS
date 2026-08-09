@@ -105,6 +105,11 @@ class WorkflowService:
         }
 
         # Update Workflow State
+        if workflow.status == "RUNNING":
+            return workflow
+        if workflow.status == "COMPLETED":
+            return workflow
+
         workflow.status = "RUNNING"
         workflow.started_at = datetime.now(timezone.utc)
         workflow.active_stage = "CEO AGENT ORCHESTRATION"
