@@ -121,3 +121,25 @@ async def get_workflow_events(
     service = WorkflowService(db)
     events = await service.get_events(workflow_id, org_id=current_user.organization_id)
     return SuccessResponse(data=events, message="Workflow events retrieved.")
+
+@router.get("/{workflow_id}/stream")
+async def stream_workflow_events(
+    workflow_id: str,
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Authenticated Server-Sent Events (SSE) streaming endpoint for a specific Workflow.
+    Filters events strictly to the user's organization.
+    """
+    from fastapi.responses import StreamingResponse
+    from app.core.redis import redis_manager
+
+    service = WorkflowService(db)
+    await service.get_workflow(workflow_id, org_id=current_user.organization_id)
+
+    async def event_generator():
+        async for msg in redis_manager.subscribe_channel(f"strtos_events:{workflow_id}"):
+            yield f"event: message\ndata: {msg}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")

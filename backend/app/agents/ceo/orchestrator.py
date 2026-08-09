@@ -147,15 +147,31 @@ class TaskPlanner:
             )
         ]
 
+from app.core.events.publisher import event_publisher
+
 class ExecutionMonitor:
-    """Tracks running tasks, execution time, and broadcasts Redis events."""
+    """Monitors live task execution and broadcasts telemetry to Redis Event Bus."""
     def __init__(self):
         logger.info("Initialized ExecutionMonitor.")
 
-    async def publish_event(self, event_type: str, data: Dict[str, Any]):
-        message = json.dumps({"type": event_type, "data": data})
-        await redis_manager.publish_event("strtos_events", message)
-        await redis_manager.publish_event(event_type, message)
+    async def publish_event(self, event_type: str, payload: Dict[str, Any]):
+        try:
+            workflow_id = payload.get("workflow_id") if isinstance(payload, dict) else None
+            org_id = payload.get("organization_id") if isinstance(payload, dict) else None
+            task_id = payload.get("task_id") if isinstance(payload, dict) else None
+            agent_name = payload.get("agent_name") if isinstance(payload, dict) else None
+            
+            await event_publisher.publish(
+                event_type=event_type,
+                workflow_id=workflow_id,
+                task_id=task_id,
+                agent_name=agent_name,
+                organization_id=org_id,
+                message=payload.get("current_thought"),
+                metadata=payload if isinstance(payload, dict) else {"raw": payload}
+            )
+        except Exception as e:
+            logger.error(f"Error publishing monitor event: {e}")
 
 class WorkflowValidator:
     """Validates specialist outputs against criteria before acceptance."""

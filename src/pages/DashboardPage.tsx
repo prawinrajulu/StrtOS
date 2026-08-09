@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { dashboardApi } from '../services/dashboardApi';
 import type { DashboardOverview } from '../services/dashboardApi';
+import { globalEventStream } from '../services/eventStream';
 
 export const DashboardPage: React.FC<{ onOpenCEO: () => void }> = ({ onOpenCEO }) => {
   const [data, setData] = useState<DashboardOverview | null>(null);
@@ -20,6 +21,12 @@ export const DashboardPage: React.FC<{ onOpenCEO: () => void }> = ({ onOpenCEO }
 
   useEffect(() => {
     loadData();
+    const unsubscribe = globalEventStream.subscribe((event) => {
+      if (['workflow.completed', 'task.completed', 'report.completed', 'dashboard.updated'].includes(event.event_type)) {
+        loadData();
+      }
+    });
+    return () => unsubscribe();
   }, [days]);
 
   return (

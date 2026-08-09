@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { workflowsApi } from '../services/workflowsApi';
 import type { Workflow, TaskItem } from '../services/workflowsApi';
+import { EventStreamClient } from '../services/eventStream';
 
 interface WorkflowDetailsPageProps {
   workflow: Workflow;
@@ -27,6 +28,13 @@ export const WorkflowDetailsPage: React.FC<WorkflowDetailsPageProps> = ({ workfl
 
   useEffect(() => {
     refreshData();
+    const stream = new EventStreamClient(`/api/v1/workflows/${workflow.id}/stream`);
+    const unsubscribe = stream.subscribe((event) => {
+      if (event.workflow_id === workflow.id) {
+        refreshData();
+      }
+    });
+    return () => unsubscribe();
   }, [workflow.id]);
 
   const handleStart = async () => {
