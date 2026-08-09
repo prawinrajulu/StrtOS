@@ -1,7 +1,3 @@
-from fastapi import APIRouter
+from app.reports.routes import router
 
-router = APIRouter(prefix="/reports", tags=["Reports"])
-
-@router.get("/")
-async def list_reports():
-    return {"reports": []}
+__all__ = ["router"]

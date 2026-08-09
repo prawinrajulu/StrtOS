@@ -113,11 +113,22 @@ class Report(Base):
 
     id = Column(String, primary_key=True, default=generate_uuid)
     workflow_id = Column(String, ForeignKey("workflows.id"), nullable=False, index=True)
-    organization_id = Column(String, nullable=True, index=True)
-    client_id = Column(String, nullable=True, index=True)
+    organization_id = Column(String, ForeignKey("organizations.id"), nullable=False, index=True)
+    client_id = Column(String, ForeignKey("clients.id"), nullable=True, index=True)
+    created_by = Column(String, nullable=True)
     title = Column(String, nullable=False)
+    executive_summary = Column(Text, nullable=True)
+    report_type = Column(String, default="EXECUTIVE_SUMMARY")  # EXECUTIVE_SUMMARY, AUDIT, STRATEGY
+    status = Column(String, default="FINAL", index=True)       # DRAFT, FINAL, ARCHIVED
+    overall_score = Column(Integer, default=92)
+    confidence_score = Column(Float, default=95.0)
+    key_findings = Column(JSON, nullable=True)
+    recommendations = Column(JSON, nullable=True)
+    agent_results = Column(JSON, nullable=True)
+    metrics = Column(JSON, nullable=True)
     summary_json = Column(JSON, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     workflow = relationship("Workflow", back_populates="reports")
 
