@@ -1,6 +1,11 @@
-import json
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from typing import Optional
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends
 from fastapi.responses import StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import get_db
+from app.auth.dependencies import get_current_user
+from app.auth.models import UserModel
+from app.clients.service import ClientService
 from app.agents.ceo.orchestrator import ceo_orchestrator
 from app.agents.ceo.graph.state import WorkflowState
 from app.core.redis import redis_manager
@@ -11,16 +16,40 @@ router = APIRouter(prefix="/ceo", tags=["CEO Agent"])
 
 class DirectiveRequest(BaseModel):
     directive: str
-    client_name: str = "Arcadia Ventures"
+    client_id: Optional[str] = None
+    client_name: Optional[str] = "Arcadia Ventures"
 
 @router.post("/directive", response_model=SuccessResponse[dict])
-async def submit_directive(request: DirectiveRequest):
+async def submit_directive(
+    request: DirectiveRequest,
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     """
     Submits a new executive directive to the CEO Agent Orchestrator.
+    If client_id is provided, loads full Client context from the authenticated user's organization.
     """
-    state = await ceo_orchestrator.execute_directive(request.directive, request.client_name)
+    client_name = request.client_name or "Arcadia Ventures"
+    client_context = None
+
+    if request.client_id:
+        client_service = ClientService(db)
+        client_dto = await client_service.get_client(request.client_id, org_id=current_user.organization_id)
+        client_name = client_dto.name
+        client_context = {
+            "client_id": client_dto.id,
+            "organization_id": client_dto.organization_id,
+            "client_name": client_dto.name,
+            "industry": client_dto.industry,
+            "website_url": client_dto.website_url,
+            "business_goal": client_dto.business_goal,
+            "monthly_budget": client_dto.monthly_budget,
+            "currency": client_dto.currency
+        }
+
+    state = await ceo_orchestrator.execute_directive(request.directive, client_name=client_name, client_context=client_context)
     return SuccessResponse(
-        data={"workflow_id": state.workflow_id, "status": state.status},
+        data={"workflow_id": state.workflow_id, "status": state.status, "client_name": client_name},
         message="Executive directive accepted and workflow initialized."
     )
 

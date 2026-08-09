@@ -12,15 +12,21 @@ import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { ClientsPage } from './pages/ClientsPage';
+import { ClientDetailsPage } from './pages/ClientDetailsPage';
+import type { Client } from './services/clientsApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
 const MainLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('ai-agents');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
   const getBreadcrumbs = () => {
     switch (activeTab) {
       case 'dashboard':
         return ['STRTOS', 'Dashboard'];
+      case 'clients':
+        return selectedClient ? ['STRTOS', 'Clients', selectedClient.name] : ['STRTOS', 'Clients'];
       case 'ceo-agent':
         return ['STRTOS', 'CEO Agent'];
       case 'profile':
@@ -35,6 +41,19 @@ const MainLayout: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         return <DashboardPage onOpenCEO={() => setActiveTab('ceo-agent')} />;
+      case 'clients':
+        if (selectedClient) {
+          return (
+            <ClientDetailsPage
+              client={selectedClient}
+              onBack={() => setSelectedClient(null)}
+              onRunAnalysis={() => {
+                setActiveTab('ceo-agent');
+              }}
+            />
+          );
+        }
+        return <ClientsPage onSelectClient={(client) => setSelectedClient(client)} />;
       case 'ceo-agent':
         return <CEOAgentPage />;
       case 'profile':

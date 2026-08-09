@@ -38,10 +38,10 @@ export const RegisterPage: React.FC = () => {
         body: JSON.stringify({ organization_name: orgName, full_name: fullName, email, password })
       });
       const result = await response.json();
-      if (result.success) {
+      if (response.ok && result.success !== false) {
         navigate('/login');
       } else {
-        setError(result.message || 'Registration failed.');
+        setError(result.message || result.detail || 'Registration failed.');
       }
     } catch (err) {
       setError('Connection failed. Please check network.');

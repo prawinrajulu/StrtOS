@@ -56,26 +56,38 @@ export interface ExecutiveReportData {
   ceo_final_recommendations: string[];
 }
 
-const BASE_URL = 'http://localhost:8000/api/v1';
+const BASE_URL = import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/v1/ceo` : '/api/v1/ceo';
 
 export class CEOApiService {
-  static async submitDirective(directive: string, clientName = 'Arcadia Ventures'): Promise<void> {
+  static async submitDirective(directive: string, clientName?: string, clientId?: string): Promise<{ workflow_id: string } | null> {
     try {
-      await fetch(`${BASE_URL}/directive`, {
+      const token = localStorage.getItem('strtos_auth_token') || sessionStorage.getItem('strtos_auth_token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const res = await fetch(`${BASE_URL}/directive`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ directive, client_name: clientName }),
+        headers,
+        body: JSON.stringify({
+          directive,
+          client_id: clientId,
+          client_name: clientName || 'Arcadia Ventures'
+        }),
       });
+      const data = await res.json();
+      return data.data;
     } catch (e) {
       console.warn('API offline - running in fallback mode', e);
+      return null;
     }
   }
 
   static async fetchReport(): Promise<ExecutiveReportData | null> {
     try {
-      const res = await fetch(`${BASE_URL}/report`);
+      const res = await fetch(`${BASE_URL}/report/latest`);
       if (res.ok) {
-        return await res.json();
+        const data = await res.json();
+        return data.data;
       }
     } catch (e) {
       console.warn('Failed fetching executive report', e);

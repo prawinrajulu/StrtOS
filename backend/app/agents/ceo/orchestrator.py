@@ -250,7 +250,12 @@ class CEOOrchestrator:
         self.active_workflows: Dict[str, WorkflowState] = {}
         logger.info("Initialized CEOOrchestrator Engine.")
 
-    async def execute_directive(self, directive: str, client_name: str = "Arcadia Ventures") -> WorkflowState:
+    async def execute_directive(
+        self,
+        directive: str,
+        client_name: str = "Arcadia Ventures",
+        client_context: Optional[Dict[str, Any]] = None
+    ) -> WorkflowState:
         workflow_id = "wf-" + str(uuid.uuid4())[:8]
 
         # 1. Intent Analysis

@@ -1,7 +1,3 @@
-from fastapi import APIRouter
+from app.clients.routes import router
 
-router = APIRouter(prefix="/clients", tags=["Clients"])
-
-@router.get("/")
-async def list_clients():
-    return {"clients": []}
+__all__ = ["router"]

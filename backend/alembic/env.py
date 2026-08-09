@@ -11,7 +11,16 @@ from alembic import context
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app.core.config import settings
-from app.models.database import Base
+from app.core.database import Base
+
+# Import all models to ensure complete metadata registration
+import app.models.database
+import app.auth.models
+import app.agents.business_analysis.models
+import app.agents.seo_audit.models
+import app.agents.competitor_research.models
+import app.agents.marketing_strategy.models
+import app.agents.campaign_planner.models
 
 config = context.config
 

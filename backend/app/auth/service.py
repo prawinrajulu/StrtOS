@@ -31,6 +31,13 @@ class AuthService:
 
         slug = payload.organization_name.lower().replace(" ", "-")
         org = await self.repo.create_organization(payload.organization_name, slug)
+        
+        # Sync core organizations table for client FK integrity
+        from app.models.database import Organization as CoreOrg
+        core_org = CoreOrg(id=org.id, name=org.name, slug=org.slug, tier="ENTERPRISE")
+        self.session.add(core_org)
+        await self.session.flush()
+
         pwd_hash = security_handler.hash_password(payload.password)
         
         user = await self.repo.create_user(
