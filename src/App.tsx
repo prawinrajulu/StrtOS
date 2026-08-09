@@ -15,11 +15,15 @@ import { ProfilePage } from './pages/ProfilePage';
 import { ClientsPage } from './pages/ClientsPage';
 import { ClientDetailsPage } from './pages/ClientDetailsPage';
 import type { Client } from './services/clientsApi';
+import { WorkflowsPage } from './pages/WorkflowsPage';
+import { WorkflowDetailsPage } from './pages/WorkflowDetailsPage';
+import type { Workflow } from './services/workflowsApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
 const MainLayout: React.FC = () => {
   const [activeTab, setActiveTab] = useState('ai-agents');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
 
   const getBreadcrumbs = () => {
     switch (activeTab) {
@@ -27,6 +31,8 @@ const MainLayout: React.FC = () => {
         return ['STRTOS', 'Dashboard'];
       case 'clients':
         return selectedClient ? ['STRTOS', 'Clients', selectedClient.name] : ['STRTOS', 'Clients'];
+      case 'workflows':
+        return selectedWorkflow ? ['STRTOS', 'Workflows', selectedWorkflow.title] : ['STRTOS', 'Workflows'];
       case 'ceo-agent':
         return ['STRTOS', 'CEO Agent'];
       case 'profile':
@@ -54,6 +60,16 @@ const MainLayout: React.FC = () => {
           );
         }
         return <ClientsPage onSelectClient={(client) => setSelectedClient(client)} />;
+      case 'workflows':
+        if (selectedWorkflow) {
+          return (
+            <WorkflowDetailsPage
+              workflow={selectedWorkflow}
+              onBack={() => setSelectedWorkflow(null)}
+            />
+          );
+        }
+        return <WorkflowsPage onSelectWorkflow={(wf) => setSelectedWorkflow(wf)} />;
       case 'ceo-agent':
         return <CEOAgentPage />;
       case 'profile':

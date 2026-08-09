@@ -63,14 +63,21 @@ class Workflow(Base):
     __tablename__ = "workflows"
 
     id = Column(String, primary_key=True, default=generate_uuid)
-    client_id = Column(String, ForeignKey("clients.id"), nullable=False)
+    organization_id = Column(String, ForeignKey("organizations.id"), nullable=False, index=True)
+    client_id = Column(String, ForeignKey("clients.id"), nullable=False, index=True)
+    created_by = Column(String, nullable=True)
     title = Column(String, nullable=False)
-    status = Column(String, default="RUNNING")
+    directive = Column(Text, nullable=True)
+    status = Column(String, default="DRAFT", nullable=False)  # DRAFT, QUEUED, RUNNING, PAUSED, COMPLETED, FAILED, CANCELLED
+    active_stage = Column(String, default="INITIALIZATION")
+    progress = Column(Integer, default=0)
     confidence_score = Column(Float, default=92.0)
     total_stages = Column(Integer, default=9)
     completed_stages = Column(Integer, default=0)
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     client = relationship("Client", back_populates="workflows")
     tasks = relationship("Task", back_populates="workflow", cascade="all, delete-orphan")
@@ -81,15 +88,23 @@ class Task(Base):
     __tablename__ = "tasks"
 
     id = Column(String, primary_key=True, default=generate_uuid)
-    workflow_id = Column(String, ForeignKey("workflows.id"), nullable=False)
+    workflow_id = Column(String, ForeignKey("workflows.id"), nullable=False, index=True)
+    organization_id = Column(String, nullable=True, index=True)
     title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
     agent_name = Column(String, nullable=False)
     priority = Column(String, default="HIGH")
-    status = Column(String, default="WAITING")
+    status = Column(String, default="WAITING")  # WAITING, QUEUED, RUNNING, COMPLETED, FAILED, SKIPPED
+    dependencies = Column(JSON, nullable=True)
     eta = Column(String, nullable=True)
     retry_count = Column(Integer, default=0)
+    max_retries = Column(Integer, default=3)
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    error_message = Column(Text, nullable=True)
+    output = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     workflow = relationship("Workflow", back_populates="tasks")
 
@@ -97,7 +112,9 @@ class Report(Base):
     __tablename__ = "reports"
 
     id = Column(String, primary_key=True, default=generate_uuid)
-    workflow_id = Column(String, ForeignKey("workflows.id"), nullable=False)
+    workflow_id = Column(String, ForeignKey("workflows.id"), nullable=False, index=True)
+    organization_id = Column(String, nullable=True, index=True)
+    client_id = Column(String, nullable=True, index=True)
     title = Column(String, nullable=False)
     summary_json = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
@@ -108,7 +125,8 @@ class WorkflowEvent(Base):
     __tablename__ = "workflow_events"
 
     id = Column(String, primary_key=True, default=generate_uuid)
-    workflow_id = Column(String, ForeignKey("workflows.id"), nullable=False)
+    workflow_id = Column(String, ForeignKey("workflows.id"), nullable=False, index=True)
+    organization_id = Column(String, nullable=True, index=True)
     event_type = Column(String, nullable=False)
     payload = Column(JSON, nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

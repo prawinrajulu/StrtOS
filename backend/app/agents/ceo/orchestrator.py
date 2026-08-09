@@ -287,8 +287,8 @@ class CEOOrchestrator:
         self.active_workflows[workflow_id] = state
         await self.execution_monitor.publish_event("workflow.started", state.model_dump())
 
-        # Async Execution Background Task
-        asyncio.create_task(self._run_workflow_execution(state))
+        # Synchronous execution for REST API workflow completion
+        await self._run_workflow_execution(state)
         return state
 
     async def _run_workflow_execution(self, state: WorkflowState):

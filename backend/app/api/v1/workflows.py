@@ -1,7 +1,3 @@
-from fastapi import APIRouter
+from app.workflows.routes import router
 
-router = APIRouter(prefix="/workflows", tags=["Workflows"])
-
-@router.get("/")
-async def list_workflows():
-    return {"workflows": []}
+__all__ = ["router"]

@@ -27,6 +27,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'clients', label: 'Clients', icon: Users },
+        { id: 'workflows', label: 'Workflows', icon: BrainCircuit },
       ],
     },
     {
