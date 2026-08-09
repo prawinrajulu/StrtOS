@@ -90,7 +90,20 @@ async def health_check():
 
 @app.get("/ready")
 async def readiness_check():
-    return {"status": "ready"}
+    db_healthy = False
+    try:
+        from sqlalchemy import text
+        from app.core.database import AsyncSessionLocal
+        async with AsyncSessionLocal() as session:
+            await session.execute(text("SELECT 1"))
+            db_healthy = True
+    except Exception:
+        db_healthy = False
+
+    if not db_healthy:
+        return JSONResponse(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, content={"status": "not_ready", "database": "disconnected"})
+
+    return {"status": "ready", "database": "connected"}
 
 @app.get("/live")
 async def liveness_check():

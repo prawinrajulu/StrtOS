@@ -90,7 +90,7 @@ class WorkflowService:
             raise HTTPException(status_code=404, detail="Workflow not found.")
 
         if workflow.status in ["RUNNING", "COMPLETED"]:
-            raise HTTPException(status_code=400, detail=f"Cannot start workflow in status '{workflow.status}'.")
+            return WorkflowDTO.model_validate(workflow)
 
         client = await self.client_repo.get_by_id_and_org(workflow.client_id, org_id)
         client_context = {

@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+ENV/
+.env
+.env.*
+!.env.example
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
