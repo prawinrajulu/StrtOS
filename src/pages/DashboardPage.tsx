@@ -1,315 +1,210 @@
-import React from 'react';
-import { MetricCard } from '../components/MetricCard';
-import { StatusBadge } from '../components/StatusBadge';
-import { Plus, Sparkles } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import {
+  Users, BrainCircuit, Activity, Award, Sparkles,
+  ListChecks, BarChart2
+} from 'lucide-react';
+import { dashboardApi } from '../services/dashboardApi';
+import type { DashboardOverview } from '../services/dashboardApi';
 
 export const DashboardPage: React.FC<{ onOpenCEO: () => void }> = ({ onOpenCEO }) => {
+  const [data, setData] = useState<DashboardOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [days, setDays] = useState(30);
+
+  const loadData = async () => {
+    setLoading(true);
+    const overview = await dashboardApi.getOverview(days);
+    setData(overview);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [days]);
+
   return (
     <div style={{ padding: '32px 40px', maxWidth: '1600px', margin: '0 auto' }}>
-      {/* Top Welcome Section */}
+      {/* Top Welcome Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
           <div
             style={{
-              fontSize: '10px',
+              fontSize: '11px',
               fontFamily: "'JetBrains Mono', monospace",
               color: '#6b7280',
               letterSpacing: '0.12em',
               textTransform: 'uppercase',
-              marginBottom: '8px',
+              marginBottom: '6px',
             }}
           >
-            WED • FEB 26 • 2026
+            STRTOS EXECUTIVE DASHBOARD • REAL-TIME INTELLIGENCE
           </div>
-          <h1 style={{ fontSize: '36px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', marginBottom: '8px' }}>
-            Good evening, Ava.
+          <h1 style={{ fontSize: '32px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
+            Executive Operations Brief
           </h1>
-          <p style={{ fontSize: '13px', color: '#9ca3af' }}>
-            Your CEO Agent orchestrated 218 tasks across 6 clients today. Confidence is trending upward.
+          <p style={{ fontSize: '14px', color: '#9ca3af', marginTop: '4px' }}>
+            Live performance metrics aggregated from Supabase PostgreSQL & CEO Orchestrator Engine.
           </p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button
+          <select
+            value={days}
+            onChange={(e) => setDays(Number(e.target.value))}
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.05)',
+              backgroundColor: '#111827',
               border: '1px solid rgba(255, 255, 255, 0.1)',
               borderRadius: '8px',
-              padding: '8px 16px',
+              padding: '8px 14px',
               color: '#e5e7eb',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
+              fontSize: '13px'
             }}
           >
-            <Plus size={14} /> New workflow
-          </button>
+            <option value={7}>Last 7 Days</option>
+            <option value={30}>Last 30 Days</option>
+            <option value={90}>Last 90 Days</option>
+          </select>
+
           <button
             onClick={onOpenCEO}
             style={{
               background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
               border: 'none',
               borderRadius: '8px',
-              padding: '8px 16px',
+              padding: '10px 18px',
               color: '#ffffff',
-              fontSize: '12px',
+              fontSize: '13px',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              boxShadow: '0 0 16px rgba(168, 85, 247, 0.4)',
+              gap: '8px',
+              boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
             }}
           >
-            <Sparkles size={14} /> Open CEO Agent
+            <Sparkles size={16} /> Open CEO Agent
           </button>
         </div>
       </div>
 
-      {/* Top 4 Metrics Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '28px' }}>
-        <MetricCard title="ACTIVE WORKFLOWS" value="18" change="↗ +12%" />
-        <MetricCard title="AGENTS ONLINE" value="8/8" change="↗ 100%" />
-        <MetricCard title="AVG CONFIDENCE" value="92.4" change="↗ +3.1" />
-        <MetricCard title="TASKS TODAY" value="2,481" change="↗ +218" />
-      </div>
-
-      {/* Middle Section: Chart + Live Queue */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '28px' }}>
-        {/* Chart Card */}
-        <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <div>
-              <div
-                style={{
-                  fontSize: '10px',
-                  fontFamily: "'JetBrains Mono', monospace",
-                  color: '#6b7280',
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
-                  marginBottom: '4px',
-                }}
-              >
-                AGENT THROUGHPUT
+      {loading ? (
+        <div style={{ padding: '80px', textAlign: 'center', color: '#9ca3af' }}>Loading real-time executive metrics...</div>
+      ) : !data ? (
+        <div style={{ padding: '60px', textAlign: 'center', color: '#ef4444' }}>
+          Failed loading dashboard metrics. Ensure backend server is running.
+        </div>
+      ) : (
+        <>
+          {/* Top KPI Cards Row */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px', marginBottom: '28px' }}>
+            <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '20px' }}>
+              <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>TOTAL CLIENTS</span>
+                <Users size={16} style={{ color: '#6366f1' }} />
               </div>
-              <div style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff' }}>
-                Tasks completed · last 6mo
-              </div>
+              <div style={{ fontSize: '28px', fontWeight: '700', color: '#ffffff' }}>{data.clients.total_clients}</div>
+              <div style={{ fontSize: '12px', color: '#10b981', marginTop: '6px' }}>{data.clients.active_clients} Active Accounts</div>
             </div>
-            <span
-              style={{
-                fontSize: '10px',
-                fontFamily: "'JetBrains Mono', monospace",
-                color: '#00e599',
-                backgroundColor: 'rgba(0, 229, 153, 0.1)',
-                padding: '3px 8px',
-                borderRadius: '4px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#00e599' }} /> LIVE
-            </span>
-          </div>
 
-          {/* Canvas SVG Area Chart */}
-          <div style={{ height: '220px', width: '100%', position: 'relative' }}>
-            <svg width="100%" height="100%" viewBox="0 0 500 200" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="chartArea" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.35" />
-                  <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0" />
-                </linearGradient>
-              </defs>
+            <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '20px' }}>
+              <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>WORKFLOWS</span>
+                <BrainCircuit size={16} style={{ color: '#8b5cf6' }} />
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: '700', color: '#ffffff' }}>{data.workflows.total_workflows}</div>
+              <div style={{ fontSize: '12px', color: '#8b5cf6', marginTop: '6px' }}>{data.workflows.completed_workflows} Completed Campaigns</div>
+            </div>
 
-              {/* Grid Lines */}
-              <line x1="0" y1="50" x2="500" y2="50" stroke="rgba(255,255,255,0.04)" strokeDasharray="4 4" />
-              <line x1="0" y1="100" x2="500" y2="100" stroke="rgba(255,255,255,0.04)" strokeDasharray="4 4" />
-              <line x1="0" y1="150" x2="500" y2="150" stroke="rgba(255,255,255,0.04)" strokeDasharray="4 4" />
+            <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '20px' }}>
+              <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>TASK SUCCESS RATE</span>
+                <ListChecks size={16} style={{ color: '#10b981' }} />
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: '700', color: '#10b981' }}>{data.tasks.task_success_rate}%</div>
+              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '6px' }}>{data.tasks.completed_tasks}/{data.tasks.total_tasks} Tasks Executed</div>
+            </div>
 
-              {/* Area Fill */}
-              <path d="M 0,140 Q 125,120 250,90 T 500,40 L 500,200 L 0,200 Z" fill="url(#chartArea)" />
-
-              {/* Line Curve */}
-              <path d="M 0,140 Q 125,120 250,90 T 500,40" fill="none" stroke="#a855f7" strokeWidth="2.5" />
-            </svg>
-
-            {/* X-Axis labels */}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '10px',
-                fontFamily: "'JetBrains Mono', monospace",
-                color: '#6b7280',
-                marginTop: '8px',
-              }}
-            >
-              <span>Sep</span>
-              <span>Oct</span>
-              <span>Nov</span>
-              <span>Dec</span>
-              <span>Jan</span>
-              <span>Feb</span>
+            <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '20px' }}>
+              <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
+                <span>AVG CONFIDENCE</span>
+                <Award size={16} style={{ color: '#f59e0b' }} />
+              </div>
+              <div style={{ fontSize: '28px', fontWeight: '700', color: '#f59e0b' }}>{data.workflows.average_confidence_score}%</div>
+              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '6px' }}>Based on Report Intelligence</div>
             </div>
           </div>
-        </div>
 
-        {/* Live Queue Box */}
-        <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff' }}>Live queue</div>
-            <span
-              style={{
-                fontSize: '9px',
-                fontFamily: "'JetBrains Mono', monospace",
-                color: '#00e599',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-              }}
-            >
-              <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#00e599' }} /> STREAMING
-            </span>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {[
-              { title: 'Synthesize Northwind competitive matrix', agent: 'COMPETITOR SCOUT', status: 'RUNNING' as const },
-              { title: 'Draft Lumen Studios Q1 narrative', agent: 'MARKETING STRATEGIST', status: 'WAITING' as const },
-              { title: 'SEO technical audit – orbitalabs.io', agent: 'SEO SPECIALIST', status: 'RUNNING' as const },
-              { title: 'Kite & Loom holiday media mix', agent: 'CAMPAIGN PLANNER', status: 'WAITING' as const },
-            ].map((q) => (
-              <div
-                key={q.title}
-                style={{
-                  padding: '10px 12px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.04)',
-                  borderRadius: '6px',
-                }}
-              >
-                <div style={{ fontSize: '12px', color: '#e5e7eb', marginBottom: '4px' }}>{q.title}</div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '9px', fontFamily: "'JetBrains Mono', monospace", color: '#6b7280' }}>
-                    {q.agent}
-                  </span>
-                  <StatusBadge status={q.status} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Section: Client Portfolio + Active Agents */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
-        {/* Client Portfolio */}
-        <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <div style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff' }}>Client portfolio</div>
-            <span style={{ fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", color: '#6b7280', cursor: 'pointer' }}>
-              VIEW ALL →
-            </span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-            {[
-              { id: 'LS', name: 'Lumen Studios', type: 'D2C SKINCARE', health: 92, color: '#6366f1' },
-              { id: 'NC', name: 'Northwind Capital', type: 'FINTECH', health: 88, color: '#00e599' },
-              { id: 'KL', name: 'Kite & Loom', type: 'HOME & LIVING', health: 95, color: '#f59e0b' },
-            ].map((client) => (
-              <div
-                key={client.name}
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.06)',
-                  borderRadius: '10px',
-                  padding: '16px',
-                }}
-              >
-                <div
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '8px',
-                    backgroundColor: client.color,
-                    color: '#000000',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: '12px',
-                  }}
-                >
-                  {client.id}
-                </div>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: '#ffffff' }}>{client.name}</div>
-                <div
-                  style={{
-                    fontSize: '9px',
-                    fontFamily: "'JetBrains Mono', monospace",
-                    color: '#6b7280',
-                    marginTop: '2px',
-                    marginBottom: '16px',
-                  }}
-                >
-                  {client.type}
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', fontFamily: "'JetBrains Mono', monospace", color: '#6b7280', marginBottom: '6px' }}>
-                  <span>HEALTH</span>
-                  <span style={{ color: '#ffffff' }}>{client.health}</span>
-                </div>
-                <div style={{ width: '100%', height: '4px', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                  <div style={{ width: `${client.health}%`, height: '100%', backgroundColor: client.color }} />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Active Agents list */}
-        <div className="glass-card" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div style={{ fontSize: '16px', fontWeight: 600, color: '#ffffff' }}>Active agents</div>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {[
-              { name: 'CEO Agent', role: 'STRATEGIC ORCHESTRATOR', status: 'THINKING' as const },
-              { name: 'Business Analyst', role: 'MARKET INTELLIGENCE', status: 'RUNNING' as const },
-              { name: 'SEO Specialist', role: 'SEARCH & DISCOVERY', status: 'RUNNING' as const },
-              { name: 'Competitor Scout', role: 'RIVAL INTELLIGENCE', status: 'COMPLETED' as const },
-            ].map((a) => (
-              <div
-                key={a.name}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 10px',
-                  borderRadius: '6px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.02)',
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '12px', fontWeight: 600, color: '#e5e7eb' }}>{a.name}</div>
-                  <div style={{ fontSize: '9px', fontFamily: "'JetBrains Mono', monospace", color: '#6b7280' }}>
-                    {a.role}
+          {/* Automated Executive Insights Banner */}
+          {data.insights.length > 0 && (
+            <div style={{ backgroundColor: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.25)', borderRadius: '14px', padding: '20px', marginBottom: '28px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#8b5cf6', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Sparkles size={18} /> Automated Backend Executive Insights
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {data.insights.map((insight, idx) => (
+                  <div key={idx} style={{ fontSize: '13.5px', color: '#e5e7eb', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#8b5cf6' }}>•</span> {insight}
                   </div>
-                </div>
-                <StatusBadge status={a.status} />
+                ))}
               </div>
-            ))}
+            </div>
+          )}
+
+          {/* Grid Layout: Agent Performance & Recent Activity */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '24px', marginBottom: '28px' }}>
+            {/* Agent Performance Table */}
+            <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '24px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: '600', color: '#ffffff', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BarChart2 size={18} style={{ color: '#6366f1' }} /> Specialist Agent Execution Performance
+              </h3>
+
+              {data.agent_performance.length === 0 ? (
+                <div style={{ color: '#9ca3af', fontSize: '13px' }}>No agent executions logged yet.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {data.agent_performance.map((agent) => (
+                    <div key={agent.agent_name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', backgroundColor: '#1f2937', borderRadius: '8px' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#f3f4f6' }}>{agent.agent_name}</div>
+                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>{agent.completed_executions} Completed / {agent.total_executions} Total</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#10b981' }}>{agent.success_rate}% Success</div>
+                        <div style={{ fontSize: '12px', color: '#8b5cf6' }}>{agent.average_confidence}% Conf.</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Recent Audit Activities */}
+            <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '24px' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: '600', color: '#ffffff', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Activity size={18} style={{ color: '#10b981' }} /> Recent Audit Trail Events
+              </h3>
+
+              {data.recent_activities.length === 0 ? (
+                <div style={{ color: '#9ca3af', fontSize: '13px' }}>No audit events logged yet.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {data.recent_activities.map((act) => (
+                    <div key={act.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid #1f2937' }}>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#8b5cf6' }}>{act.event_type}</div>
+                        <div style={{ fontSize: '11px', color: '#6b7280' }}>Workflow: {act.workflow_id}</div>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#9ca3af' }}>
+                        {new Date(act.created_at).toLocaleTimeString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 };
