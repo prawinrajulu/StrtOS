@@ -38,6 +38,10 @@ import type { ActionRecord } from './services/executionApi';
 import { SwarmPage } from './pages/SwarmPage';
 import { SwarmDetailsPage } from './pages/SwarmDetailsPage';
 import type { SwarmSessionRecord } from './services/swarmApi';
+import { LearningPage } from './pages/LearningPage';
+import { AgentPerformancePage } from './pages/AgentPerformancePage';
+import { PolicyDetailsPage } from './pages/PolicyDetailsPage';
+import type { AgentPerformanceRecord } from './services/learningApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
 const MainLayout: React.FC = () => {
@@ -50,6 +54,8 @@ const MainLayout: React.FC = () => {
   const [selectedPrediction, setSelectedPrediction] = useState<PredictionRecord | null>(null);
   const [selectedAction, setSelectedAction] = useState<ActionRecord | null>(null);
   const [selectedSwarm, setSelectedSwarm] = useState<SwarmSessionRecord | null>(null);
+  const [selectedLearningAgent, setSelectedLearningAgent] = useState<AgentPerformanceRecord | null>(null);
+  const [selectedPolicyAgent, setSelectedPolicyAgent] = useState<string | null>(null);
   const [showSimulator, setShowSimulator] = useState(false);
 
   const getBreadcrumbs = () => {
@@ -66,6 +72,10 @@ const MainLayout: React.FC = () => {
         return selectedAction ? ['STRTOS', 'Execution', selectedAction.name] : ['STRTOS', 'Execution', 'Actions'];
       case 'swarm':
         return selectedSwarm ? ['STRTOS', 'Intelligence', 'Swarm', selectedSwarm.objective] : ['STRTOS', 'Intelligence', 'Swarm'];
+      case 'learning':
+        if (selectedPolicyAgent) return ['STRTOS', 'Intelligence', 'Learning', 'Policies', selectedPolicyAgent];
+        if (selectedLearningAgent) return ['STRTOS', 'Intelligence', 'Learning', selectedLearningAgent.agent_name];
+        return ['STRTOS', 'Intelligence', 'Learning & Adaptation'];
       case 'memory':
         return selectedMemory ? ['STRTOS', 'Intelligence', 'Memory', selectedMemory.title] : ['STRTOS', 'Intelligence', 'Memory'];
       case 'outcomes':
@@ -145,6 +155,29 @@ const MainLayout: React.FC = () => {
           );
         }
         return <SwarmPage onSelectSwarm={(s) => setSelectedSwarm(s)} />;
+      case 'learning':
+        if (selectedPolicyAgent) {
+          return (
+            <PolicyDetailsPage
+              agentName={selectedPolicyAgent}
+              onBack={() => setSelectedPolicyAgent(null)}
+            />
+          );
+        }
+        if (selectedLearningAgent) {
+          return (
+            <AgentPerformancePage
+              agent={selectedLearningAgent}
+              onBack={() => setSelectedLearningAgent(null)}
+            />
+          );
+        }
+        return (
+          <LearningPage
+            onSelectAgent={(ag) => setSelectedLearningAgent(ag)}
+            onOpenPolicies={(agName) => setSelectedPolicyAgent(agName)}
+          />
+        );
       case 'memory':
         if (selectedMemory) {
           return (

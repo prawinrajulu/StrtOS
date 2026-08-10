@@ -17,6 +17,7 @@ import {
   Brain,
   Zap,
   Network,
+  Activity,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -43,7 +44,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     {
       group: 'INTELLIGENCE',
       items: [
-        { id: 'swarm', label: 'Swarm Orchestration', icon: Network, badgeDot: true },
+        { id: 'learning', label: 'Learning & Adaptation', icon: Activity, badgeDot: true },
+        { id: 'swarm', label: 'Swarm Orchestration', icon: Network },
         { id: 'ceo-agent', label: 'CEO Agent', icon: BrainCircuit },
         { id: 'memory', label: 'Memory', icon: Brain },
         { id: 'outcomes', label: 'Outcomes', icon: Target },
@@ -131,7 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                 letterSpacing: '0.1em',
               }}
             >
-              AI OS • V1.4
+              AI OS • V1.5
             </div>
           </div>
         </div>

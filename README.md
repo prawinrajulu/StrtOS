@@ -1,16 +1,22 @@
 # StrtOS - Autonomous Multi-Agent AI Operating System
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-v1.4.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-v1.5.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 
 **StrtOS** is an autonomous Multi-Agent AI Operating System designed to decompose high-level executive business directives into coordinated multi-stage execution graphs across specialized AI agents.
 
-> **Security Guarantee**: StrtOS does not treat individual LLM outputs as authoritative. Decisions are based on evidence, confidence, cross-agent validation, deterministic conflict handling, and governance policies. All execution passes through an explicit `ActionRegistry`, deterministic `PolicyEngine`, and `Governance` human approval layer.
+> **Security Guarantee**: StrtOS does not treat individual LLM outputs as authoritative. Decisions are based on evidence, confidence, cross-agent validation, deterministic conflict handling, versioned policies, and governance policies. All execution passes through an explicit `ActionRegistry`, deterministic `PolicyEngine`, and `Governance` human approval layer.
 
 ```
                                 ┌────────────────────────┐
                                 │  Executive Directive   │
+                                └───────────┬────────────┘
+                                            │
+                                            ▼
+                                ┌────────────────────────┐
+                                │ Adaptive Agent Learning│
+                                │ & Optimization Engine  │
                                 └───────────┬────────────┘
                                             │
                                             ▼
@@ -61,6 +67,13 @@
 ---
 
 ## Key Features
+
+- **Adaptive Agent Learning & Self-Optimization (v1.5.0)**:
+  - 5 new tables deployed on live Supabase PostgreSQL: `agent_performance`, `tool_reliability`, `llm_provider_performance`, `agent_policies`, `agent_adaptations`.
+  - **Deterministic Reliability Engine**: Calculates 0-100 reliability score weighted across Prediction Accuracy (30%), Outcome Success Rate (25%), Evidence Quality (15%), Human Approval (10%), Tool Reliability (10%), Swarm Consensus (5%), and Execution Stability (5%).
+  - **Bounded Adaptation Engine**: Limits policy adaptations to max 10% delta. High deltas (> 5%) automatically route through Governance `ApprovalRequest`.
+  - **Versioned Agent Policies & Degradation Rollback**: `AgentPolicyModel` tracks versioned policy configurations (`ACTIVE`, `ROLLED_BACK`, `DEPRECATED`). `PolicyRollbackEngine` automatically restores prior active policies if performance drops > 15%.
+  - **Learning Control Center UI (`LearningPage.tsx`, `AgentPerformancePage.tsx`, `PolicyDetailsPage.tsx`)**: Dark-glass control panel with sub-navigation tabs, agent cards, policy history list, and real-time SSE stream auto-refresh.
 
 - **Multi-Agent Collaboration, Debate & Swarm Orchestration (v1.4.0)**:
   - `SwarmSessionModel`, `SwarmMessageModel`, `SwarmConflictModel`, and `SwarmDebateModel` mapped to 4 new tables on live Supabase PostgreSQL.
