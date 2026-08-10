@@ -35,6 +35,7 @@ class SEOAuditResult(BaseModel):
     recommendations: List[str] = Field(default_factory=list)
     priority_fixes: List[str] = Field(default_factory=list)
     estimated_seo_impact: str = "High (+35% organic traffic expected within 60 days)"
+    evidence: List[Dict[str, Any]] = Field(default_factory=list)
     confidence_score: float = Field(default=95.0, ge=0.0, le=100.0)
     execution_time_seconds: float = 0.0
     status: str = "COMPLETED"

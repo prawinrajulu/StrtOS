@@ -141,21 +141,61 @@ export const ReportDetailsPage: React.FC<ReportDetailsPageProps> = ({ report, on
           {agentSections.map((sec, idx) => {
             const Icon = sec.icon;
             const res = report.agent_results ? report.agent_results[sec.key] : null;
+            const status = res?.status || 'COMPLETED';
+            const confidence = res?.confidence_score ?? res?.confidence;
+            const evidenceCount = res?.evidence ? res.evidence.length : 0;
+            const provider = res?.provider;
+            const model = res?.model;
+            const latency = res?.latency_ms ? `${res.latency_ms}ms` : res?.execution_time_seconds ? `${res.execution_time_seconds}s` : null;
+
             return (
               <div key={idx} style={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '12px', padding: '18px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <Icon size={20} style={{ color: sec.color }} />
                     <span style={{ fontSize: '15px', fontWeight: '700', color: '#f9fafb' }}>{sec.title}</span>
                   </div>
-                  <span style={{ fontSize: '12px', color: '#10b981', fontWeight: '600' }}>COMPLETED</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {confidence !== undefined && (
+                      <span style={{ padding: '2px 8px', backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#a78bfa', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}>
+                        {confidence}% Confidence
+                      </span>
+                    )}
+                    {evidenceCount > 0 && (
+                      <span style={{ padding: '2px 8px', backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}>
+                        {evidenceCount} Evidence Items
+                      </span>
+                    )}
+                    <span style={{
+                      padding: '2px 8px',
+                      backgroundColor: status === 'COMPLETED' ? 'rgba(16, 185, 129, 0.15)' : status === 'DEGRADED' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      color: status === 'COMPLETED' ? '#10b981' : status === 'DEGRADED' ? '#f59e0b' : '#ef4444',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: '700'
+                    }}>
+                      {status}
+                    </span>
+                  </div>
                 </div>
+
+                {(provider || model || latency) && (
+                  <div style={{ fontSize: '11px', color: '#9ca3af', marginBottom: '10px', display: 'flex', gap: '12px' }}>
+                    {provider && <span>AI Provider: <strong style={{ color: '#d1d5db' }}>{provider}</strong></span>}
+                    {model && <span>Model: <strong style={{ color: '#d1d5db' }}>{model}</strong></span>}
+                    {latency && <span>Latency: <strong style={{ color: '#d1d5db' }}>{latency}</strong></span>}
+                  </div>
+                )}
 
                 <div style={{ fontSize: '13px', color: '#9ca3af', lineHeight: '1.5' }}>
                   {res && res.findings ? (
                     <ul style={{ margin: 0, paddingLeft: '20px' }}>
                       {res.findings.map((f: string, i: number) => <li key={i}>{f}</li>)}
                     </ul>
+                  ) : res && res.business_summary ? (
+                    <p style={{ margin: 0, color: '#d1d5db' }}>{res.business_summary}</p>
+                  ) : res && res.campaign_summary ? (
+                    <p style={{ margin: 0, color: '#d1d5db' }}>{res.campaign_summary}</p>
                   ) : (
                     <span>Specialist intelligence synthesis verified and integrated into Executive Report summary.</span>
                   )}

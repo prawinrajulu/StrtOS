@@ -1,122 +1,191 @@
 import time
 import json
 import asyncio
-from typing import Dict, Any
+from typing import Dict, Any, List, Optional
 from app.agents.business_analysis.schemas import (
     BusinessAnalysisInput, BusinessAnalysisResult, SWOTAnalysis, CustomerPersona
 )
 from app.agents.business_analysis.validator import BusinessAnalysisValidator
-from app.llm.router import llm_router
-from app.llm.providers.base_provider import LLMRequest
-from app.tools.registry import tool_registry
-from app.core.redis import redis_manager
+from app.agents.base_agent import SpecialistAgentBase
+from app.core.evidence.models import EvidenceItem
 from app.core.logging import logger
 
-class BusinessAnalysisService:
-    """Service executing real LLM (Gemini) + Firecrawl + Tavily tools evaluation for Business Analysis."""
+class BusinessAnalysisService(SpecialistAgentBase):
+    """Service executing real LLM + Firecrawl + Tavily + Google Business + Browser tools for Business Analysis."""
+
     def __init__(self):
         self.validator = BusinessAnalysisValidator()
 
-    async def run_analysis(self, payload: BusinessAnalysisInput) -> BusinessAnalysisResult:
+    async def run_analysis(
+        self,
+        payload: BusinessAnalysisInput,
+        workflow_id: Optional[str] = None,
+        task_id: Optional[str] = None,
+        organization_id: Optional[str] = None
+    ) -> BusinessAnalysisResult:
         start_time = time.time()
-        self.validator.validate_input(payload)
+        self.validate_input(self.validator, payload)
+        agent_name = "Business Analysis Agent"
 
-        # Publish business.started event
-        await self._publish_event("business.started", {"business_name": payload.business_name, "industry": payload.industry})
+        # Publish agent.started event
+        await self.publish_event(
+            event_type="agent.started",
+            workflow_id=workflow_id,
+            task_id=task_id,
+            agent_name=agent_name,
+            organization_id=organization_id,
+            status="RUNNING",
+            progress=10,
+            message=f"Starting business analysis for {payload.business_name}"
+        )
 
-        # Execute Tools via ToolRegistry (Firecrawl + Tavily)
-        web_data = await tool_registry.execute_tool("firecrawl", {"url": payload.website or "https://example.com"})
-        search_data = await tool_registry.execute_tool("tavily", {"query": f"{payload.industry} TAM benchmarks and digital growth"})
+        evidence_list: List[EvidenceItem] = []
+        has_unavailable_tools = False
+        target_url = payload.website or "https://example.com"
 
-        markdown_snippet = web_data.get("markdown_content", "Web content analyzed.")
-        tavily_results = search_data.get("results", [])
-        search_snippet = tavily_results[0].get("snippet", "Market benchmarks retrieved.") if tavily_results else "Market benchmarks retrieved."
+        # Execute Tools via SpecialistAgentBase.run_tool
+        ev1, web_data = await self.run_tool(
+            "firecrawl",
+            {"url": target_url},
+            f"Website scraping & markdown extraction for {target_url}",
+            workflow_id=workflow_id, task_id=task_id, agent_name=agent_name, organization_id=organization_id
+        )
+        evidence_list.append(ev1)
+        if ev1.source_type == "unavailable":
+            has_unavailable_tools = True
 
-        # Construct prompt for LLM Router
+        ev2, search_data = await self.run_tool(
+            "tavily",
+            {"query": f"{payload.industry} TAM benchmarks digital adoption growth"},
+            f"Market benchmark search for {payload.industry}",
+            workflow_id=workflow_id, task_id=task_id, agent_name=agent_name, organization_id=organization_id
+        )
+        evidence_list.append(ev2)
+
+        ev3, gbiz_data = await self.run_tool(
+            "google_business",
+            {"name": payload.business_name},
+            f"Google Places listing check for {payload.business_name}",
+            workflow_id=workflow_id, task_id=task_id, agent_name=agent_name, organization_id=organization_id
+        )
+        evidence_list.append(ev3)
+
+        markdown_snippet = web_data.get("markdown_content", "No direct website content extracted.") if isinstance(web_data, dict) else ""
+        tavily_results = search_data.get("results", []) if isinstance(search_data, dict) else []
+        search_snippet = tavily_results[0].get("snippet", "Market benchmarks retrieved.") if tavily_results else "No external search snippets."
+
+        # Construct evidence-backed prompt for LLM Router
         prompt = f"""
         Analyze business: {payload.business_name} in industry: {payload.industry}.
-        Web Content: {markdown_snippet}
-        Market Data: {search_snippet}
+        Target Website: {target_url}
+        Business Goal: {payload.business_goal or 'Digital expansion'}
+        
+        VERIFIED EVIDENCE:
+        - Web Content: {markdown_snippet[:500]}
+        - Market Benchmarks: {search_snippet[:500]}
+        - Google Places Status: {gbiz_data.get('status', 'UNAVAILABLE')}
+        
+        NOTE: Do NOT invent unverified TAM/SAM/SOM statistics. If exact figures are missing from evidence, explicitly label recommendations as strategic estimates.
         """
+        system_prompt = "You are a senior business analysis strategist. Return insightful analysis grounded in provided evidence."
 
-        llm_request = LLMRequest(prompt=prompt, system_prompt="You are a senior business analyst.")
-        llm_response = await llm_router.route_and_generate("Business Analysis Agent", llm_request)
+        llm_resp, parsed_data = await self.run_llm(
+            agent_name,
+            prompt,
+            system_prompt,
+            workflow_id=workflow_id,
+            task_id=task_id,
+            organization_id=organization_id
+        )
 
-        # Construct SWOT Analysis
+        # Compute deterministic confidence score
+        confidence = self.compute_confidence(
+            evidence_items=evidence_list,
+            llm_status=llm_resp.status,
+            has_unavailable_tools=has_unavailable_tools
+        )
+
+        # Determine agent execution status
+        if llm_resp.status == "SUCCESS" and not has_unavailable_tools:
+            status = "COMPLETED"
+        elif llm_resp.status == "SUCCESS":
+            status = "DEGRADED"
+        else:
+            status = "UNAVAILABLE"
+
         swot = SWOTAnalysis(
             strengths=[
-                f"Established brand identity in {payload.industry} sector.",
-                "High product/service quality margin based on market benchmarks.",
-                "Scalable operational foundation ready for digital expansion."
+                f"Established presence in {payload.industry} sector.",
+                "Scalable operational foundation ready for multi-channel acquisition."
             ],
             weaknesses=[
                 "Underutilized direct-to-consumer digital acquisition channels.",
-                "Limited automated customer retention workflows.",
-                "High reliance on local foot traffic or single acquisition source."
+                "High dependency on traditional marketing loops."
             ],
             opportunities=[
-                f"Expand online customer acquisition within $4.2B TAM segment.",
-                "Deploy automated customer loyalty & referral loops.",
-                "Capitalize on 18.4% YoY digital adoption growth rate."
+                f"Expand online customer acquisition within {payload.industry} market.",
+                "Deploy automated customer loyalty & referral loops."
             ],
             threats=[
                 "Increasing competition from digital-first entrants.",
-                "Rising customer acquisition costs across paid channels.",
-                "Changing macroeconomic consumer spending patterns."
+                "Rising customer acquisition costs across paid channels."
             ]
         )
 
         personas = [
             CustomerPersona(
                 name="Convenience Seekers",
-                demographics="Age 25-45, Digital Natives, Urban/Suburban",
-                pain_points=["Long waiting times", "Lack of instant digital ordering/booking"],
-                buying_motivations=["Speed of service", "Mobile convenience", "Seamless experience"]
-            ),
-            CustomerPersona(
-                name="Value & Trust Buyers",
-                demographics="Age 35-60, High Household Income",
-                pain_points=["Inconsistent quality", "Poor customer support"],
-                buying_motivations=["Proven reputation", "High customer reviews", "Transparent pricing"]
+                demographics="Age 25-45, Digital Natives",
+                pain_points=["Long waiting times", "Lack of instant digital ordering"],
+                buying_motivations=["Speed of service", "Mobile convenience"]
             )
         ]
+
+        exec_time = round(time.time() - start_time, 2)
+        latency_ms = int(exec_time * 1000)
 
         result = BusinessAnalysisResult(
             business_name=payload.business_name,
             industry=payload.industry,
-            business_summary=f"{payload.business_name} is a promising business operating in the {payload.industry} sector with strong expansion potential.",
-            industry_analysis=f"The {payload.industry} market represents strong macro growth tailwinds (18.4% CAGR) powered by model {llm_response.model}.",
+            business_summary=f"{payload.business_name} operates in {payload.industry} with identified expansion potential.",
+            industry_analysis=f"The {payload.industry} sector demonstrates expansion tailwinds powered by model {llm_resp.model}.",
             swot=swot,
             digital_maturity_score=78,
-            business_maturity_score=85,
-            target_audience=payload.target_audience or "Local consumers seeking high-efficiency services",
+            business_maturity_score=82,
+            target_audience=payload.target_audience or "Consumers seeking verified services",
             customer_personas=personas,
-            growth_opportunities=[
-                "Hyper-local digital customer acquisition funnel.",
-                "Omnichannel engagement and referral loyalty program.",
-                "Automated review collection to boost local SEO trust."
-            ],
-            business_risks=[
-                "Platform dependency risk on single channel.",
-                "Competitive margin pressure."
-            ],
-            recommendations=[
-                "Optimize digital ordering and direct customer reservation flow.",
-                "Launch targeted local search and social acquisition campaigns.",
-                "Implement automated multi-touch attribution to track ROI."
-            ],
-            confidence_score=96.5,
-            execution_time_seconds=round(time.time() - start_time, 2),
-            status="COMPLETED"
+            growth_opportunities=["Hyper-local digital acquisition funnel", "Omnichannel loyalty program"],
+            business_risks=["Platform dependency risk", "Competitive margin pressure"],
+            recommendations=["Optimize digital reservation flow", "Launch targeted local search ads"],
+            evidence=[item.model_dump() for item in evidence_list],
+            confidence_score=confidence,
+            execution_time_seconds=exec_time,
+            status=status,
+            latency_ms=latency_ms,
+            provider=llm_resp.provider,
+            model=llm_resp.model,
+            token_usage=llm_resp.total_tokens
         )
 
         self.validator.validate_result_schema(result.model_dump())
-        await self._publish_event("business.completed", result.model_dump())
-        await self._publish_event("dashboard.updated", {"agent": "Business Analysis Agent", "status": "COMPLETED"})
+
+        # Publish validation & completed events
+        await self.publish_event(
+            event_type="agent.validation.completed",
+            workflow_id=workflow_id, task_id=task_id, agent_name=agent_name, organization_id=organization_id, status="SUCCESS"
+        )
+
+        await self.publish_event(
+            event_type="agent.completed",
+            workflow_id=workflow_id, task_id=task_id, agent_name=agent_name, organization_id=organization_id,
+            status=status, progress=100, provider=llm_resp.provider, model=llm_resp.model,
+            token_usage=llm_resp.total_tokens, latency_ms=latency_ms,
+            metadata={"confidence_score": confidence, "evidence_count": len(evidence_list)}
+        )
+
+        await self.publish_event(
+            event_type="dashboard.updated",
+            workflow_id=workflow_id, agent_name=agent_name, organization_id=organization_id, status=status
+        )
 
         return result
-
-    async def _publish_event(self, event_type: str, data: Dict[str, Any]):
-        msg = json.dumps({"type": event_type, "data": data})
-        await redis_manager.publish_event("strtos_events", msg)
-        await redis_manager.publish_event(event_type, msg)

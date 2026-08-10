@@ -17,6 +17,11 @@ class EventPublisher:
         status: Optional[str] = None,
         progress: Optional[int] = None,
         message: Optional[str] = None,
+        provider: Optional[str] = None,
+        model: Optional[str] = None,
+        tool_name: Optional[str] = None,
+        token_usage: Optional[int] = None,
+        latency_ms: Optional[int] = None,
         metadata: Optional[Dict[str, Any]] = None
     ) -> RealtimeEvent:
         event = RealtimeEvent(
@@ -28,6 +33,11 @@ class EventPublisher:
             status=status,
             progress=progress,
             message=message,
+            provider=provider,
+            model=model,
+            tool_name=tool_name,
+            token_usage=token_usage,
+            latency_ms=latency_ms,
             metadata=metadata or {}
         )
 

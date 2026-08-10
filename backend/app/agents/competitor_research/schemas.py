@@ -40,6 +40,7 @@ class CompetitorResearchResult(BaseModel):
     market_gaps: List[MarketGapItem] = Field(default_factory=list)
     competitive_opportunities: List[str] = Field(default_factory=list)
     recommendations: List[str] = Field(default_factory=list)
+    evidence: List[Dict[str, Any]] = Field(default_factory=list)
     confidence_score: float = Field(default=95.0, ge=0.0, le=100.0)
     execution_time_seconds: float = 0.0
     status: str = "COMPLETED"

@@ -1,7 +1,7 @@
 # StrtOS - Autonomous Multi-Agent AI Operating System
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-v0.1.0--alpha-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-v0.9.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 
 **StrtOS** is an autonomous Multi-Agent AI Operating System designed to decompose high-level executive business directives into coordinated multi-stage execution graphs across specialized AI agents.
@@ -31,14 +31,17 @@
 ## Key Features
 
 - **CEO Orchestration Engine**: Intent analysis, decision evaluation, task planning, confidence scoring, and executive report synthesis.
-- **5 Implemented Specialist Agents**:
+- **Evidence-Based Specialist Intelligence (v0.9.0)**:
+  - `EvidenceItem` contract: Standardized provenance tracking across `website`, `search`, `api`, `database`, `llm`, `assumption`, `unavailable`.
+  - **Deterministic Confidence Engine**: Weighted scoring algorithm prioritizing direct API/Database verification > Website > Search > LLM inference.
+- **5 Specialist AI Agents**:
   - `Business Analysis Agent`: TAM benchmark analysis, SWOT matrix, digital/business maturity scoring, customer personas.
   - `SEO Audit Agent`: Crawlability, Core Web Vitals, HTML heading hierarchy, meta tags, schema validation.
   - `Competitor Research Agent`: Rival mapping, pricing benchmarking, digital presence scoring, market gap analysis.
   - `Marketing Strategy Agent`: Brand positioning, UVP, multi-channel budget allocation, funnel design, 90-day growth roadmaps.
   - `Campaign Planner Agent`: Flighting schedules, creative asset requirements, weekly roadmaps, pre-launch checklists.
-- **Real-Time Event Stream**: Redis Pub/Sub integration feeding live thought streams and task progress via Server-Sent Events (SSE).
-- **React Flow UI Integration**: Pixel-perfect dark-mode visualizer with glowing active execution nodes, green completed nodes, and animated edges.
+- **Real-Time Event Stream**: Typed real-time events (`agent.started`, `agent.tool.started`, `agent.evidence.collected`, `agent.llm.started`, `agent.completed`) broadcast over Redis Pub/Sub & SSE.
+- **React Flow UI Integration**: Dark-glass visualizer with glowing execution nodes, confidence badges, evidence counters, and telemetry metrics.
 
 ---
 

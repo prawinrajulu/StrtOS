@@ -14,4 +14,9 @@ class RealtimeEvent(BaseModel):
     status: Optional[str] = None
     progress: Optional[int] = None
     message: Optional[str] = None
+    provider: Optional[str] = None
+    model: Optional[str] = None
+    tool_name: Optional[str] = None
+    token_usage: Optional[int] = None
+    latency_ms: Optional[int] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
