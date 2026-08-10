@@ -1,16 +1,22 @@
 # StrtOS - Autonomous Multi-Agent AI Operating System
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-v1.3.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-v1.4.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 
 **StrtOS** is an autonomous Multi-Agent AI Operating System designed to decompose high-level executive business directives into coordinated multi-stage execution graphs across specialized AI agents.
 
-> **Security Guarantee**: LLM outputs are proposals, never direct executable commands. All execution passes through an explicit `ActionRegistry`, deterministic `PolicyEngine`, and `Governance` human approval layer.
+> **Security Guarantee**: StrtOS does not treat individual LLM outputs as authoritative. Decisions are based on evidence, confidence, cross-agent validation, deterministic conflict handling, and governance policies. All execution passes through an explicit `ActionRegistry`, deterministic `PolicyEngine`, and `Governance` human approval layer.
 
 ```
                                 ┌────────────────────────┐
                                 │  Executive Directive   │
+                                └───────────┬────────────┘
+                                            │
+                                            ▼
+                                ┌────────────────────────┐
+                                │ Multi-Agent Swarm      │
+                                │ Orchestration Engine   │
                                 └───────────┬────────────┘
                                             │
                                             ▼
@@ -55,6 +61,17 @@
 ---
 
 ## Key Features
+
+- **Multi-Agent Collaboration, Debate & Swarm Orchestration (v1.4.0)**:
+  - `SwarmSessionModel`, `SwarmMessageModel`, `SwarmConflictModel`, and `SwarmDebateModel` mapped to 4 new tables on live Supabase PostgreSQL.
+  - **5 Core Specialist Agents**: Business Analysis, SEO Audit, Competitor Research, Marketing Strategy, Campaign Planner. No dynamic spawning of extra agents.
+  - **Swarm Coordinator**: Parallel execution of independent agents via `asyncio.gather` and dependency graph resolution.
+  - **Shared Context Bus**: Thread-safe, tenant-isolated message and evidence distribution across agents.
+  - **Bounded Debate Engine**: Agent-to-agent challenge rounds capped at maximum 3 rounds per pair.
+  - **Critic Engine**: Evaluates logical consistency, evidence quality, and unsupported assumptions.
+  - **Conflict & Consensus Engines**: Detects cross-agent contradictions, classifies severity (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`), and computes consensus score.
+  - **Governance Escalation**: Consensus < 60% or CRITICAL conflict automatically triggers Governance Approval.
+  - **Swarm UI (`SwarmPage.tsx`, `SwarmDetailsPage.tsx`)**: Dark-glass control panel with SSE real-time stream auto-refresh.
 
 - **Autonomous Execution & Closed-Loop Optimization (v1.3.0)**:
   - `ActionModel` with multi-tenant isolation, 26 columns, 10 indexes, and foreign keys to live Supabase PostgreSQL.

@@ -35,6 +35,9 @@ import type { PredictionRecord } from './services/predictionsApi';
 import { ExecutionPage } from './pages/ExecutionPage';
 import { ActionDetailsPage } from './pages/ActionDetailsPage';
 import type { ActionRecord } from './services/executionApi';
+import { SwarmPage } from './pages/SwarmPage';
+import { SwarmDetailsPage } from './pages/SwarmDetailsPage';
+import type { SwarmSessionRecord } from './services/swarmApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
 const MainLayout: React.FC = () => {
@@ -46,6 +49,7 @@ const MainLayout: React.FC = () => {
   const [selectedMemory, setSelectedMemory] = useState<MemoryRecord | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<PredictionRecord | null>(null);
   const [selectedAction, setSelectedAction] = useState<ActionRecord | null>(null);
+  const [selectedSwarm, setSelectedSwarm] = useState<SwarmSessionRecord | null>(null);
   const [showSimulator, setShowSimulator] = useState(false);
 
   const getBreadcrumbs = () => {
@@ -60,6 +64,8 @@ const MainLayout: React.FC = () => {
         return selectedApproval ? ['STRTOS', 'Governance', selectedApproval.title] : ['STRTOS', 'Governance', 'Approvals'];
       case 'actions':
         return selectedAction ? ['STRTOS', 'Execution', selectedAction.name] : ['STRTOS', 'Execution', 'Actions'];
+      case 'swarm':
+        return selectedSwarm ? ['STRTOS', 'Intelligence', 'Swarm', selectedSwarm.objective] : ['STRTOS', 'Intelligence', 'Swarm'];
       case 'memory':
         return selectedMemory ? ['STRTOS', 'Intelligence', 'Memory', selectedMemory.title] : ['STRTOS', 'Intelligence', 'Memory'];
       case 'outcomes':
@@ -129,6 +135,16 @@ const MainLayout: React.FC = () => {
           );
         }
         return <ExecutionPage onSelectAction={(act) => setSelectedAction(act)} />;
+      case 'swarm':
+        if (selectedSwarm) {
+          return (
+            <SwarmDetailsPage
+              swarm={selectedSwarm}
+              onBack={() => setSelectedSwarm(null)}
+            />
+          );
+        }
+        return <SwarmPage onSelectSwarm={(s) => setSelectedSwarm(s)} />;
       case 'memory':
         if (selectedMemory) {
           return (

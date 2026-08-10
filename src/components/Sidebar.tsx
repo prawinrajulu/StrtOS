@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   Brain,
   Zap,
+  Network,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -26,11 +27,11 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   const sections = [
     {
-      group: 'WORKSPACE',
+      group: 'MAIN',
       items: [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'clients', label: 'Clients', icon: Users },
-        { id: 'workflows', label: 'Workflows', icon: BrainCircuit },
+        { id: 'workflows', label: 'Workflows', icon: Bot },
       ],
     },
     {
@@ -42,7 +43,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     {
       group: 'INTELLIGENCE',
       items: [
-        { id: 'ceo-agent', label: 'CEO Agent', icon: BrainCircuit, badgeDot: true },
+        { id: 'swarm', label: 'Swarm Orchestration', icon: Network, badgeDot: true },
+        { id: 'ceo-agent', label: 'CEO Agent', icon: BrainCircuit },
         { id: 'memory', label: 'Memory', icon: Brain },
         { id: 'outcomes', label: 'Outcomes', icon: Target },
         { id: 'predictions', label: 'Predictions', icon: TrendingUp },
@@ -129,7 +131,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                 letterSpacing: '0.1em',
               }}
             >
-              AI OS • V1.3
+              AI OS • V1.4
             </div>
           </div>
         </div>
