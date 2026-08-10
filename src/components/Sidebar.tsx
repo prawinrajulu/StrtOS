@@ -14,6 +14,7 @@ import {
   Settings,
   ChevronDown,
   ShieldCheck,
+  Brain,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -41,6 +42,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       group: 'INTELLIGENCE',
       items: [
         { id: 'ceo-agent', label: 'CEO Agent', icon: BrainCircuit, badgeDot: true },
+        { id: 'memory', label: 'Memory', icon: Brain },
+        { id: 'outcomes', label: 'Outcomes', icon: Target },
         { id: 'ai-agents', label: 'AI Agents', icon: Bot },
         { id: 'business-analysis', label: 'Business Analysis', icon: TrendingUp },
         { id: 'competitor-research', label: 'Competitor Research', icon: Target },
@@ -118,7 +121,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                 letterSpacing: '0.1em',
               }}
             >
-              AI OS • V0.9
+              AI OS • V1.1
             </div>
           </div>
         </div>

@@ -273,6 +273,39 @@ class CEOOrchestrator:
         client_context: Optional[Dict[str, Any]] = None
     ) -> WorkflowState:
         workflow_id = "wf-" + str(uuid.uuid4())[:8]
+        ctx = client_context or {}
+
+        # 0. Historical Memory Retrieval
+        historical_memories: List[Dict[str, Any]] = []
+        org_id = ctx.get("organization_id")
+        client_id = ctx.get("client_id")
+        if org_id:
+            try:
+                from app.core.database import AsyncSessionLocal
+                from app.memory.retrieval import MemoryRetrievalEngine
+                async with AsyncSessionLocal() as session:
+                    retrieval_engine = MemoryRetrievalEngine(session)
+                    results = await retrieval_engine.retrieve_relevant_memories(
+                        organization_id=org_id,
+                        client_id=client_id,
+                        query=directive,
+                        limit=5
+                    )
+                    historical_memories = [
+                        {
+                            "memory_id": m.id,
+                            "title": m.title,
+                            "content": m.content,
+                            "memory_type": m.memory_type.value,
+                            "outcome_status": m.outcome_status.value,
+                            "confidence_score": m.confidence_score,
+                            "relevance_score": score,
+                            "occurred_at": m.occurred_at.isoformat() if m.occurred_at else None
+                        }
+                        for m, score in results
+                    ]
+            except Exception as e:
+                logger.warning(f"CEO Memory retrieval skipped: {e}")
 
         # 1. Intent Analysis
         intent = await self.intent_engine.analyze_intent(directive)
@@ -304,23 +337,33 @@ class CEOOrchestrator:
         await self.execution_monitor.publish_event("workflow.started", state.model_dump())
 
         # Synchronous execution for REST API workflow completion
-        await self._run_workflow_execution(state)
+        await self._run_workflow_execution(state, historical_memories=historical_memories, client_context=ctx)
         return state
 
-    async def _run_workflow_execution(self, state: WorkflowState):
+    async def _run_workflow_execution(
+        self,
+        state: WorkflowState,
+        historical_memories: Optional[List[Dict[str, Any]]] = None,
+        client_context: Optional[Dict[str, Any]] = None
+    ):
         state.status = WorkflowStatus.RUNNING
         confidences: List[float] = []
+
+        ctx = client_context or {}
 
         # Shared Context Manager Data Object passed sequentially
         shared_context: Dict[str, Any] = {
             "workflow_id": state.workflow_id,
+            "organization_id": ctx.get("organization_id"),
+            "client_id": ctx.get("client_id"),
             "client_name": state.client_name,
             "directive": state.directive,
             "industry": state.intent.industry if state.intent else "General Commercial",
             "business_goal": state.intent.primary_goal if state.intent else "Growth",
-            "website_url": "https://restaurant-example.com",
-            "budget": "$10,000 / mo",
-            "timeline": "90 Days"
+            "website_url": ctx.get("website_url") or "https://restaurant-example.com",
+            "budget": f"${ctx.get('monthly_budget', 10000):,.0f} / mo",
+            "timeline": "90 Days",
+            "historical_memories": historical_memories or []
         }
 
         for task in state.tasks:

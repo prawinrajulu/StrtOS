@@ -59,6 +59,34 @@ class GovernanceService:
 
         created = await self.repo.create(approval)
 
+        # Record DECISION Memory Record
+        try:
+            from app.memory.models import MemoryRecordModel, MemoryType, OutcomeStatus
+            mem_decision = MemoryRecordModel(
+                organization_id=org_id,
+                client_id=created.client_id,
+                workflow_id=created.workflow_id,
+                approval_id=created.id,
+                memory_type=MemoryType.DECISION,
+                title=f"Governance Decision Pending: {created.title}",
+                content=f"Action: {created.requested_action or created.title}. Risk Score: {created.risk_score} ({created.risk_level.value}).",
+                structured_data={
+                    "risk_level": created.risk_level.value,
+                    "risk_score": created.risk_score,
+                    "decision_type": created.decision_type.value,
+                    "ai_confidence_score": created.ai_confidence_score,
+                    "evidence_count": created.evidence_count
+                },
+                source="governance_engine",
+                confidence_score=created.ai_confidence_score,
+                importance_score=75.0,
+                outcome_status=OutcomeStatus.PENDING,
+                created_by=creator_id
+            )
+            self.session.add(mem_decision)
+        except Exception as e:
+            logger.warning(f"Failed to persist decision memory: {e}")
+
         # Audit Log
         audit = AuditLogModel(
             organization_id=org_id,

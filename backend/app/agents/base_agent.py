@@ -34,6 +34,57 @@ class SpecialistAgentBase(ABC):
         if hasattr(validator_obj, "validate_input"):
             validator_obj.validate_input(payload)
 
+    def format_memory_aware_prompt(
+        self,
+        current_evidence: List[EvidenceItem],
+        historical_memories: List[Dict[str, Any]],
+        current_context: Dict[str, Any],
+        ai_assumptions: Optional[List[str]] = None
+    ) -> str:
+        """
+        Formats prompt with strict demarcation to prevent memory hallucination:
+        1. CURRENT VERIFIED EVIDENCE
+        2. HISTORICAL MEMORY
+        3. CURRENT BUSINESS CONTEXT
+        4. AI ASSUMPTIONS
+        """
+        evidence_str = "\n".join([f"- [{e.source_type.upper()}] {e.finding} (Confidence: {e.confidence}%)" for e in current_evidence]) if current_evidence else "None"
+        
+        memory_str = "None"
+        if historical_memories:
+            memory_items = []
+            for m in historical_memories:
+                memory_items.append(
+                    f"HISTORICAL MEMORY #{str(m.get('memory_id', ''))[:8]}\n"
+                    f"Title: {m.get('title')}\n"
+                    f"Type: {m.get('memory_type')}\n"
+                    f"Outcome: {m.get('outcome_status')}\n"
+                    f"Content: {m.get('content')}\n"
+                    f"Date: {m.get('occurred_at')}"
+                )
+            memory_str = "\n\n".join(memory_items)
+
+        context_str = json.dumps(current_context, indent=2)
+        assumptions_str = "\n".join([f"- {a}" for a in (ai_assumptions or [])]) if ai_assumptions else "None"
+
+        return f"""
+CURRENT VERIFIED EVIDENCE
+-------------------------
+{evidence_str}
+
+HISTORICAL MEMORY (DO NOT CITE AS CURRENT EXTERNAL SOURCE)
+---------------------------------------------------------
+{memory_str}
+
+CURRENT BUSINESS CONTEXT
+------------------------
+{context_str}
+
+AI ASSUMPTIONS
+--------------
+{assumptions_str}
+"""
+
     async def publish_event(
         self,
         event_type: str,

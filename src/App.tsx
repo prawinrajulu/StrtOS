@@ -24,6 +24,10 @@ import type { ExecutiveReport } from './services/reportsApi';
 import { ApprovalsPage } from './pages/ApprovalsPage';
 import { ApprovalDetailsPage } from './pages/ApprovalDetailsPage';
 import type { ApprovalRequest } from './services/governanceApi';
+import { MemoryPage } from './pages/MemoryPage';
+import { MemoryDetailsPage } from './pages/MemoryDetailsPage';
+import { OutcomesPage } from './pages/OutcomesPage';
+import type { MemoryRecord } from './services/memoryApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
 const MainLayout: React.FC = () => {
@@ -32,6 +36,7 @@ const MainLayout: React.FC = () => {
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const [selectedReport, setSelectedReport] = useState<ExecutiveReport | null>(null);
   const [selectedApproval, setSelectedApproval] = useState<ApprovalRequest | null>(null);
+  const [selectedMemory, setSelectedMemory] = useState<MemoryRecord | null>(null);
 
   const getBreadcrumbs = () => {
     switch (activeTab) {
@@ -43,6 +48,10 @@ const MainLayout: React.FC = () => {
         return selectedWorkflow ? ['STRTOS', 'Workflows', selectedWorkflow.title] : ['STRTOS', 'Workflows'];
       case 'approvals':
         return selectedApproval ? ['STRTOS', 'Governance', selectedApproval.title] : ['STRTOS', 'Governance', 'Approvals'];
+      case 'memory':
+        return selectedMemory ? ['STRTOS', 'Intelligence', 'Memory', selectedMemory.title] : ['STRTOS', 'Intelligence', 'Memory'];
+      case 'outcomes':
+        return ['STRTOS', 'Intelligence', 'Outcomes'];
       case 'reports':
         return selectedReport ? ['STRTOS', 'Reports', selectedReport.title] : ['STRTOS', 'Reports'];
       case 'ceo-agent':
@@ -95,6 +104,18 @@ const MainLayout: React.FC = () => {
           );
         }
         return <ApprovalsPage onSelectApproval={(app) => setSelectedApproval(app)} />;
+      case 'memory':
+        if (selectedMemory) {
+          return (
+            <MemoryDetailsPage
+              memory={selectedMemory}
+              onBack={() => setSelectedMemory(null)}
+            />
+          );
+        }
+        return <MemoryPage onSelectMemory={(mem) => setSelectedMemory(mem)} />;
+      case 'outcomes':
+        return <OutcomesPage />;
       case 'reports':
         if (selectedReport) {
           return (
