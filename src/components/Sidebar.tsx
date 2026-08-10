@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ShieldCheck,
   Brain,
+  Zap,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -51,6 +52,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         { id: 'seo-audit', label: 'SEO Audit', icon: Search },
         { id: 'marketing-strategy', label: 'Marketing Strategy', icon: Megaphone },
         { id: 'campaign-planner', label: 'Campaign Planner', icon: Calendar },
+      ],
+    },
+    {
+      group: 'EXECUTION',
+      items: [
+        { id: 'actions', label: 'Actions', icon: Zap },
       ],
     },
     {
@@ -122,7 +129,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                 letterSpacing: '0.1em',
               }}
             >
-              AI OS • V1.2
+              AI OS • V1.3
             </div>
           </div>
         </div>

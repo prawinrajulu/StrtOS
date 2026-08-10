@@ -1,10 +1,12 @@
 # StrtOS - Autonomous Multi-Agent AI Operating System
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-v1.2.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-v1.3.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 
 **StrtOS** is an autonomous Multi-Agent AI Operating System designed to decompose high-level executive business directives into coordinated multi-stage execution graphs across specialized AI agents.
+
+> **Security Guarantee**: LLM outputs are proposals, never direct executable commands. All execution passes through an explicit `ActionRegistry`, deterministic `PolicyEngine`, and `Governance` human approval layer.
 
 ```
                                 ┌────────────────────────┐
@@ -31,6 +33,12 @@
                                             │
                                             ▼
                                 ┌────────────────────────┐
+                                │ Policy Engine & Action │
+                                │ Execution Control Loop │
+                                └───────────┬────────────┘
+                                            │
+                                            ▼
+                                ┌────────────────────────┐
                                 │   CEO Agent Engine     │
                                 │(LangGraph Orchestrator)│
                                 └───────────┬────────────┘
@@ -47,6 +55,14 @@
 ---
 
 ## Key Features
+
+- **Autonomous Execution & Closed-Loop Optimization (v1.3.0)**:
+  - `ActionModel` with multi-tenant isolation, 26 columns, 10 indexes, and foreign keys to live Supabase PostgreSQL.
+  - **Action Registry Allowlist**: Strict registry of safe executable actions (`GENERATE_REPORT`, `RUN_SEO_AUDIT`, `RUN_WEBSITE_AUDIT`, etc.), strictly blocking arbitrary shell, SQL, Python eval, or credential access.
+  - **Deterministic Policy Engine**: Evaluates role RBAC, multi-tenancy, risk level rules, autonomy modes (`MANUAL`, `ASSISTED`, `APPROVAL_REQUIRED`, `AUTONOMOUS`), and governance approval states.
+  - **Action Executor & Idempotency**: Manages tool execution, state machine transitions, retry handling, and idempotency key deduplication.
+  - **Closed-Loop Optimization Engine**: Evaluates actual execution KPI telemetry against predictions, calculates accuracy scores, maps outcome status, and records grounded lessons to v1.1 Memory.
+  - **Execution UI (`ExecutionPage.tsx`, `ActionDetailsPage.tsx`)**: Dark-glass control panel with real-time SSE stream auto-refresh.
 
 - **Predictive Decision Intelligence & Scenario Simulation (v1.2.0)**:
   - `PredictionModel` with multi-tenant isolation, 33 columns, 7 indexes, and foreign keys to live Supabase PostgreSQL.

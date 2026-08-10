@@ -32,6 +32,9 @@ import { PredictionsPage } from './pages/PredictionsPage';
 import { PredictionDetailsPage } from './pages/PredictionDetailsPage';
 import { PredictionSimulatorPage } from './pages/PredictionSimulatorPage';
 import type { PredictionRecord } from './services/predictionsApi';
+import { ExecutionPage } from './pages/ExecutionPage';
+import { ActionDetailsPage } from './pages/ActionDetailsPage';
+import type { ActionRecord } from './services/executionApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
 const MainLayout: React.FC = () => {
@@ -42,6 +45,7 @@ const MainLayout: React.FC = () => {
   const [selectedApproval, setSelectedApproval] = useState<ApprovalRequest | null>(null);
   const [selectedMemory, setSelectedMemory] = useState<MemoryRecord | null>(null);
   const [selectedPrediction, setSelectedPrediction] = useState<PredictionRecord | null>(null);
+  const [selectedAction, setSelectedAction] = useState<ActionRecord | null>(null);
   const [showSimulator, setShowSimulator] = useState(false);
 
   const getBreadcrumbs = () => {
@@ -54,6 +58,8 @@ const MainLayout: React.FC = () => {
         return selectedWorkflow ? ['STRTOS', 'Workflows', selectedWorkflow.title] : ['STRTOS', 'Workflows'];
       case 'approvals':
         return selectedApproval ? ['STRTOS', 'Governance', selectedApproval.title] : ['STRTOS', 'Governance', 'Approvals'];
+      case 'actions':
+        return selectedAction ? ['STRTOS', 'Execution', selectedAction.name] : ['STRTOS', 'Execution', 'Actions'];
       case 'memory':
         return selectedMemory ? ['STRTOS', 'Intelligence', 'Memory', selectedMemory.title] : ['STRTOS', 'Intelligence', 'Memory'];
       case 'outcomes':
@@ -113,6 +119,16 @@ const MainLayout: React.FC = () => {
           );
         }
         return <ApprovalsPage onSelectApproval={(app) => setSelectedApproval(app)} />;
+      case 'actions':
+        if (selectedAction) {
+          return (
+            <ActionDetailsPage
+              action={selectedAction}
+              onBack={() => setSelectedAction(null)}
+            />
+          );
+        }
+        return <ExecutionPage onSelectAction={(act) => setSelectedAction(act)} />;
       case 'memory':
         if (selectedMemory) {
           return (
