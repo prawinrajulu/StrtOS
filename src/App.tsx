@@ -28,6 +28,10 @@ import { MemoryPage } from './pages/MemoryPage';
 import { MemoryDetailsPage } from './pages/MemoryDetailsPage';
 import { OutcomesPage } from './pages/OutcomesPage';
 import type { MemoryRecord } from './services/memoryApi';
+import { PredictionsPage } from './pages/PredictionsPage';
+import { PredictionDetailsPage } from './pages/PredictionDetailsPage';
+import { PredictionSimulatorPage } from './pages/PredictionSimulatorPage';
+import type { PredictionRecord } from './services/predictionsApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
 const MainLayout: React.FC = () => {
@@ -37,6 +41,8 @@ const MainLayout: React.FC = () => {
   const [selectedReport, setSelectedReport] = useState<ExecutiveReport | null>(null);
   const [selectedApproval, setSelectedApproval] = useState<ApprovalRequest | null>(null);
   const [selectedMemory, setSelectedMemory] = useState<MemoryRecord | null>(null);
+  const [selectedPrediction, setSelectedPrediction] = useState<PredictionRecord | null>(null);
+  const [showSimulator, setShowSimulator] = useState(false);
 
   const getBreadcrumbs = () => {
     switch (activeTab) {
@@ -52,6 +58,9 @@ const MainLayout: React.FC = () => {
         return selectedMemory ? ['STRTOS', 'Intelligence', 'Memory', selectedMemory.title] : ['STRTOS', 'Intelligence', 'Memory'];
       case 'outcomes':
         return ['STRTOS', 'Intelligence', 'Outcomes'];
+      case 'predictions':
+        if (showSimulator) return ['STRTOS', 'Intelligence', 'Predictions', 'What-If Simulator'];
+        return selectedPrediction ? ['STRTOS', 'Intelligence', 'Predictions', selectedPrediction.scenario_name] : ['STRTOS', 'Intelligence', 'Predictions'];
       case 'reports':
         return selectedReport ? ['STRTOS', 'Reports', selectedReport.title] : ['STRTOS', 'Reports'];
       case 'ceo-agent':
@@ -116,6 +125,32 @@ const MainLayout: React.FC = () => {
         return <MemoryPage onSelectMemory={(mem) => setSelectedMemory(mem)} />;
       case 'outcomes':
         return <OutcomesPage />;
+      case 'predictions':
+        if (showSimulator) {
+          return (
+            <PredictionSimulatorPage
+              onBack={() => setShowSimulator(false)}
+              onSelectPrediction={(pred) => {
+                setShowSimulator(false);
+                setSelectedPrediction(pred);
+              }}
+            />
+          );
+        }
+        if (selectedPrediction) {
+          return (
+            <PredictionDetailsPage
+              prediction={selectedPrediction}
+              onBack={() => setSelectedPrediction(null)}
+            />
+          );
+        }
+        return (
+          <PredictionsPage
+            onSelectPrediction={(pred) => setSelectedPrediction(pred)}
+            onOpenSimulator={() => setShowSimulator(true)}
+          />
+        );
       case 'reports':
         if (selectedReport) {
           return (

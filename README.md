@@ -1,7 +1,7 @@
 # StrtOS - Autonomous Multi-Agent AI Operating System
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-v1.1.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-v1.2.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 
 **StrtOS** is an autonomous Multi-Agent AI Operating System designed to decompose high-level executive business directives into coordinated multi-stage execution graphs across specialized AI agents.
@@ -9,6 +9,12 @@
 ```
                                 ┌────────────────────────┐
                                 │  Executive Directive   │
+                                └───────────┬────────────┘
+                                            │
+                                            ▼
+                                ┌────────────────────────┐
+                                │ Predictive Engine &    │
+                                │ Scenario Simulator     │
                                 └───────────┬────────────┘
                                             │
                                             ▼
@@ -42,6 +48,12 @@
 
 ## Key Features
 
+- **Predictive Decision Intelligence & Scenario Simulation (v1.2.0)**:
+  - `PredictionModel` with multi-tenant isolation, 33 columns, 7 indexes, and foreign keys to live Supabase PostgreSQL.
+  - **Scenario Engine**: Deterministic generation of `CONSERVATIVE`, `BALANCED`, and `AGGRESSIVE` decision scenarios.
+  - **What-If Decision Simulator**: Interactive budget simulation with expected metric ranges and delta calculations.
+  - **Prediction Accuracy Engine**: Evaluates prediction accuracy against v1.1 actual performance outcomes.
+  - **Predictions UI (`PredictionsPage.tsx`, `PredictionSimulatorPage.tsx`)**: Dark-glass control panel with real-time SSE stream auto-refresh.
 - **Adaptive Intelligence & Memory Layer (v1.1.0)**:
   - `MemoryRecordModel` with multi-tenant isolation, 8 memory types (`CLIENT_CONTEXT`, `DECISION`, `STRATEGY`, `APPROVAL`, `WORKFLOW`, `OUTCOME`, `FEEDBACK`, `LESSON`), and foreign keys to live Supabase PostgreSQL.
   - **Deterministic Memory Retrieval Engine**: Scores candidate memories based on Client Match, Industry Match, Keyword Overlap, Recency, Importance/Confidence, and Outcome status.

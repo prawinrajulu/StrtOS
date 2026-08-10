@@ -18,6 +18,7 @@ from app.api.v1.reports import router as reports_router
 from app.api.v1.settings import router as settings_router
 from app.governance.routes import router as governance_router
 from app.memory.routes import router as memory_router
+from app.predictions.routes import router as predictions_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -32,7 +33,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    version="1.1.0",
+    version="1.2.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan
@@ -79,7 +80,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 # Required Base Endpoints
 @app.get("/")
 async def root():
-    return {"name": settings.APP_NAME, "version": "1.1.0", "status": "operational"}
+    return {"name": settings.APP_NAME, "version": "1.2.0", "status": "operational"}
 
 @app.get("/health")
 async def health_check():
@@ -87,7 +88,7 @@ async def health_check():
     return {
         "status": "healthy" if redis_healthy else "degraded",
         "redis": "connected" if redis_healthy else "disconnected",
-        "version": "1.1.0"
+        "version": "1.2.0"
     }
 
 @app.get("/ready")
@@ -113,7 +114,7 @@ async def liveness_check():
 
 @app.get("/version")
 async def version_info():
-    return {"version": "1.1.0", "env": settings.APP_ENV}
+    return {"version": "1.2.0", "env": settings.APP_ENV}
 
 # Include API v1 Routers
 app.include_router(auth_router, prefix=settings.API_V1_STR)
@@ -125,3 +126,4 @@ app.include_router(reports_router, prefix=settings.API_V1_STR)
 app.include_router(settings_router, prefix=settings.API_V1_STR)
 app.include_router(governance_router)
 app.include_router(memory_router)
+app.include_router(predictions_router)

@@ -44,6 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         { id: 'ceo-agent', label: 'CEO Agent', icon: BrainCircuit, badgeDot: true },
         { id: 'memory', label: 'Memory', icon: Brain },
         { id: 'outcomes', label: 'Outcomes', icon: Target },
+        { id: 'predictions', label: 'Predictions', icon: TrendingUp },
         { id: 'ai-agents', label: 'AI Agents', icon: Bot },
         { id: 'business-analysis', label: 'Business Analysis', icon: TrendingUp },
         { id: 'competitor-research', label: 'Competitor Research', icon: Target },
@@ -121,7 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                 letterSpacing: '0.1em',
               }}
             >
-              AI OS • V1.1
+              AI OS • V1.2
             </div>
           </div>
         </div>
