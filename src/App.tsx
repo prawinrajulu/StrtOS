@@ -21,6 +21,9 @@ import type { Workflow } from './services/workflowsApi';
 import { ReportsPage } from './pages/ReportsPage';
 import { ReportDetailsPage } from './pages/ReportDetailsPage';
 import type { ExecutiveReport } from './services/reportsApi';
+import { ApprovalsPage } from './pages/ApprovalsPage';
+import { ApprovalDetailsPage } from './pages/ApprovalDetailsPage';
+import type { ApprovalRequest } from './services/governanceApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
 const MainLayout: React.FC = () => {
@@ -28,6 +31,7 @@ const MainLayout: React.FC = () => {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const [selectedReport, setSelectedReport] = useState<ExecutiveReport | null>(null);
+  const [selectedApproval, setSelectedApproval] = useState<ApprovalRequest | null>(null);
 
   const getBreadcrumbs = () => {
     switch (activeTab) {
@@ -37,6 +41,8 @@ const MainLayout: React.FC = () => {
         return selectedClient ? ['STRTOS', 'Clients', selectedClient.name] : ['STRTOS', 'Clients'];
       case 'workflows':
         return selectedWorkflow ? ['STRTOS', 'Workflows', selectedWorkflow.title] : ['STRTOS', 'Workflows'];
+      case 'approvals':
+        return selectedApproval ? ['STRTOS', 'Governance', selectedApproval.title] : ['STRTOS', 'Governance', 'Approvals'];
       case 'reports':
         return selectedReport ? ['STRTOS', 'Reports', selectedReport.title] : ['STRTOS', 'Reports'];
       case 'ceo-agent':
@@ -76,6 +82,19 @@ const MainLayout: React.FC = () => {
           );
         }
         return <WorkflowsPage onSelectWorkflow={(wf) => setSelectedWorkflow(wf)} />;
+      case 'approvals':
+        if (selectedApproval) {
+          return (
+            <ApprovalDetailsPage
+              approval={selectedApproval}
+              onBack={() => setSelectedApproval(null)}
+              onUpdated={() => {
+                setSelectedApproval(null);
+              }}
+            />
+          );
+        }
+        return <ApprovalsPage onSelectApproval={(app) => setSelectedApproval(app)} />;
       case 'reports':
         if (selectedReport) {
           return (

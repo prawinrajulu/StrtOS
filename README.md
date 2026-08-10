@@ -1,35 +1,47 @@
 # StrtOS - Autonomous Multi-Agent AI Operating System
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Version](https://img.shields.io/badge/version-v0.9.0-blue.svg)]()
+[![Version](https://img.shields.io/badge/version-v1.0.0-blue.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 
 **StrtOS** is an autonomous Multi-Agent AI Operating System designed to decompose high-level executive business directives into coordinated multi-stage execution graphs across specialized AI agents.
 
 ```
-                               ┌────────────────────────┐
-                               │  Executive Directive   │
-                               └───────────┬────────────┘
-                                           │
-                                           ▼
-                               ┌────────────────────────┐
-                               │   CEO Agent Engine     │
-                               │(LangGraph Orchestrator)│
-                               └───────────┬────────────┘
-                                           │
-         ┌──────────────────┬──────────────┼──────────────┬──────────────────┐
-         │                  │              │              │                  │
-         ▼                  ▼              ▼              ▼                  ▼
-┌─────────────────┐ ┌──────────────┐ ┌───────────┐ ┌─────────────┐ ┌──────────────────┐
-│Business Analysis│ │  SEO Audit   │ │Competitor │ │ Marketing   │ │ Campaign Planner │
-│     Agent       │ │    Agent     │ │ Research  │ │ Strategy    │ │      Agent       │
-└─────────────────┘ └──────────────┘ └───────────┘ └─────────────┘ └──────────────────┘
+                                ┌────────────────────────┐
+                                │  Executive Directive   │
+                                └───────────┬────────────┘
+                                            │
+                                            ▼
+                                ┌────────────────────────┐
+                                │ Human Governance Layer │
+                                │(Deterministic Risk Eng)│
+                                └───────────┬────────────┘
+                                            │
+                                            ▼
+                                ┌────────────────────────┐
+                                │   CEO Agent Engine     │
+                                │(LangGraph Orchestrator)│
+                                └───────────┬────────────┘
+                                            │
+          ┌──────────────────┬──────────────┼──────────────┬──────────────────┐
+          │                  │              │              │                  │
+          ▼                  ▼              ▼              ▼                  ▼
+ ┌─────────────────┐ ┌──────────────┐ ┌───────────┐ ┌─────────────┐ ┌──────────────────┐
+ │Business Analysis│ │  SEO Audit   │ │Competitor │ │ Marketing   │ │ Campaign Planner │
+ │     Agent       │ │    Agent     │ │ Research  │ │ Strategy    │ │      Agent       │
+ └─────────────────┘ └──────────────┘ └───────────┘ └─────────────┘ └──────────────────┘
 ```
 
 ---
 
 ## Key Features
 
+- **Human Approval & AI Decision Governance Layer (v1.0.0)**:
+  - `ApprovalRequestModel` with multi-tenant isolation, state machine transitions, and foreign keys to live Supabase PostgreSQL.
+  - **Deterministic Risk Engine**: 0–100 scoring algorithm classifying decisions into `LOW`, `MEDIUM`, `HIGH`, and `CRITICAL` risk tiers.
+  - **Self-Approval Prevention**: Service-level enforcement forbidding requestors from approving their own governance requests.
+  - **Workflow Engine Integration**: Pauses high-risk or governance-flagged workflows until explicit reviewer approval.
+  - **Governance UI (`ApprovalsPage.tsx`)**: Dark-glass control panel with real-time SSE stream auto-refresh.
 - **CEO Orchestration Engine**: Intent analysis, decision evaluation, task planning, confidence scoring, and executive report synthesis.
 - **Evidence-Based Specialist Intelligence (v0.9.0)**:
   - `EvidenceItem` contract: Standardized provenance tracking across `website`, `search`, `api`, `database`, `llm`, `assumption`, `unavailable`.
@@ -40,7 +52,7 @@
   - `Competitor Research Agent`: Rival mapping, pricing benchmarking, digital presence scoring, market gap analysis.
   - `Marketing Strategy Agent`: Brand positioning, UVP, multi-channel budget allocation, funnel design, 90-day growth roadmaps.
   - `Campaign Planner Agent`: Flighting schedules, creative asset requirements, weekly roadmaps, pre-launch checklists.
-- **Real-Time Event Stream**: Typed real-time events (`agent.started`, `agent.tool.started`, `agent.evidence.collected`, `agent.llm.started`, `agent.completed`) broadcast over Redis Pub/Sub & SSE.
+- **Real-Time Event Stream**: Typed real-time events (`approval.created`, `approval.pending`, `approval.approved`, `approval.rejected`, `agent.started`, `agent.completed`) broadcast over Redis Pub/Sub & SSE.
 - **React Flow UI Integration**: Dark-glass visualizer with glowing execution nodes, confidence badges, evidence counters, and telemetry metrics.
 
 ---

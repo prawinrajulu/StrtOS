@@ -13,6 +13,7 @@ import {
   BarChart3,
   Settings,
   ChevronDown,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -28,6 +29,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'clients', label: 'Clients', icon: Users },
         { id: 'workflows', label: 'Workflows', icon: BrainCircuit },
+      ],
+    },
+    {
+      group: 'GOVERNANCE',
+      items: [
+        { id: 'approvals', label: 'Approvals', icon: ShieldCheck },
       ],
     },
     {

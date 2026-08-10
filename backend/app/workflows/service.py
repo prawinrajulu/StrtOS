@@ -11,6 +11,10 @@ from app.workflows.schemas import (
 from app.workflows.repository import WorkflowRepository
 from app.agents.ceo.orchestrator import ceo_orchestrator
 
+from app.governance.models import ApprovalRequestModel, ApprovalStatus, RiskLevel, DecisionType
+from app.governance.risk_engine import calculate_decision_risk
+from app.core.events.publisher import event_publisher
+
 class WorkflowService:
     """Core Workflow Management Service enforcing tenant isolation and CEO Orchestrator integration."""
 
@@ -104,12 +108,69 @@ class WorkflowService:
             "currency": client.currency if client else "USD"
         }
 
-        # Update Workflow State
-        if workflow.status == "RUNNING":
-            return workflow
-        if workflow.status == "COMPLETED":
-            return workflow
+        # Check existing Governance Approval Request
+        app_stmt = select(ApprovalRequestModel).where(
+            ApprovalRequestModel.workflow_id == workflow.id,
+            ApprovalRequestModel.organization_id == org_id
+        ).order_by(ApprovalRequestModel.created_at.desc())
+        app_res = await self.session.execute(app_stmt)
+        existing_approval = app_res.scalars().first()
 
+        if existing_approval:
+            if existing_approval.status == ApprovalStatus.PENDING_APPROVAL:
+                workflow.status = "PAUSED"
+                workflow.active_stage = "AWAITING HUMAN APPROVAL"
+                await self.session.commit()
+                return WorkflowDTO.model_validate(workflow)
+            elif existing_approval.status in [ApprovalStatus.REJECTED, ApprovalStatus.CANCELLED]:
+                workflow.status = "CANCELLED"
+                await self.session.commit()
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Workflow execution rejected by governance approval (Status: {existing_approval.status.value})."
+                )
+
+        # Evaluate Decision Risk for new workflows
+        if not existing_approval:
+            risk_res = calculate_decision_risk(
+                ai_confidence_score=workflow.confidence_score,
+                evidence_count=4,
+                decision_type=DecisionType.WORKFLOW_EXECUTION
+            )
+            # Pause & require approval if HIGH/CRITICAL risk or requested in title/directive
+            if risk_res["risk_level"] in [RiskLevel.HIGH, RiskLevel.CRITICAL] or "approval required" in (workflow.directive or "").lower() or "approval required" in workflow.title.lower():
+                approval = ApprovalRequestModel(
+                    organization_id=org_id,
+                    workflow_id=workflow.id,
+                    client_id=workflow.client_id,
+                    requested_by=workflow.created_by or "system",
+                    title=f"Governance Approval Required: {workflow.title}",
+                    description=workflow.directive,
+                    decision_type=DecisionType.WORKFLOW_EXECUTION,
+                    risk_level=risk_res["risk_level"],
+                    risk_score=risk_res["risk_score"],
+                    status=ApprovalStatus.PENDING_APPROVAL,
+                    requested_action=f"Approve execution of '{workflow.title}'",
+                    ai_recommendation="Execute multi-agent intelligence strategy",
+                    ai_confidence_score=workflow.confidence_score,
+                    evidence_count=4
+                )
+                self.session.add(approval)
+                workflow.status = "PAUSED"
+                workflow.active_stage = "AWAITING HUMAN APPROVAL"
+                await self.session.commit()
+                await self.session.refresh(workflow)
+
+                await event_publisher.publish(
+                    event_type="approval.pending",
+                    workflow_id=workflow.id,
+                    organization_id=org_id,
+                    status="PENDING_APPROVAL",
+                    metadata={"approval_id": approval.id, "risk_level": risk_res["risk_level"].value}
+                )
+                return WorkflowDTO.model_validate(workflow)
+
+        # Update Workflow State
         workflow.status = "RUNNING"
         workflow.started_at = datetime.now(timezone.utc)
         workflow.active_stage = "CEO AGENT ORCHESTRATION"
