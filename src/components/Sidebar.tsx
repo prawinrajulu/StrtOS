@@ -33,6 +33,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     {
       group: 'MAIN',
       items: [
+        { id: 'command-center', label: 'Command Center', icon: Compass, badgeDot: true },
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'clients', label: 'Clients', icon: Users },
         { id: 'workflows', label: 'Workflows', icon: Bot },
