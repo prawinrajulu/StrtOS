@@ -47,6 +47,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     {
       group: 'INTELLIGENCE',
       items: [
+        { id: 'strategy', label: 'Strategic Control Center', icon: Compass, badgeDot: true },
         { id: 'decision-optimization', label: 'Decision Optimization', icon: Compass, badgeDot: true },
         { id: 'action-candidates', label: 'Action Candidates', icon: Cpu },
         { id: 'action-plan', label: 'Predictive Planning', icon: GitFork },
