@@ -20,6 +20,7 @@ import {
   Zap,
   Network,
   Activity,
+  Compass,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -46,6 +47,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     {
       group: 'INTELLIGENCE',
       items: [
+        { id: 'decision-optimization', label: 'Decision Optimization', icon: Compass, badgeDot: true },
+        { id: 'action-candidates', label: 'Action Candidates', icon: Cpu },
+        { id: 'action-plan', label: 'Predictive Planning', icon: GitFork },
+        { id: 'decision-details', label: 'Decision Explanation', icon: Activity },
         { id: 'knowledge', label: 'Causal Knowledge Graph', icon: GitFork, badgeDot: true },
         { id: 'agent-intelligence', label: 'Agent Intelligence', icon: Cpu, badgeDot: true },
         { id: 'policies', label: 'Policy Evolution', icon: ShieldCheck, badgeDot: true },

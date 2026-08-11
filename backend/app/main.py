@@ -26,6 +26,7 @@ from app.experiments.routes import router as experiments_router
 from app.policies.routes import router as policies_router
 from app.agent_intelligence.routes import router as agent_intelligence_router
 from app.knowledge.routes import router as knowledge_router
+from app.decision_optimization.routes import router as decision_optimization_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -141,3 +142,4 @@ app.include_router(experiments_router)
 app.include_router(policies_router)
 app.include_router(agent_intelligence_router)
 app.include_router(knowledge_router)
+app.include_router(decision_optimization_router, prefix="/api/v1/decision-optimization", tags=["Decision Optimization"])
