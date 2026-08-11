@@ -24,6 +24,7 @@ from app.swarm.routes import router as swarm_router
 from app.learning.routes import router as learning_router
 from app.experiments.routes import router as experiments_router
 from app.policies.routes import router as policies_router
+from app.agent_intelligence.routes import router as agent_intelligence_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -137,3 +138,4 @@ app.include_router(swarm_router)
 app.include_router(learning_router)
 app.include_router(experiments_router)
 app.include_router(policies_router)
+app.include_router(agent_intelligence_router)

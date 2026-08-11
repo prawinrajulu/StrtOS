@@ -44,6 +44,8 @@ import { AgentPerformancePage } from './pages/AgentPerformancePage';
 import { PolicyDetailsPage } from './pages/PolicyDetailsPage';
 import { PoliciesPage } from './pages/PoliciesPage';
 import { PolicyEvolutionPage } from './pages/PolicyEvolutionPage';
+import { AgentIntelligencePage } from './pages/AgentIntelligencePage';
+import { AgentOptimizationPage } from './pages/AgentOptimizationPage';
 import type { AgentPerformanceRecord } from './services/learningApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
@@ -60,12 +62,18 @@ const MainLayout: React.FC = () => {
   const [selectedLearningAgent, setSelectedLearningAgent] = useState<AgentPerformanceRecord | null>(null);
   const [selectedPolicyAgent, setSelectedPolicyAgent] = useState<string | null>(null);
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
+  const [selectedIntelligenceAgent, setSelectedIntelligenceAgent] = useState<string | null>(null);
   const [showSimulator, setShowSimulator] = useState(false);
 
   const getBreadcrumbs = () => {
     switch (activeTab) {
       case 'dashboard':
         return ['STRTOS', 'Dashboard'];
+      case 'agent-intelligence':
+        if (selectedIntelligenceAgent) return ['STRTOS', 'Intelligence', 'Agent Performance', selectedIntelligenceAgent];
+        return ['STRTOS', 'Intelligence', 'Agent Performance Intelligence'];
+      case 'agent-optimization':
+        return ['STRTOS', 'Intelligence', 'Optimization Control Center'];
       case 'policies':
         if (selectedPolicyId) return ['STRTOS', 'Intelligence', 'Policy Evolution', 'Details'];
         return ['STRTOS', 'Intelligence', 'Policy Evolution'];
@@ -187,6 +195,23 @@ const MainLayout: React.FC = () => {
             onOpenPolicies={(agName) => setSelectedPolicyAgent(agName)}
           />
         );
+      case 'agent-intelligence':
+        if (selectedIntelligenceAgent) {
+          return (
+            <AgentPerformancePage
+              agentName={selectedIntelligenceAgent}
+              onBack={() => setSelectedIntelligenceAgent(null)}
+            />
+          );
+        }
+        return (
+          <AgentIntelligencePage
+            onSelectAgent={(agName) => setSelectedIntelligenceAgent(agName)}
+            onNavigateToOptimization={() => setActiveTab('agent-optimization')}
+          />
+        );
+      case 'agent-optimization':
+        return <AgentOptimizationPage onBack={() => setActiveTab('agent-intelligence')} />;
       case 'policies':
         if (selectedPolicyId) {
           return (

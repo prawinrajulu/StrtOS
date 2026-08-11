@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   Users,
   Bot,
+  Cpu,
   BrainCircuit,
   TrendingUp,
   Target,
@@ -44,6 +45,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     {
       group: 'INTELLIGENCE',
       items: [
+        { id: 'agent-intelligence', label: 'Agent Intelligence', icon: Cpu, badgeDot: true },
         { id: 'policies', label: 'Policy Evolution', icon: ShieldCheck, badgeDot: true },
         { id: 'experiments', label: 'Experiments & A/B', icon: Activity, badgeDot: true },
         { id: 'learning', label: 'Learning & Adaptation', icon: Activity },
