@@ -29,7 +29,7 @@ async def test_validator_input():
 async def test_marketing_strategy_service_execution():
     service = MarketingStrategyService()
     payload = MarketingStrategyInput(
-        business_analysis_result={"status": "COMPLETED"},
+        business_analysis_result={"status": "COMPLETED", "evidence": [{"finding": "Business evidence", "source": "API", "source_type": "api", "confidence": 100.0}]},
         seo_audit_result={"status": "COMPLETED"},
         competitor_research_result={"status": "COMPLETED"},
         business_goal="Acquire 10k online customers",

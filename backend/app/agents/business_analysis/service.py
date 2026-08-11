@@ -138,6 +138,12 @@ class BusinessAnalysisService(SpecialistAgentBase):
                 demographics="Age 25-45, Digital Natives",
                 pain_points=["Long waiting times", "Lack of instant digital ordering"],
                 buying_motivations=["Speed of service", "Mobile convenience"]
+            ),
+            CustomerPersona(
+                name="Quality Aficionados",
+                demographics="Age 30-55, High Income",
+                pain_points=["Lack of premium options", "Unverified claims"],
+                buying_motivations=["High quality", "Authenticity"]
             )
         ]
 

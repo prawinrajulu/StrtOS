@@ -34,6 +34,13 @@ class LLMRouter:
         logger.info("Initialized LLMRouter with 6 providers.")
 
     async def route_and_generate(self, agent_name: str, request: LLMRequest) -> LLMResponse:
+        from app.core.config import settings
+        from app.llm.providers.mock import MockLLMProvider
+
+        if settings.TESTING or settings.APP_ENV == "test":
+            mock_prov = MockLLMProvider()
+            return await mock_prov.generate(request)
+
         primary_key = self.routing_matrix.get(agent_name, "gemini")
         fallback_keys = ["gemini", "openai", "claude", "deepseek", "qwen", "openrouter"]
         ordered_keys = [primary_key] + [k for k in fallback_keys if k != primary_key]

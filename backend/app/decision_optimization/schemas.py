@@ -130,7 +130,7 @@ class ActionEvaluationResponse(BaseModel):
 # ---------------------------------------------------------------------------
 
 class ActionComparisonRequest(OrganizationScopedBase):
-    candidate_ids: List[str] = Field(..., min_items=2, description="At least two candidate IDs to compare.")
+    candidate_ids: List[str] = Field(..., min_length=2, description="At least two candidate IDs to compare.")
 
 class ActionComparisonResponse(BaseModel):
     compared: List[ActionEvaluationResponse]

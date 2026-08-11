@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 
 class ChannelStrategyItem(BaseModel):
     channel: str  # Organic Search, Paid Search, Social Video, Email, etc.
@@ -50,4 +50,4 @@ class MarketingStrategyResult(BaseModel):
     provider: Optional[str] = None
     model: Optional[str] = None
     token_usage: Optional[int] = None
-    generated_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

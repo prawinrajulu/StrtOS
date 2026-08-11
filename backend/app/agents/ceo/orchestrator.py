@@ -1,6 +1,7 @@
 import asyncio
 import json
 import uuid
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from app.agents.ceo.graph.state import (
     WorkflowState, StructuredIntent, WorkflowDecision, CEOTaskItem,
@@ -214,7 +215,7 @@ class ExecutiveReporter:
             "client_name": state.client_name,
             "directive": state.directive,
             "overall_confidence": int(state.overall_confidence),
-            "generated_at": datetime.utcnow().isoformat() if 'datetime' in globals() else "2026-08-07T22:10:00Z",
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "business_summary": {
                 "business_name": biz.get("full_result", {}).get("business_name", state.client_name),
                 "industry": biz.get("full_result", {}).get("industry", "Food & Beverage"),

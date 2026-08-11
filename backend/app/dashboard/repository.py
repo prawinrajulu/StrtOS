@@ -168,26 +168,28 @@ class DashboardRepository:
         now = datetime.now(timezone.utc)
         start_date = now - timedelta(days=days)
 
-        wf_stmt = select(
-            cast(WorkflowModel.completed_at, Date).label("d"),
-            func.count(WorkflowModel.id)
-        ).where(
+        wf_stmt = select(WorkflowModel.completed_at).where(
             WorkflowModel.organization_id == org_id,
             WorkflowModel.status == "COMPLETED",
             WorkflowModel.completed_at >= start_date
-        ).group_by(cast(WorkflowModel.completed_at, Date))
+        )
         wf_res = await self.session.execute(wf_stmt)
-        wf_map = {str(r[0]): r[1] for r in wf_res.fetchall() if r[0]}
+        wf_map: Dict[str, int] = {}
+        for (comp_at,) in wf_res.fetchall():
+            if comp_at:
+                d_key = comp_at.strftime("%Y-%m-%d") if hasattr(comp_at, "strftime") else str(comp_at)[:10]
+                wf_map[d_key] = wf_map.get(d_key, 0) + 1
 
-        rep_stmt = select(
-            cast(ReportModel.created_at, Date).label("d"),
-            func.count(ReportModel.id)
-        ).where(
+        rep_stmt = select(ReportModel.created_at).where(
             ReportModel.organization_id == org_id,
             ReportModel.created_at >= start_date
-        ).group_by(cast(ReportModel.created_at, Date))
+        )
         rep_res = await self.session.execute(rep_stmt)
-        rep_map = {str(r[0]): r[1] for r in rep_res.fetchall() if r[0]}
+        rep_map: Dict[str, int] = {}
+        for (created_at,) in rep_res.fetchall():
+            if created_at:
+                d_key = created_at.strftime("%Y-%m-%d") if hasattr(created_at, "strftime") else str(created_at)[:10]
+                rep_map[d_key] = rep_map.get(d_key, 0) + 1
 
         points = []
         for i in range(days):

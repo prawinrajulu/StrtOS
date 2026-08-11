@@ -25,7 +25,7 @@ async def test_validator_input():
 async def test_campaign_planner_service_execution():
     service = CampaignPlannerService()
     payload = CampaignPlanningInput(
-        marketing_strategy_result={"status": "COMPLETED"},
+        marketing_strategy_result={"status": "COMPLETED", "evidence": [{"finding": "Strategy evidence", "source": "API", "source_type": "api", "confidence": 100.0}]},
         business_goal="Acquire 10k online customers",
         budget="$10,000 / mo",
         timeline="90 Days"

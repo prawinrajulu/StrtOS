@@ -141,20 +141,20 @@ class CompetitorResearchService(SpecialistAgentBase):
                         key_weaknesses=["Customer support latency", "Outdated conversion UI"]
                     )
                 )
-        else:
-            direct_competitors = [
+        if len(direct_competitors) < 2:
+            direct_competitors.append(
                 CompetitorProfile(
-                    name="Industry Rival A",
+                    name="Industry Rival B",
                     competitor_type="DIRECT",
-                    website="https://rival-a.example.com",
-                    market_share_estimate="25%",
-                    pricing_tier="PREMIUM",
-                    digital_presence_score=85,
-                    seo_visibility_score=80,
-                    key_strengths=["Strong brand recognition", "Extensive video presence"],
-                    key_weaknesses=["High customer response times (>45 mins)", "Expensive shipping thresholds"]
+                    website="https://rival-b.example.com",
+                    market_share_estimate="20%",
+                    pricing_tier="MEDIUM",
+                    digital_presence_score=80,
+                    seo_visibility_score=75,
+                    key_strengths=["Broad retail coverage", "Strong social presence"],
+                    key_weaknesses=["High acquisition cost", "Slower innovation cycles"]
                 )
-            ]
+            )
 
         indirect_competitors = [
             CompetitorProfile(

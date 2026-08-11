@@ -159,7 +159,7 @@ class CampaignPlannerService(SpecialistAgentBase):
         latency_ms = int(exec_time * 1000)
 
         result = CampaignPlanningResult(
-            campaign_summary=f"Executable campaign flighting plan powered by model {llm_resp.model}.",
+            campaign_summary=f"Actionable 90-day campaign flighting plan powered by model {llm_resp.model}.",
             campaign_timeline=payload.timeline or "90 Days",
             execution_plan=[
                 "Phase 1 (Week 1-2): Setup conversion tracking & launch Google Search Ads.",

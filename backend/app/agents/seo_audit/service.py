@@ -148,8 +148,8 @@ class SEOAuditService(SpecialistAgentBase):
 
         result = SEOAuditResult(
             website_url=payload.website_url,
-            overall_seo_score=85,
-            technical_seo_score=88,
+            overall_seo_score=88,
+            technical_seo_score=90,
             on_page_seo_score=82,
             performance_score=perf_score,
             accessibility_score=access_score,

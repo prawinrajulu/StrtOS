@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field, HttpUrl
-from datetime import datetime
+from datetime import datetime, timezone
 
 class CoreWebVitals(BaseModel):
     lcp: str = "1.1s"  # Largest Contentful Paint
@@ -39,4 +39,4 @@ class SEOAuditResult(BaseModel):
     confidence_score: float = Field(default=95.0, ge=0.0, le=100.0)
     execution_time_seconds: float = 0.0
     status: str = "COMPLETED"
-    generated_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

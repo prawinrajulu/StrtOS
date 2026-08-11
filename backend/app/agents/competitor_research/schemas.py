@@ -1,6 +1,6 @@
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 
 class CompetitorProfile(BaseModel):
     name: str
@@ -44,4 +44,4 @@ class CompetitorResearchResult(BaseModel):
     confidence_score: float = Field(default=95.0, ge=0.0, le=100.0)
     execution_time_seconds: float = 0.0
     status: str = "COMPLETED"
-    generated_at: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
+    generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
