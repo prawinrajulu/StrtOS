@@ -1,3 +1,4 @@
+import os
 from typing import List, Optional
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -54,6 +55,9 @@ class Settings(BaseSettings):
     GOOGLE_PAGESPEED_API_KEY: str = ""
     GOOGLE_MAPS_API_KEY: str = ""
 
+    # TESTING
+    TESTING: bool = False
+
     model_config = SettingsConfigDict(
         env_file=("../.env", "../.env.development", ".env", ".env.development"),
         env_file_encoding="utf-8",
@@ -61,11 +65,22 @@ class Settings(BaseSettings):
         extra="ignore"
     )
 
+    @field_validator("TESTING", mode="before")
+    def set_testing_flag(cls, v: Optional[bool], values) -> bool:
+        if v is True:
+            return True
+        data = values.data
+        env = data.get("APP_ENV", "development")
+        return env == "test" or os.getenv("APP_ENV") == "test" or os.getenv("TESTING") == "1"
+
     @field_validator("DATABASE_URL", mode="before")
     def assemble_db_connection(cls, v: Optional[str], values) -> str:
+        data = values.data
+        app_env = data.get("APP_ENV", os.getenv("APP_ENV", "development"))
+        if app_env == "test" or os.getenv("APP_ENV") == "test" or os.getenv("TESTING") == "1":
+            return "sqlite+aiosqlite:///:memory:"
         if isinstance(v, str) and v.strip():
             return v
-        data = values.data
         host = data.get("DATABASE_HOST", "localhost")
         port = data.get("DATABASE_PORT", 5432)
         user = data.get("DATABASE_USER", "postgres")
@@ -75,9 +90,12 @@ class Settings(BaseSettings):
 
     @field_validator("REDIS_URL", mode="before")
     def assemble_redis_connection(cls, v: Optional[str], values) -> str:
+        data = values.data
+        app_env = data.get("APP_ENV", os.getenv("APP_ENV", "development"))
+        if app_env == "test" or os.getenv("APP_ENV") == "test" or os.getenv("TESTING") == "1":
+            return "redis://localhost:6379/0"
         if isinstance(v, str) and v.strip():
             return v
-        data = values.data
         host = data.get("REDIS_HOST", "localhost")
         port = data.get("REDIS_PORT", 6379)
         db = data.get("REDIS_DB", 0)
