@@ -1,6 +1,6 @@
 # StrtOS AI Intelligence & Evidence-Based Architecture
 
-This document details the production AI intelligence architecture, evidence collection contract, confidence engine, policy evolution & self-optimization layer, and agent performance intelligence & autonomous optimization layer for StrtOS v1.7.0.
+This document details the production AI intelligence architecture, evidence collection contract, confidence engine, policy evolution & self-optimization layer, agent performance intelligence, and causal intelligence & knowledge graph layer for StrtOS v1.8.0.
 
 ---
 

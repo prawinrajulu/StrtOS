@@ -46,6 +46,9 @@ import { PoliciesPage } from './pages/PoliciesPage';
 import { PolicyEvolutionPage } from './pages/PolicyEvolutionPage';
 import { AgentIntelligencePage } from './pages/AgentIntelligencePage';
 import { AgentOptimizationPage } from './pages/AgentOptimizationPage';
+import { KnowledgePage } from './pages/KnowledgePage';
+import { DecisionGraphPage } from './pages/DecisionGraphPage';
+import { RootCausePage } from './pages/RootCausePage';
 import type { AgentPerformanceRecord } from './services/learningApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
@@ -62,6 +65,8 @@ const MainLayout: React.FC = () => {
   const [selectedLearningAgent, setSelectedLearningAgent] = useState<AgentPerformanceRecord | null>(null);
   const [selectedPolicyAgent, setSelectedPolicyAgent] = useState<string | null>(null);
   const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
+  const [selectedKnowledgeDecision, setSelectedKnowledgeDecision] = useState<string | null>(null);
+  const [selectedKnowledgeOutcome, setSelectedKnowledgeOutcome] = useState<string | null>(null);
   const [selectedIntelligenceAgent, setSelectedIntelligenceAgent] = useState<string | null>(null);
   const [showSimulator, setShowSimulator] = useState(false);
 
@@ -69,6 +74,12 @@ const MainLayout: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         return ['STRTOS', 'Dashboard'];
+      case 'knowledge':
+        return ['STRTOS', 'Intelligence', 'Causal Knowledge Graph'];
+      case 'decision-explainability':
+        return ['STRTOS', 'Intelligence', 'Knowledge Graph', 'Decision Explainability'];
+      case 'root-cause':
+        return ['STRTOS', 'Intelligence', 'Knowledge Graph', 'Outcome Root Cause'];
       case 'agent-intelligence':
         if (selectedIntelligenceAgent) return ['STRTOS', 'Intelligence', 'Agent Performance', selectedIntelligenceAgent];
         return ['STRTOS', 'Intelligence', 'Agent Performance Intelligence'];
@@ -193,6 +204,33 @@ const MainLayout: React.FC = () => {
           <LearningPage
             onSelectAgent={(ag) => setSelectedLearningAgent(ag)}
             onOpenPolicies={(agName) => setSelectedPolicyAgent(agName)}
+          />
+        );
+      case 'knowledge':
+        return (
+          <KnowledgePage
+            onNavigateToExplainability={(decId) => {
+              setSelectedKnowledgeDecision(decId);
+              setActiveTab('decision-explainability');
+            }}
+            onNavigateToRootCause={(outId) => {
+              setSelectedKnowledgeOutcome(outId);
+              setActiveTab('root-cause');
+            }}
+          />
+        );
+      case 'decision-explainability':
+        return (
+          <DecisionGraphPage
+            decisionId={selectedKnowledgeDecision || undefined}
+            onBack={() => setActiveTab('knowledge')}
+          />
+        );
+      case 'root-cause':
+        return (
+          <RootCausePage
+            outcomeId={selectedKnowledgeOutcome || undefined}
+            onBack={() => setActiveTab('knowledge')}
           />
         );
       case 'agent-intelligence':
