@@ -1,31 +1,45 @@
 # StrtOS AI Intelligence & Evidence-Based Architecture
 
-This document details the production AI intelligence architecture, evidence collection contract, confidence engine, real-tool integration, and real-time event streaming layer for StrtOS v0.9.0.
+This document details the production AI intelligence architecture, evidence collection contract, confidence engine, policy evolution & self-optimization layer, and real-time event streaming layer for StrtOS v1.6.0.
 
 ---
 
 ## 1. End-to-End Pipeline Architecture
 
 ```
-CEO Directive / Workflow Start
-      ↓
-CEO Orchestrator
-      ↓
-Specialist Agent (Business, SEO, Competitor, Marketing, Campaign)
-      ↓
-Tool Registry (`execute_tool`) ─── Firecrawl / Tavily / Serper / PageSpeed / Google Business / Browser
-      ↓
-Evidence Collection (`EvidenceItem` - website | search | api | database | llm | assumption | unavailable)
-      ↓
-Confidence Engine (`calculate_confidence` - 0 to 100 deterministic scale)
-      ↓
-LLM Router (`route_and_generate`) ─── Gemini / Claude / OpenAI / DeepSeek / Qwen / OpenRouter
-      ↓
-Pydantic Validation & Output Verification
-      ↓
-CEO Synthesis & Executive Report Persistence
-      ↓
-Real-Time Event Stream (Redis Pub/Sub & SSE) ─── Frontend Dashboard UI
+REAL DATA
+   ↓
+EVIDENCE
+   ↓
+MEMORY
+   ↓
+PREDICTION
+   ↓
+MULTI-AGENT SWARM
+   ↓
+GOVERNANCE
+   ↓
+EXECUTION
+   ↓
+ACTUAL OUTCOME
+   ↓
+PERFORMANCE MEASUREMENT
+   ↓
+AGENT LEARNING
+   ↓
+POLICY PERFORMANCE
+   ↓
+BOUNDED OPTIMIZATION
+   ↓
+A/B VALIDATION
+   ↓
+RISK EVALUATION
+   ↓
+HUMAN GOVERNANCE
+   ↓
+VERSIONED POLICY
+   ↓
+BETTER FUTURE DECISION
 ```
 
 ---

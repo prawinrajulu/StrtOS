@@ -44,7 +44,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     {
       group: 'INTELLIGENCE',
       items: [
-        { id: 'learning', label: 'Learning & Adaptation', icon: Activity, badgeDot: true },
+        { id: 'policies', label: 'Policy Evolution', icon: ShieldCheck, badgeDot: true },
+        { id: 'experiments', label: 'Experiments & A/B', icon: Activity, badgeDot: true },
+        { id: 'learning', label: 'Learning & Adaptation', icon: Activity },
         { id: 'swarm', label: 'Swarm Orchestration', icon: Network },
         { id: 'ceo-agent', label: 'CEO Agent', icon: BrainCircuit },
         { id: 'memory', label: 'Memory', icon: Brain },
@@ -133,7 +135,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                 letterSpacing: '0.1em',
               }}
             >
-              AI OS • V1.5
+              AI OS • V1.6
             </div>
           </div>
         </div>

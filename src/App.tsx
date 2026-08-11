@@ -39,8 +39,11 @@ import { SwarmPage } from './pages/SwarmPage';
 import { SwarmDetailsPage } from './pages/SwarmDetailsPage';
 import type { SwarmSessionRecord } from './services/swarmApi';
 import { LearningPage } from './pages/LearningPage';
+import { ExperimentsPage } from './pages/ExperimentsPage';
 import { AgentPerformancePage } from './pages/AgentPerformancePage';
 import { PolicyDetailsPage } from './pages/PolicyDetailsPage';
+import { PoliciesPage } from './pages/PoliciesPage';
+import { PolicyEvolutionPage } from './pages/PolicyEvolutionPage';
 import type { AgentPerformanceRecord } from './services/learningApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
@@ -56,12 +59,18 @@ const MainLayout: React.FC = () => {
   const [selectedSwarm, setSelectedSwarm] = useState<SwarmSessionRecord | null>(null);
   const [selectedLearningAgent, setSelectedLearningAgent] = useState<AgentPerformanceRecord | null>(null);
   const [selectedPolicyAgent, setSelectedPolicyAgent] = useState<string | null>(null);
+  const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
   const [showSimulator, setShowSimulator] = useState(false);
 
   const getBreadcrumbs = () => {
     switch (activeTab) {
       case 'dashboard':
         return ['STRTOS', 'Dashboard'];
+      case 'policies':
+        if (selectedPolicyId) return ['STRTOS', 'Intelligence', 'Policy Evolution', 'Details'];
+        return ['STRTOS', 'Intelligence', 'Policy Evolution'];
+      case 'policy-evolution':
+        return ['STRTOS', 'Intelligence', 'Policy Evolution', 'Pipeline'];
       case 'clients':
         return selectedClient ? ['STRTOS', 'Clients', selectedClient.name] : ['STRTOS', 'Clients'];
       case 'workflows':
@@ -178,6 +187,25 @@ const MainLayout: React.FC = () => {
             onOpenPolicies={(agName) => setSelectedPolicyAgent(agName)}
           />
         );
+      case 'policies':
+        if (selectedPolicyId) {
+          return (
+            <PolicyDetailsPage
+              policyId={selectedPolicyId}
+              onBack={() => setSelectedPolicyId(null)}
+            />
+          );
+        }
+        return (
+          <PoliciesPage
+            onSelectPolicy={(id) => setSelectedPolicyId(id)}
+            onNavigateToEvolution={() => setActiveTab('policy-evolution')}
+          />
+        );
+      case 'policy-evolution':
+        return <PolicyEvolutionPage onBack={() => setActiveTab('policies')} />;
+      case 'experiments':
+        return <ExperimentsPage />;
       case 'memory':
         if (selectedMemory) {
           return (

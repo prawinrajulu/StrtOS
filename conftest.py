@@ -13,6 +13,16 @@ import pytest
 import pytest_asyncio
 from app.core.database import engine, Base
 
+# Import all models to ensure complete metadata registration
+import app.auth.models
+import app.governance.models
+import app.memory.models
+import app.predictions.models
+import app.execution.models
+import app.swarm.models
+import app.learning.models
+import app.experiments.models
+
 pytest_plugins = ["pytest_asyncio"]
 
 @pytest_asyncio.fixture(autouse=True, scope="session")
