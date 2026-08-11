@@ -43,7 +43,7 @@ export const DecisionOptimizationPage: React.FC = () => {
       <div className="flex justify-between items-center border-b border-slate-800 pb-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2 text-cyan-400">
-            <Compass className="h-6 w-6" /> Causal Decision Optimization & Action Planning (v1.9.0)
+            <Compass className="h-6 w-6" /> Causal Decision Optimization & Action Planning
           </h1>
           <p className="text-sm text-slate-400">
             Predictive action optimization, deterministic risk scoring, and governance-guarded planning.

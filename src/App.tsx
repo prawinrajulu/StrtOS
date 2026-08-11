@@ -54,6 +54,7 @@ import { ActionCandidatesPage } from './pages/ActionCandidatesPage';
 import { ActionPlanPage } from './pages/ActionPlanPage';
 import { DecisionOptimizationDetailsPage } from './pages/DecisionOptimizationDetailsPage';
 import { StrategyPage } from './pages/StrategyPage';
+import { BusinessStatePage } from './pages/BusinessStatePage';
 import type { AgentPerformanceRecord } from './services/learningApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
@@ -248,6 +249,8 @@ const MainLayout: React.FC = () => {
         return <DecisionOptimizationDetailsPage />;
       case 'strategy':
         return <StrategyPage />;
+      case 'business-state':
+        return <BusinessStatePage />;
       case 'agent-intelligence':
         if (selectedIntelligenceAgent) {
           return (
