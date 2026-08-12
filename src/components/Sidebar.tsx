@@ -1,18 +1,10 @@
 import React from 'react';
 import {
   LayoutDashboard,
-  Users,
-  Bot,
-  Cpu,
   GitFork,
-  BrainCircuit,
   TrendingUp,
   Target,
-  Search,
-  Megaphone,
-  Calendar,
   FileText,
-  BarChart3,
   Settings,
   ChevronDown,
   ShieldCheck,
@@ -22,6 +14,7 @@ import {
   Activity,
   Compass,
   Briefcase,
+  Server,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -35,63 +28,47 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       group: 'MAIN',
       items: [
         { id: 'command-center', label: 'Command Center', icon: Compass, badgeDot: true },
-        { id: 'missions', label: 'Mission Control Center', icon: Target, badgeDot: true },
-        { id: 'portfolio', label: 'Portfolio Command Center', icon: Briefcase, badgeDot: true },
-        { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'clients', label: 'Clients', icon: Users },
-        { id: 'workflows', label: 'Workflows', icon: Bot },
+        { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
+      ],
+    },
+    {
+      group: 'INTELLIGENCE',
+      items: [
+        { id: 'business-state', label: 'Business State', icon: Activity, badgeDot: true },
+        { id: 'forecasting', label: 'Strategic Forecasting', icon: TrendingUp, badgeDot: true },
+        { id: 'strategy', label: 'Strategy Engine', icon: Compass, badgeDot: true },
+        { id: 'decision-optimization', label: 'Decision Optimization', icon: GitFork, badgeDot: true },
+        { id: 'knowledge', label: 'Knowledge Graph', icon: Network, badgeDot: true },
+      ],
+    },
+    {
+      group: 'EXECUTION',
+      items: [
+        { id: 'missions', label: 'Missions', icon: Target, badgeDot: true },
+        { id: 'portfolio', label: 'Portfolio Control', icon: Briefcase },
+        { id: 'workflows', label: 'Execution & Workflows', icon: Zap },
+        { id: 'resources', label: 'Resource Intelligence', icon: Server, badgeDot: true },
       ],
     },
     {
       group: 'GOVERNANCE',
       items: [
         { id: 'approvals', label: 'Approvals', icon: ShieldCheck },
+        { id: 'policies', label: 'Policies', icon: ShieldCheck },
       ],
     },
     {
-      group: 'INTELLIGENCE',
+      group: 'INSIGHTS',
       items: [
-        { id: 'forecasting', label: 'Strategic Forecasting', icon: TrendingUp, badgeDot: true },
-        { id: 'business-state', label: 'Continuous Business State', icon: Activity, badgeDot: true },
-        { id: 'strategy', label: 'Strategic Control Center', icon: Compass, badgeDot: true },
-        { id: 'decision-optimization', label: 'Decision Optimization', icon: Compass, badgeDot: true },
-        { id: 'action-candidates', label: 'Action Candidates', icon: Cpu },
-        { id: 'action-plan', label: 'Predictive Planning', icon: GitFork },
-        { id: 'decision-details', label: 'Decision Explanation', icon: Activity },
-        { id: 'knowledge', label: 'Causal Knowledge Graph', icon: GitFork, badgeDot: true },
-        { id: 'agent-intelligence', label: 'Agent Intelligence', icon: Cpu, badgeDot: true },
-        { id: 'policies', label: 'Policy Evolution', icon: ShieldCheck, badgeDot: true },
-        { id: 'experiments', label: 'Experiments & A/B', icon: Activity, badgeDot: true },
-        { id: 'learning', label: 'Learning & Adaptation', icon: Activity },
-        { id: 'swarm', label: 'Swarm Orchestration', icon: Network },
-        { id: 'ceo-agent', label: 'CEO Agent', icon: BrainCircuit },
         { id: 'memory', label: 'Memory', icon: Brain },
-        { id: 'outcomes', label: 'Outcomes', icon: Target },
-        { id: 'predictions', label: 'Predictions', icon: TrendingUp },
-        { id: 'ai-agents', label: 'AI Agents', icon: Bot },
-        { id: 'business-analysis', label: 'Business Analysis', icon: TrendingUp },
-        { id: 'competitor-research', label: 'Competitor Research', icon: Target },
-        { id: 'seo-audit', label: 'SEO Audit', icon: Search },
-        { id: 'marketing-strategy', label: 'Marketing Strategy', icon: Megaphone },
-        { id: 'campaign-planner', label: 'Campaign Planner', icon: Calendar },
+        { id: 'outcomes', label: 'Outcomes & Reports', icon: FileText },
       ],
     },
     {
-      group: 'EXECUTION',
+      group: 'SYSTEM',
       items: [
-        { id: 'actions', label: 'Actions', icon: Zap },
+        { id: 'settings', label: 'Settings & Diagnostics', icon: Settings },
       ],
-    },
-    {
-      group: 'OUTPUT',
-      items: [
-        { id: 'reports', label: 'Reports', icon: FileText },
-        { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-      ],
-    },
-    {
-      group: 'ACCOUNT',
-      items: [{ id: 'settings', label: 'Settings', icon: Settings }],
     },
   ];
 
@@ -151,7 +128,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                 letterSpacing: '0.1em',
               }}
             >
-              AI OS • V1.6
+              STRATEGIC AI OS • V2.6
             </div>
           </div>
         </div>
@@ -282,7 +259,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
           <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#00e599' }} />
-          <span style={{ fontSize: '11px', fontWeight: 500, color: '#e5e7eb' }}>All systems operational</span>
+          <span style={{ fontSize: '11px', fontWeight: 500, color: '#e5e7eb' }}>StrtOS Engine Operational</span>
         </div>
         <div
           style={{
@@ -293,7 +270,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
             paddingLeft: '14px',
           }}
         >
-          8 AGENTS • 128K CTX
+          INTELLIGENCE ENGINE • 128K CTX
         </div>
       </div>
     </aside>

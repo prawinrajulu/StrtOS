@@ -59,11 +59,12 @@ import { ForecastingPage } from './pages/ForecastingPage';
 import { CommandCenterPage } from './pages/CommandCenterPage';
 import { MissionsPage } from './pages/MissionsPage';
 import { PortfolioPage } from './pages/PortfolioPage';
+import { ResourceControlCenterPage } from './pages/ResourceControlCenterPage';
 import type { AgentPerformanceRecord } from './services/learningApi';
 import { GlobalFAB } from './components/GlobalFAB';
 
 const MainLayout: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('ai-agents');
+  const [activeTab, setActiveTab] = useState('command-center');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedWorkflow, setSelectedWorkflow] = useState<Workflow | null>(null);
   const [selectedReport, setSelectedReport] = useState<ExecutiveReport | null>(null);
@@ -82,140 +83,93 @@ const MainLayout: React.FC = () => {
 
   const getBreadcrumbs = () => {
     switch (activeTab) {
+      case 'command-center':
+        return ['STRTOS', 'Command Center'];
       case 'dashboard':
-        return ['STRTOS', 'Dashboard'];
+        return ['STRTOS', 'Executive Dashboard'];
+      case 'business-state':
+        return ['STRTOS', 'Intelligence', 'Business State'];
+      case 'forecasting':
+        return ['STRTOS', 'Intelligence', 'Strategic Forecasting'];
+      case 'strategy':
+        return ['STRTOS', 'Intelligence', 'Strategy Control Center'];
+      case 'decision-optimization':
+        return ['STRTOS', 'Intelligence', 'Decision Optimization'];
+      case 'action-candidates':
+        return ['STRTOS', 'Intelligence', 'Action Candidates'];
+      case 'action-plan':
+        return ['STRTOS', 'Intelligence', 'Predictive Action Plan'];
+      case 'decision-details':
+        return ['STRTOS', 'Intelligence', 'Decision Details'];
       case 'knowledge':
         return ['STRTOS', 'Intelligence', 'Causal Knowledge Graph'];
       case 'decision-explainability':
         return ['STRTOS', 'Intelligence', 'Knowledge Graph', 'Decision Explainability'];
       case 'root-cause':
         return ['STRTOS', 'Intelligence', 'Knowledge Graph', 'Outcome Root Cause'];
-      case 'agent-intelligence':
-        if (selectedIntelligenceAgent) return ['STRTOS', 'Intelligence', 'Agent Performance', selectedIntelligenceAgent];
-        return ['STRTOS', 'Intelligence', 'Agent Performance Intelligence'];
-      case 'agent-optimization':
-        return ['STRTOS', 'Intelligence', 'Optimization Control Center'];
-      case 'policies':
-        if (selectedPolicyId) return ['STRTOS', 'Intelligence', 'Policy Evolution', 'Details'];
-        return ['STRTOS', 'Intelligence', 'Policy Evolution'];
-      case 'policy-evolution':
-        return ['STRTOS', 'Intelligence', 'Policy Evolution', 'Pipeline'];
-      case 'clients':
-        return selectedClient ? ['STRTOS', 'Clients', selectedClient.name] : ['STRTOS', 'Clients'];
+      case 'missions':
+        return ['STRTOS', 'Execution', 'Missions'];
+      case 'portfolio':
+        return ['STRTOS', 'Execution', 'Portfolio'];
+      case 'resources':
+        return ['STRTOS', 'Execution', 'Resource Intelligence'];
       case 'workflows':
-        return selectedWorkflow ? ['STRTOS', 'Workflows', selectedWorkflow.title] : ['STRTOS', 'Workflows'];
-      case 'approvals':
-        return selectedApproval ? ['STRTOS', 'Governance', selectedApproval.title] : ['STRTOS', 'Governance', 'Approvals'];
+        return selectedWorkflow ? ['STRTOS', 'Execution', selectedWorkflow.title] : ['STRTOS', 'Execution', 'Workflows'];
       case 'actions':
         return selectedAction ? ['STRTOS', 'Execution', selectedAction.name] : ['STRTOS', 'Execution', 'Actions'];
-      case 'swarm':
-        return selectedSwarm ? ['STRTOS', 'Intelligence', 'Swarm', selectedSwarm.objective] : ['STRTOS', 'Intelligence', 'Swarm'];
-      case 'learning':
-        if (selectedPolicyAgent) return ['STRTOS', 'Intelligence', 'Learning', 'Policies', selectedPolicyAgent];
-        if (selectedLearningAgent) return ['STRTOS', 'Intelligence', 'Learning', selectedLearningAgent.agent_name];
-        return ['STRTOS', 'Intelligence', 'Learning & Adaptation'];
+      case 'approvals':
+        return selectedApproval ? ['STRTOS', 'Governance', selectedApproval.title] : ['STRTOS', 'Governance', 'Approvals'];
+      case 'policies':
+        if (selectedPolicyId) return ['STRTOS', 'Governance', 'Policies', 'Details'];
+        return ['STRTOS', 'Governance', 'Policies'];
+      case 'policy-evolution':
+        return ['STRTOS', 'Governance', 'Policies', 'Evolution Pipeline'];
       case 'memory':
-        return selectedMemory ? ['STRTOS', 'Intelligence', 'Memory', selectedMemory.title] : ['STRTOS', 'Intelligence', 'Memory'];
+        return selectedMemory ? ['STRTOS', 'Insights', 'Memory', selectedMemory.title] : ['STRTOS', 'Insights', 'Memory'];
       case 'outcomes':
-        return ['STRTOS', 'Intelligence', 'Outcomes'];
+        return ['STRTOS', 'Insights', 'Outcomes & Reports'];
+      case 'reports':
+        return selectedReport ? ['STRTOS', 'Insights', 'Reports', selectedReport.title] : ['STRTOS', 'Insights', 'Reports'];
       case 'predictions':
         if (showSimulator) return ['STRTOS', 'Intelligence', 'Predictions', 'What-If Simulator'];
         return selectedPrediction ? ['STRTOS', 'Intelligence', 'Predictions', selectedPrediction.scenario_name] : ['STRTOS', 'Intelligence', 'Predictions'];
-      case 'reports':
-        return selectedReport ? ['STRTOS', 'Reports', selectedReport.title] : ['STRTOS', 'Reports'];
-      case 'ceo-agent':
-        return ['STRTOS', 'CEO Agent'];
+      case 'clients':
+        return selectedClient ? ['STRTOS', 'Clients', selectedClient.name] : ['STRTOS', 'Clients'];
+      case 'settings':
       case 'profile':
-        return ['STRTOS', 'Profile'];
-      case 'ai-agents':
+        return ['STRTOS', 'Settings & System Diagnostics'];
+      case 'agent-intelligence':
+        if (selectedIntelligenceAgent) return ['STRTOS', 'Diagnostics', 'Telemetry', selectedIntelligenceAgent];
+        return ['STRTOS', 'Diagnostics', 'Telemetry'];
+      case 'agent-optimization':
+        return ['STRTOS', 'Diagnostics', 'Optimization Controls'];
+      case 'swarm':
+        return selectedSwarm ? ['STRTOS', 'Diagnostics', 'Swarm', selectedSwarm.objective] : ['STRTOS', 'Diagnostics', 'Swarm'];
       default:
-        return ['STRTOS', 'AI Agents'];
+        return ['STRTOS', 'Command Center'];
     }
   };
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'command-center':
+        return <CommandCenterPage />;
       case 'dashboard':
-        return <DashboardPage onOpenCEO={() => setActiveTab('ceo-agent')} />;
-      case 'clients':
-        if (selectedClient) {
-          return (
-            <ClientDetailsPage
-              client={selectedClient}
-              onBack={() => setSelectedClient(null)}
-              onRunAnalysis={() => {
-                setActiveTab('ceo-agent');
-              }}
-            />
-          );
-        }
-        return <ClientsPage onSelectClient={(client) => setSelectedClient(client)} />;
-      case 'workflows':
-        if (selectedWorkflow) {
-          return (
-            <WorkflowDetailsPage
-              workflow={selectedWorkflow}
-              onBack={() => setSelectedWorkflow(null)}
-            />
-          );
-        }
-        return <WorkflowsPage onSelectWorkflow={(wf) => setSelectedWorkflow(wf)} />;
-      case 'approvals':
-        if (selectedApproval) {
-          return (
-            <ApprovalDetailsPage
-              approval={selectedApproval}
-              onBack={() => setSelectedApproval(null)}
-              onUpdated={() => {
-                setSelectedApproval(null);
-              }}
-            />
-          );
-        }
-        return <ApprovalsPage onSelectApproval={(app) => setSelectedApproval(app)} />;
-      case 'actions':
-        if (selectedAction) {
-          return (
-            <ActionDetailsPage
-              action={selectedAction}
-              onBack={() => setSelectedAction(null)}
-            />
-          );
-        }
-        return <ExecutionPage onSelectAction={(act) => setSelectedAction(act)} />;
-      case 'swarm':
-        if (selectedSwarm) {
-          return (
-            <SwarmDetailsPage
-              swarm={selectedSwarm}
-              onBack={() => setSelectedSwarm(null)}
-            />
-          );
-        }
-        return <SwarmPage onSelectSwarm={(s) => setSelectedSwarm(s)} />;
-      case 'learning':
-        if (selectedPolicyAgent) {
-          return (
-            <PolicyDetailsPage
-              agentName={selectedPolicyAgent}
-              onBack={() => setSelectedPolicyAgent(null)}
-            />
-          );
-        }
-        if (selectedLearningAgent) {
-          return (
-            <AgentPerformancePage
-              agent={selectedLearningAgent}
-              onBack={() => setSelectedLearningAgent(null)}
-            />
-          );
-        }
-        return (
-          <LearningPage
-            onSelectAgent={(ag) => setSelectedLearningAgent(ag)}
-            onOpenPolicies={(agName) => setSelectedPolicyAgent(agName)}
-          />
-        );
+        return <DashboardPage onOpenCEO={() => setActiveTab('command-center')} />;
+      case 'business-state':
+        return <BusinessStatePage />;
+      case 'forecasting':
+        return <ForecastingPage />;
+      case 'strategy':
+        return <StrategyPage />;
+      case 'decision-optimization':
+        return <DecisionOptimizationPage />;
+      case 'action-candidates':
+        return <ActionCandidatesPage />;
+      case 'action-plan':
+        return <ActionPlanPage />;
+      case 'decision-details':
+        return <DecisionOptimizationDetailsPage />;
       case 'knowledge':
         return (
           <KnowledgePage
@@ -243,43 +197,58 @@ const MainLayout: React.FC = () => {
             onBack={() => setActiveTab('knowledge')}
           />
         );
-      case 'decision-optimization':
-        return <DecisionOptimizationPage />;
-      case 'action-candidates':
-        return <ActionCandidatesPage />;
-      case 'action-plan':
-        return <ActionPlanPage />;
-      case 'decision-details':
-        return <DecisionOptimizationDetailsPage />;
-      case 'strategy':
-        return <StrategyPage />;
-      case 'business-state':
-        return <BusinessStatePage />;
-      case 'forecasting':
-        return <ForecastingPage />;
-      case 'command-center':
-        return <CommandCenterPage />;
       case 'missions':
         return <MissionsPage />;
       case 'portfolio':
         return <PortfolioPage />;
-      case 'agent-intelligence':
-        if (selectedIntelligenceAgent) {
+      case 'resources':
+        return <ResourceControlCenterPage />;
+      case 'clients':
+        if (selectedClient) {
           return (
-            <AgentPerformancePage
-              agentName={selectedIntelligenceAgent}
-              onBack={() => setSelectedIntelligenceAgent(null)}
+            <ClientDetailsPage
+              client={selectedClient}
+              onBack={() => setSelectedClient(null)}
+              onRunAnalysis={() => {
+                setActiveTab('command-center');
+              }}
             />
           );
         }
-        return (
-          <AgentIntelligencePage
-            onSelectAgent={(agName) => setSelectedIntelligenceAgent(agName)}
-            onNavigateToOptimization={() => setActiveTab('agent-optimization')}
-          />
-        );
-      case 'agent-optimization':
-        return <AgentOptimizationPage onBack={() => setActiveTab('agent-intelligence')} />;
+        return <ClientsPage onSelectClient={(client) => setSelectedClient(client)} />;
+      case 'workflows':
+        if (selectedWorkflow) {
+          return (
+            <WorkflowDetailsPage
+              workflow={selectedWorkflow}
+              onBack={() => setSelectedWorkflow(null)}
+            />
+          );
+        }
+        return <WorkflowsPage onSelectWorkflow={(wf) => setSelectedWorkflow(wf)} />;
+      case 'actions':
+        if (selectedAction) {
+          return (
+            <ActionDetailsPage
+              action={selectedAction}
+              onBack={() => setSelectedAction(null)}
+            />
+          );
+        }
+        return <ExecutionPage onSelectAction={(act) => setSelectedAction(act)} />;
+      case 'approvals':
+        if (selectedApproval) {
+          return (
+            <ApprovalDetailsPage
+              approval={selectedApproval}
+              onBack={() => setSelectedApproval(null)}
+              onUpdated={() => {
+                setSelectedApproval(null);
+              }}
+            />
+          );
+        }
+        return <ApprovalsPage onSelectApproval={(app) => setSelectedApproval(app)} />;
       case 'policies':
         if (selectedPolicyId) {
           return (
@@ -347,13 +316,67 @@ const MainLayout: React.FC = () => {
           );
         }
         return <ReportsPage onSelectReport={(rep) => setSelectedReport(rep)} />;
+      case 'settings':
+      case 'profile':
+        return <ProfilePage onNavigateDiagnostics={(tab) => setActiveTab(tab)} />;
+
+      /* Internal Diagnostics Routes (Requirement 17) */
+      case 'agent-intelligence':
+        if (selectedIntelligenceAgent) {
+          return (
+            <AgentPerformancePage
+              agentName={selectedIntelligenceAgent}
+              onBack={() => setSelectedIntelligenceAgent(null)}
+            />
+          );
+        }
+        return (
+          <AgentIntelligencePage
+            onSelectAgent={(agName) => setSelectedIntelligenceAgent(agName)}
+            onNavigateToOptimization={() => setActiveTab('agent-optimization')}
+          />
+        );
+      case 'agent-optimization':
+        return <AgentOptimizationPage onBack={() => setActiveTab('agent-intelligence')} />;
+      case 'swarm':
+        if (selectedSwarm) {
+          return (
+            <SwarmDetailsPage
+              swarm={selectedSwarm}
+              onBack={() => setSelectedSwarm(null)}
+            />
+          );
+        }
+        return <SwarmPage onSelectSwarm={(s) => setSelectedSwarm(s)} />;
+      case 'learning':
+        if (selectedPolicyAgent) {
+          return (
+            <PolicyDetailsPage
+              agentName={selectedPolicyAgent}
+              onBack={() => setSelectedPolicyAgent(null)}
+            />
+          );
+        }
+        if (selectedLearningAgent) {
+          return (
+            <AgentPerformancePage
+              agent={selectedLearningAgent}
+              onBack={() => setSelectedLearningAgent(null)}
+            />
+          );
+        }
+        return (
+          <LearningPage
+            onSelectAgent={(ag) => setSelectedLearningAgent(ag)}
+            onOpenPolicies={(agName) => setSelectedPolicyAgent(agName)}
+          />
+        );
       case 'ceo-agent':
         return <CEOAgentPage />;
-      case 'profile':
-        return <ProfilePage />;
       case 'ai-agents':
-      default:
         return <AIAgentsPage />;
+      default:
+        return <CommandCenterPage />;
     }
   };
 
@@ -364,7 +387,7 @@ const MainLayout: React.FC = () => {
         <TopNav breadcrumbs={getBreadcrumbs()} />
         <main style={{ flex: 1 }}>{renderContent()}</main>
       </div>
-      <GlobalFAB onClick={() => setActiveTab('ceo-agent')} />
+      <GlobalFAB onClick={() => setActiveTab('command-center')} />
     </div>
   );
 };

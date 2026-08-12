@@ -33,6 +33,7 @@ from app.forecasting.routes import router as forecasting_router
 from app.command_center.routes import router as command_center_router
 from app.missions.routes import router as missions_router
 from app.portfolio.routes import router as portfolio_router
+from app.resources.routes import router as resources_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -47,7 +48,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    version="2.5.0",
+    version="2.6.0",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan
@@ -155,3 +156,4 @@ app.include_router(forecasting_router, prefix="/api/v1")
 app.include_router(command_center_router, prefix="/api/v1")
 app.include_router(missions_router, prefix="/api/v1")
 app.include_router(portfolio_router, prefix="/api/v1")
+app.include_router(resources_router, prefix="/api/v1")

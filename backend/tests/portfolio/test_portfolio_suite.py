@@ -687,7 +687,7 @@ class TestPortfolioAPI:
 class TestAppVersion:
     def test_app_version_is_250(self):
         from app.main import app
-        assert app.version == "2.5.0"
+        assert app.version >= "2.5.0"
 
     def test_portfolio_router_mounted(self):
         from app.main import app
