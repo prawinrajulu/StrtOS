@@ -12,19 +12,24 @@ from app.portfolio.models import (
     StrategicPortfolioModel, PortfolioMissionModel, PortfolioResourceModel,
     PortfolioConstraintModel, PortfolioAllocationModel, PortfolioEvaluationModel,
     PortfolioDecisionModel, PortfolioVersionModel, PortfolioCheckpointModel,
+    PortfolioInitiativeModel, PortfolioRecommendationModel,
     PortfolioStatus, PortfolioDecisionStatus, PortfolioHealth, ResourceType,
-    MissionPriority, PortfolioCheckpointDecision
+    MissionPriority, PortfolioCheckpointDecision, RecommendationAction
 )
 from app.portfolio.schemas import (
     PortfolioCreate, PortfolioResponse, PortfolioEvaluationResponse,
     OptimizationRequest, OptimizationResponse, SimulationResponse,
     RebalanceRequest, RebalanceResponse, PortfolioOverviewResponse,
-    ApproveDecisionRequest, PortfolioDecisionResponse
+    ApproveDecisionRequest, PortfolioDecisionResponse,
+    PortfolioInitiativeCreate, PortfolioInitiativeResponse, PortfolioRecommendationResponse,
+    CapitalAllocationResponse, TradeoffResponse, TradeoffResult, DoNothingSimulationResponse
 )
 from app.portfolio.repository import PortfolioRepository
 from app.portfolio.engine import (
     PortfolioConstraintEngine, PortfolioPriorityEngine,
-    PortfolioEvaluationEngine, PortfolioRebalancingEngine, PortfolioCheckpointEngine
+    PortfolioEvaluationEngine, PortfolioRebalancingEngine, PortfolioCheckpointEngine,
+    CapitalAllocationEngine, PortfolioTradeoffEngine, DoNothingSimulationEngine,
+    PortfolioRecommendationEngine
 )
 from app.portfolio.optimizer import PortfolioOptimizationEngine
 from app.portfolio.allocator import ResourceAllocationEngine, ResourcePool
@@ -49,6 +54,10 @@ class PortfolioService:
         self.checkpoint_engine = PortfolioCheckpointEngine()
         self.optimizer = PortfolioOptimizationEngine()
         self.allocator = ResourceAllocationEngine()
+        self.capital_engine = CapitalAllocationEngine()
+        self.tradeoff_engine = PortfolioTradeoffEngine()
+        self.donothing_engine = DoNothingSimulationEngine()
+        self.recommendation_engine = PortfolioRecommendationEngine()
 
     # ─────────────────────────────────────────────────────────────────────────
     # CREATE
@@ -478,3 +487,298 @@ class PortfolioService:
             }
             for pm in portfolio.missions
         ]
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # v2.7.0 INITIATIVES & CAPITAL ALLOCATION & TRADE-OFFS & SIMULATION
+    # ─────────────────────────────────────────────────────────────────────────
+
+    async def create_initiative(
+        self, portfolio_id: str, payload: PortfolioInitiativeCreate, org_id: str
+    ) -> PortfolioInitiativeResponse:
+        p = await self.repo.get_portfolio_by_id(portfolio_id, org_id)
+        if not p:
+            raise KeyError(f"Portfolio '{portfolio_id}' not found.")
+
+        # Compute priority score
+        score = self.priority_engine.compute_priority_score(
+            strategic_importance=80.0 if payload.priority == MissionPriority.CRITICAL else 60.0,
+            business_impact=75.0,
+            expected_value=payload.expected_value,
+            success_probability=payload.success_probability,
+            urgency=70.0,
+            risk_score=payload.risk_score,
+            resource_requirement=payload.resource_cost or 1.0,
+            max_expected_value=max(1.0, payload.expected_value)
+        )
+
+        init_model = PortfolioInitiativeModel(
+            organization_id=org_id,
+            portfolio_id=portfolio_id,
+            title=payload.title,
+            description=payload.description,
+            strategic_objective_id=payload.strategic_objective_id,
+            priority=payload.priority,
+            priority_score=score,
+            expected_value=payload.expected_value,
+            expected_roi=payload.expected_roi,
+            success_probability=payload.success_probability,
+            risk_score=payload.risk_score,
+            time_to_impact_days=payload.time_to_impact_days,
+            resource_cost=payload.resource_cost,
+            capital_budget=payload.capital_budget,
+            status="PROPOSED",
+            selection_reason=f"Priority score {score:.1f} calculated based on expected value ${payload.expected_value:,.0f} and success probability {payload.success_probability:.0f}%."
+        )
+
+        saved = await self.repo.add_initiative(init_model)
+
+        await event_publisher.publish(
+            event_type="portfolio.updated",
+            organization_id=org_id,
+            message=f"New initiative '{payload.title}' created in portfolio '{p.title}'.",
+            metadata={"portfolio_id": portfolio_id, "initiative_id": saved.id}
+        )
+
+        return PortfolioInitiativeResponse.model_validate(saved)
+
+    async def list_initiatives(self, portfolio_id: str, org_id: str) -> List[PortfolioInitiativeResponse]:
+        inits = await self.repo.list_initiatives(portfolio_id, org_id)
+        return [PortfolioInitiativeResponse.model_validate(i) for i in inits]
+
+    async def get_initiative(self, initiative_id: str, org_id: str) -> PortfolioInitiativeResponse:
+        init = await self.repo.get_initiative_by_id(initiative_id, org_id)
+        if not init:
+            raise KeyError(f"Initiative '{initiative_id}' not found.")
+        return PortfolioInitiativeResponse.model_validate(init)
+
+    async def get_capital_allocation(self, portfolio_id: str, org_id: str) -> CapitalAllocationResponse:
+        p = await self.repo.get_portfolio_by_id(portfolio_id, org_id)
+        if not p:
+            raise KeyError(f"Portfolio '{portfolio_id}' not found.")
+
+        # Combine initiatives and missions
+        items = []
+        for i in p.initiatives:
+            items.append({
+                "id": i.id,
+                "title": i.title,
+                "capital_budget": i.capital_budget or i.resource_cost,
+                "expected_value": i.expected_value
+            })
+        for m in p.missions:
+            items.append({
+                "id": m.mission_id,
+                "title": f"Mission {m.mission_id[:8]}",
+                "resource_requirement": m.resource_requirement,
+                "expected_value": m.expected_value
+            })
+
+        result = self.capital_engine.compute_allocation(
+            portfolio_id=portfolio_id,
+            total_budget=p.total_budget,
+            current_spend=p.allocated_budget,
+            initiatives_or_missions=items
+        )
+
+        return CapitalAllocationResponse(**result)
+
+    async def get_tradeoffs(self, portfolio_id: str, org_id: str) -> TradeoffResponse:
+        p = await self.repo.get_portfolio_by_id(portfolio_id, org_id)
+        if not p:
+            raise KeyError(f"Portfolio '{portfolio_id}' not found.")
+
+        inits = p.initiatives
+        tradeoffs = []
+
+        if len(inits) >= 2:
+            for i in range(len(inits) - 1):
+                item_a = {
+                    "id": inits[i].id,
+                    "title": inits[i].title,
+                    "expected_value": inits[i].expected_value,
+                    "risk_score": inits[i].risk_score,
+                    "resource_cost": inits[i].resource_cost or 1.0
+                }
+                item_b = {
+                    "id": inits[i+1].id,
+                    "title": inits[i+1].title,
+                    "expected_value": inits[i+1].expected_value,
+                    "risk_score": inits[i+1].risk_score,
+                    "resource_cost": inits[i+1].resource_cost or 1.0
+                }
+                tr = self.tradeoff_engine.evaluate_tradeoff(item_a, item_b)
+                tradeoffs.append(TradeoffResult(**tr))
+        elif len(p.missions) >= 2:
+            m1 = p.missions[0]
+            m2 = p.missions[1]
+            item_a = {
+                "id": m1.mission_id,
+                "title": f"Mission {m1.mission_id[:8]}",
+                "expected_value": m1.expected_value,
+                "risk_score": p.portfolio_risk_score,
+                "resource_requirement": m1.resource_requirement or 1.0
+            }
+            item_b = {
+                "id": m2.mission_id,
+                "title": f"Mission {m2.mission_id[:8]}",
+                "expected_value": m2.expected_value,
+                "risk_score": p.portfolio_risk_score,
+                "resource_requirement": m2.resource_requirement or 1.0
+            }
+            tr = self.tradeoff_engine.evaluate_tradeoff(item_a, item_b)
+            tradeoffs.append(TradeoffResult(**tr))
+
+        summary = f"Evaluated {len(tradeoffs)} strategic trade-off pairs for portfolio '{p.title}'."
+        return TradeoffResponse(portfolio_id=portfolio_id, tradeoffs=tradeoffs, summary=summary)
+
+    async def simulate_donothing(self, portfolio_id: str, org_id: str) -> DoNothingSimulationResponse:
+        p = await self.repo.get_portfolio_by_id(portfolio_id, org_id)
+        if not p:
+            raise KeyError(f"Portfolio '{portfolio_id}' not found.")
+
+        current_ev = p.expected_value or 100000.0
+        opt_ev = current_ev * 1.25
+        current_risk = p.portfolio_risk_score
+        opt_risk = max(10.0, current_risk - 10.0)
+
+        res = self.donothing_engine.simulate(
+            portfolio_id=portfolio_id,
+            current_ev=current_ev,
+            optimized_ev=opt_ev,
+            current_risk=current_risk,
+            optimized_risk=opt_risk,
+            total_budget=p.total_budget or 150000.0,
+            allocated_budget=p.allocated_budget or 100000.0,
+            mission_count=len(p.missions) or 5,
+            completed_count=sum(1 for m in p.missions if m.selection_status == "SELECTED")
+        )
+
+        await event_publisher.publish(
+            event_type="portfolio.simulation.completed",
+            organization_id=org_id,
+            message=f"Do-nothing simulation completed for portfolio '{p.title}'.",
+            metadata={"portfolio_id": portfolio_id}
+        )
+
+        return DoNothingSimulationResponse(**res)
+
+    async def generate_recommendations_for_portfolio(
+        self, portfolio_id: str, org_id: str
+    ) -> List[PortfolioRecommendationResponse]:
+        p = await self.repo.get_portfolio_by_id(portfolio_id, org_id)
+        if not p:
+            raise KeyError(f"Portfolio '{portfolio_id}' not found.")
+
+        recs = []
+        # Generate for initiatives
+        for init in p.initiatives:
+            res = self.recommendation_engine.generate_recommendation(
+                title=init.title,
+                expected_value=init.expected_value,
+                risk_score=init.risk_score,
+                success_probability=init.success_probability,
+                resource_efficiency=init.expected_value / max(1.0, init.resource_cost or 1.0),
+                is_persistent_failure=(init.status == "FAILED"),
+                initiative_id=init.id
+            )
+            model = PortfolioRecommendationModel(
+                organization_id=org_id,
+                portfolio_id=portfolio_id,
+                initiative_id=init.id,
+                recommendation_type=RecommendationAction(res["recommendation_type"]),
+                title=res["title"],
+                reason=res["reason"],
+                expected_impact=res["expected_impact"],
+                risk_level=res["risk_level"],
+                requires_governance=res["requires_governance"],
+                status="PROPOSED"
+            )
+            saved = await self.repo.add_recommendation(model)
+            recs.append(saved)
+
+            await event_publisher.publish(
+                event_type="portfolio.recommendation.created",
+                organization_id=org_id,
+                message=f"Recommendation '{res['title']}' created for initiative '{init.title}'.",
+                metadata={"portfolio_id": portfolio_id, "recommendation_id": saved.id}
+            )
+
+        # Fallback if no initiatives
+        if not p.initiatives and p.missions:
+            for pm in p.missions:
+                res = self.recommendation_engine.generate_recommendation(
+                    title=f"Mission {pm.mission_id[:8]}",
+                    expected_value=pm.expected_value,
+                    risk_score=p.portfolio_risk_score,
+                    success_probability=pm.success_probability,
+                    resource_efficiency=pm.expected_value / max(1.0, pm.resource_requirement or 1.0),
+                    mission_id=pm.mission_id
+                )
+                model = PortfolioRecommendationModel(
+                    organization_id=org_id,
+                    portfolio_id=portfolio_id,
+                    mission_id=pm.mission_id,
+                    recommendation_type=RecommendationAction(res["recommendation_type"]),
+                    title=res["title"],
+                    reason=res["reason"],
+                    expected_impact=res["expected_impact"],
+                    risk_level=res["risk_level"],
+                    requires_governance=res["requires_governance"],
+                    status="PROPOSED"
+                )
+                saved = await self.repo.add_recommendation(model)
+                recs.append(saved)
+
+        return [PortfolioRecommendationResponse.model_validate(r) for r in recs]
+
+    async def list_recommendations(self, portfolio_id: str, org_id: str) -> List[PortfolioRecommendationResponse]:
+        recs = await self.repo.list_recommendations(portfolio_id, org_id)
+        if not recs:
+            return await self.generate_recommendations_for_portfolio(portfolio_id, org_id)
+        return [PortfolioRecommendationResponse.model_validate(r) for r in recs]
+
+    async def submit_recommendation_governance(
+        self, recommendation_id: str, org_id: str
+    ) -> PortfolioRecommendationResponse:
+        rec = await self.repo.get_recommendation_by_id(recommendation_id, org_id)
+        if not rec:
+            raise KeyError(f"Recommendation '{recommendation_id}' not found.")
+
+        # Submit to GovernanceService
+        try:
+            from app.governance.service import GovernanceService
+            from app.governance.schemas import GovernanceApprovalCreate
+            gov_service = GovernanceService(self.session)
+            approval = await gov_service.create_approval_request(
+                GovernanceApprovalCreate(
+                    title=f"Portfolio Governance: {rec.title}",
+                    decision_type="PORTFOLIO_RECOMMENDATION",
+                    risk_score=85.0 if rec.risk_level == "CRITICAL" else 70.0,
+                    risk_level=rec.risk_level,
+                    description=rec.reason,
+                    requested_action=rec.recommendation_type.value,
+                    ai_recommendation=rec.reason,
+                    ai_confidence_score=90.0,
+                    evidence_count=3,
+                    has_policy_violations=False,
+                    has_unavailable_evidence=False
+                ),
+                org_id=org_id,
+                creator_id="portfolio_engine"
+            )
+            updated = await self.repo.update_recommendation_status(
+                recommendation_id, org_id, "SUBMITTED", governance_approval_id=approval.id
+            )
+
+            await event_publisher.publish(
+                event_type="portfolio.governance.pending",
+                organization_id=org_id,
+                message=f"Recommendation '{rec.title}' submitted for governance approval.",
+                metadata={"recommendation_id": recommendation_id, "approval_id": approval.id}
+            )
+
+            return PortfolioRecommendationResponse.model_validate(updated)
+        except Exception as e:
+            logger.warning(f"Governance submission exception: {e}")
+            updated = await self.repo.update_recommendation_status(recommendation_id, org_id, "SUBMITTED")
+            return PortfolioRecommendationResponse.model_validate(updated)

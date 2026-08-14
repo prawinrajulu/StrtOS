@@ -122,6 +122,117 @@ export interface SimulationResponse {
   recommendation: string;
 }
 
+export type RecommendationAction =
+  | 'CONTINUE'
+  | 'ACCELERATE'
+  | 'MAINTAIN'
+  | 'DELAY'
+  | 'REDUCE'
+  | 'STOP'
+  | 'REVIEW';
+
+export interface PortfolioInitiative {
+  id: string;
+  organization_id: string;
+  portfolio_id: string;
+  title: string;
+  description?: string;
+  strategic_objective_id?: string;
+  priority: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  priority_score: number;
+  expected_value: number;
+  expected_roi: number;
+  success_probability: number;
+  risk_score: number;
+  time_to_impact_days: number;
+  resource_cost: number;
+  capital_budget: number;
+  status: string;
+  selection_reason?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PortfolioRecommendation {
+  id: string;
+  organization_id: string;
+  portfolio_id: string;
+  initiative_id?: string;
+  mission_id?: string;
+  recommendation_type: RecommendationAction;
+  title: string;
+  reason: string;
+  expected_impact?: string;
+  risk_level: string;
+  requires_governance: boolean;
+  governance_approval_id?: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CapitalAllocationBreakdown {
+  id: string;
+  title: string;
+  allocated: number;
+  expected_value: number;
+  roi: number;
+  pct_of_total_budget: number;
+}
+
+export interface CapitalAllocation {
+  portfolio_id: string;
+  total_budget?: number;
+  current_spend: number;
+  allocated_budget: number;
+  unused_budget?: number;
+  budget_shortage: number;
+  expected_portfolio_roi?: number;
+  allocation_breakdown: CapitalAllocationBreakdown[];
+  data_quality: 'SUFFICIENT' | 'INSUFFICIENT_DATA';
+  explanation: string;
+}
+
+export interface TradeoffResult {
+  option_a_id: string;
+  option_a_title: string;
+  option_b_id: string;
+  option_b_title: string;
+  prioritize_a_tradeoffs: string[];
+  prioritize_b_tradeoffs: string[];
+  expected_value_delta: number;
+  risk_delta: number;
+  resource_efficiency_delta: number;
+  recommendation: string;
+}
+
+export interface TradeoffResponse {
+  portfolio_id: string;
+  tradeoffs: TradeoffResult[];
+  summary: string;
+}
+
+export interface DoNothingScenario {
+  scenario_type: string;
+  expected_value: number;
+  expected_roi: number;
+  risk_score: number;
+  resource_utilization_pct: number;
+  budget_utilization_pct: number;
+  mission_completion_rate: number;
+  strategic_progress_pct: number;
+  summary: string;
+}
+
+export interface DoNothingSimulationResponse {
+  portfolio_id: string;
+  current: DoNothingScenario;
+  optimized: DoNothingScenario;
+  do_nothing: DoNothingScenario;
+  recommendation: string;
+  is_side_effect_free: boolean;
+}
+
 export const portfolioApi = {
   getOverview: async (): Promise<PortfolioOverview> => {
     const res = await fetch(`${API_BASE}/overview`, { headers: getHeaders() });
@@ -212,6 +323,78 @@ export const portfolioApi = {
 
   getExplanation: async (id: string): Promise<unknown> => {
     const res = await fetch(`${API_BASE}/portfolios/${id}/explanation`, { headers: getHeaders() });
+    return res.json();
+  },
+
+  // ─── v2.7.0 Initiatives, Allocations, Trade-offs, Recommendations, Simulation ────
+
+  listInitiatives: async (portfolio_id?: string): Promise<PortfolioInitiative[]> => {
+    const url = portfolio_id ? `${API_BASE}/initiatives?portfolio_id=${portfolio_id}` : `${API_BASE}/initiatives`;
+    const res = await fetch(url, { headers: getHeaders() });
+    return res.json();
+  },
+
+  createInitiative: async (
+    data: {
+      title: string;
+      description?: string;
+      priority?: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+      expected_value?: number;
+      expected_roi?: number;
+      success_probability?: number;
+      risk_score?: number;
+      time_to_impact_days?: number;
+      resource_cost?: number;
+      capital_budget?: number;
+    },
+    portfolio_id?: string
+  ): Promise<PortfolioInitiative> => {
+    const url = portfolio_id ? `${API_BASE}/initiatives?portfolio_id=${portfolio_id}` : `${API_BASE}/initiatives`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  getInitiative: async (id: string): Promise<PortfolioInitiative> => {
+    const res = await fetch(`${API_BASE}/initiatives/${id}`, { headers: getHeaders() });
+    return res.json();
+  },
+
+  getCapitalAllocations: async (portfolio_id?: string): Promise<CapitalAllocation> => {
+    const url = portfolio_id ? `${API_BASE}/allocations?portfolio_id=${portfolio_id}` : `${API_BASE}/allocations`;
+    const res = await fetch(url, { headers: getHeaders() });
+    return res.json();
+  },
+
+  getTradeoffs: async (portfolio_id?: string): Promise<TradeoffResponse> => {
+    const url = portfolio_id ? `${API_BASE}/tradeoffs?portfolio_id=${portfolio_id}` : `${API_BASE}/tradeoffs`;
+    const res = await fetch(url, { headers: getHeaders() });
+    return res.json();
+  },
+
+  listRecommendations: async (portfolio_id?: string): Promise<PortfolioRecommendation[]> => {
+    const url = portfolio_id ? `${API_BASE}/recommendations?portfolio_id=${portfolio_id}` : `${API_BASE}/recommendations`;
+    const res = await fetch(url, { headers: getHeaders() });
+    return res.json();
+  },
+
+  submitRecommendationGovernance: async (id: string): Promise<PortfolioRecommendation> => {
+    const res = await fetch(`${API_BASE}/recommendations/${id}/governance`, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
+    return res.json();
+  },
+
+  simulateDoNothing: async (portfolio_id?: string): Promise<DoNothingSimulationResponse> => {
+    const url = portfolio_id ? `${API_BASE}/simulate?portfolio_id=${portfolio_id}` : `${API_BASE}/simulate`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: getHeaders(),
+    });
     return res.json();
   },
 };

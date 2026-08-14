@@ -7,7 +7,9 @@ from app.portfolio.schemas import (
     PortfolioCreate, PortfolioResponse, PortfolioEvaluationResponse,
     OptimizationRequest, OptimizationResponse, SimulationResponse,
     RebalanceRequest, RebalanceResponse, PortfolioOverviewResponse,
-    ApproveDecisionRequest, PortfolioDecisionResponse
+    ApproveDecisionRequest, PortfolioDecisionResponse,
+    PortfolioInitiativeCreate, PortfolioInitiativeResponse, PortfolioRecommendationResponse,
+    CapitalAllocationResponse, TradeoffResponse, DoNothingSimulationResponse
 )
 from app.portfolio.models import PortfolioStatus
 from app.portfolio.service import PortfolioService
@@ -284,3 +286,217 @@ async def approve_portfolio_decision(
         return await service.approve_decision(id, payload, get_org_id(user))
     except KeyError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+# ─────────────────────────── v2.7.0 Initiatives ───────────────────────────────
+
+@router.get("/initiatives", response_model=List[PortfolioInitiativeResponse])
+async def list_portfolio_initiatives(
+    portfolio_id: Optional[str] = Query(None),
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """List portfolio initiatives."""
+    service = PortfolioService(db)
+    org_id = get_org_id(user)
+    if not portfolio_id:
+        portfolios = await service.list_portfolios(org_id)
+        if not portfolios:
+            return []
+        portfolio_id = portfolios[0].id
+    return await service.list_initiatives(portfolio_id, org_id)
+
+
+@router.post("/initiatives", response_model=PortfolioInitiativeResponse, status_code=status.HTTP_201_CREATED)
+async def create_portfolio_initiative(
+    payload: PortfolioInitiativeCreate,
+    portfolio_id: Optional[str] = Query(None),
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Create a new portfolio initiative."""
+    service = PortfolioService(db)
+    org_id = get_org_id(user)
+    if not portfolio_id:
+        portfolios = await service.list_portfolios(org_id)
+        if not portfolios:
+            raise HTTPException(status_code=400, detail="No active portfolio found to add initiative to.")
+        portfolio_id = portfolios[0].id
+    try:
+        return await service.create_initiative(portfolio_id, payload, org_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/initiatives/{id}", response_model=PortfolioInitiativeResponse)
+async def get_portfolio_initiative(
+    id: str,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get initiative details."""
+    service = PortfolioService(db)
+    try:
+        return await service.get_initiative(id, get_org_id(user))
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+# ─────────────────────────── v2.7.0 Capital Allocations & Trade-offs ───────────
+
+@router.get("/allocations", response_model=CapitalAllocationResponse)
+async def get_capital_allocations(
+    portfolio_id: Optional[str] = Query(None),
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get capital and budget allocation for portfolio."""
+    service = PortfolioService(db)
+    org_id = get_org_id(user)
+    if not portfolio_id:
+        portfolios = await service.list_portfolios(org_id)
+        if not portfolios:
+            raise HTTPException(status_code=404, detail="No active portfolio found.")
+        portfolio_id = portfolios[0].id
+    try:
+        return await service.get_capital_allocation(portfolio_id, org_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/tradeoffs", response_model=TradeoffResponse)
+async def get_portfolio_tradeoffs(
+    portfolio_id: Optional[str] = Query(None),
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Evaluate explicit strategic trade-offs between initiatives/missions."""
+    service = PortfolioService(db)
+    org_id = get_org_id(user)
+    if not portfolio_id:
+        portfolios = await service.list_portfolios(org_id)
+        if not portfolios:
+            raise HTTPException(status_code=404, detail="No active portfolio found.")
+        portfolio_id = portfolios[0].id
+    try:
+        return await service.get_tradeoffs(portfolio_id, org_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+# ─────────────────────────── v2.7.0 Recommendations & Governance ─────────────
+
+@router.get("/recommendations", response_model=List[PortfolioRecommendationResponse])
+async def list_portfolio_recommendations(
+    portfolio_id: Optional[str] = Query(None),
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """List actionable portfolio recommendations (CONTINUE, ACCELERATE, MAINTAIN, DELAY, REDUCE, STOP, REVIEW)."""
+    service = PortfolioService(db)
+    org_id = get_org_id(user)
+    if not portfolio_id:
+        portfolios = await service.list_portfolios(org_id)
+        if not portfolios:
+            return []
+        portfolio_id = portfolios[0].id
+    try:
+        return await service.list_recommendations(portfolio_id, org_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/recommendations/{id}/governance", response_model=PortfolioRecommendationResponse)
+async def submit_recommendation_governance(
+    id: str,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Submit high-risk recommendation for human governance approval."""
+    service = PortfolioService(db)
+    try:
+        return await service.submit_recommendation_governance(id, get_org_id(user))
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+# ─────────────────────────── v2.7.0 Top-Level Optimization & Simulation Alias ─
+
+@router.post("/optimize", response_model=OptimizationResponse)
+async def optimize_portfolio_toplevel(
+    portfolio_id: Optional[str] = Query(None),
+    payload: Optional[OptimizationRequest] = None,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Run portfolio optimization (top-level alias)."""
+    service = PortfolioService(db)
+    org_id = get_org_id(user)
+    if not portfolio_id:
+        portfolios = await service.list_portfolios(org_id)
+        if not portfolios:
+            raise HTTPException(status_code=404, detail="No active portfolio found.")
+        portfolio_id = portfolios[0].id
+    req = payload or OptimizationRequest()
+    try:
+        return await service.optimize_portfolio(portfolio_id, req, org_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/simulate", response_model=DoNothingSimulationResponse)
+async def simulate_portfolio_toplevel(
+    portfolio_id: Optional[str] = Query(None),
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Run side-effect free do-nothing vs current vs optimized simulation."""
+    service = PortfolioService(db)
+    org_id = get_org_id(user)
+    if not portfolio_id:
+        portfolios = await service.list_portfolios(org_id)
+        if not portfolios:
+            raise HTTPException(status_code=404, detail="No active portfolio found.")
+        portfolio_id = portfolios[0].id
+    try:
+        return await service.simulate_donothing(portfolio_id, org_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/allocations/simulate", response_model=CapitalAllocationResponse)
+async def simulate_allocations_toplevel(
+    portfolio_id: Optional[str] = Query(None),
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Side-effect free capital allocation simulation."""
+    service = PortfolioService(db)
+    org_id = get_org_id(user)
+    if not portfolio_id:
+        portfolios = await service.list_portfolios(org_id)
+        if not portfolios:
+            raise HTTPException(status_code=404, detail="No active portfolio found.")
+        portfolio_id = portfolios[0].id
+    try:
+        return await service.get_capital_allocation(portfolio_id, org_id)
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.get("/explanation/{id}")
+async def get_portfolio_explanation_toplevel(
+    id: str,
+    user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Get explanation by ID (portfolio_id or recommendation_id)."""
+    service = PortfolioService(db)
+    org_id = get_org_id(user)
+    try:
+        return await service.get_portfolio_explanation(id, org_id)
+    except KeyError:
+        return {
+            "id": id,
+            "explanation": "Causal knowledge chain: Strategic Objective → Portfolio Initiative → Mission → Resource → Execution → Outcome."
+        }

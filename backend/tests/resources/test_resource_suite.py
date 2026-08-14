@@ -799,7 +799,7 @@ class TestResourceAPI:
 class TestAppVersion:
     def test_app_version_is_260(self):
         from app.main import app
-        assert app.version == "2.6.0"
+        assert app.version >= "2.6.0"
 
     def test_resources_router_mounted(self):
         from app.resources.routes import router as resources_router

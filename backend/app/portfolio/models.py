@@ -75,6 +75,17 @@ class ConstraintStatus(str, enum.Enum):
     VIOLATION = "VIOLATION"
 
 
+class RecommendationAction(str, enum.Enum):
+    CONTINUE = "CONTINUE"
+    ACCELERATE = "ACCELERATE"
+    MAINTAIN = "MAINTAIN"
+    DELAY = "DELAY"
+    REDUCE = "REDUCE"
+    STOP = "STOP"
+    REVIEW = "REVIEW"
+
+
+
 # ─────────────────────────── ORM Models ──────────────────────────────────────
 
 class StrategicPortfolioModel(Base):
@@ -107,6 +118,8 @@ class StrategicPortfolioModel(Base):
     decisions = relationship("PortfolioDecisionModel", back_populates="portfolio", cascade="all, delete-orphan")
     versions = relationship("PortfolioVersionModel", back_populates="portfolio", cascade="all, delete-orphan")
     checkpoints = relationship("PortfolioCheckpointModel", back_populates="portfolio", cascade="all, delete-orphan")
+    initiatives = relationship("PortfolioInitiativeModel", back_populates="portfolio", cascade="all, delete-orphan")
+    recommendations = relationship("PortfolioRecommendationModel", back_populates="portfolio", cascade="all, delete-orphan")
 
 
 class PortfolioMissionModel(Base):
@@ -266,3 +279,55 @@ class PortfolioCheckpointModel(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     portfolio = relationship("StrategicPortfolioModel", back_populates="checkpoints")
+
+
+class PortfolioInitiativeModel(Base):
+    """Strategic initiative belonging to a portfolio."""
+    __tablename__ = "portfolio_initiatives"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    organization_id = Column(String, nullable=False, index=True)
+    portfolio_id = Column(String, ForeignKey("portfolios.id"), nullable=False, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    strategic_objective_id = Column(String, nullable=True, index=True)
+    priority = Column(Enum(MissionPriority), nullable=False, default=MissionPriority.MEDIUM)
+    priority_score = Column(Float, nullable=False, default=50.0)
+    expected_value = Column(Float, nullable=False, default=0.0)
+    expected_roi = Column(Float, nullable=False, default=0.0)
+    success_probability = Column(Float, nullable=False, default=80.0)
+    risk_score = Column(Float, nullable=False, default=20.0)
+    time_to_impact_days = Column(Integer, nullable=False, default=90)
+    resource_cost = Column(Float, nullable=False, default=0.0)
+    capital_budget = Column(Float, nullable=False, default=0.0)
+    status = Column(String, nullable=False, default="PROPOSED")  # PROPOSED, ACTIVE, DEFERRED, PAUSED, STOPPED, COMPLETED
+    selection_reason = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+                        onupdate=lambda: datetime.now(timezone.utc))
+
+    portfolio = relationship("StrategicPortfolioModel", back_populates="initiatives")
+
+
+class PortfolioRecommendationModel(Base):
+    """Actionable portfolio recommendation (CONTINUE, ACCELERATE, MAINTAIN, DELAY, REDUCE, STOP, REVIEW)."""
+    __tablename__ = "portfolio_recommendations"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    organization_id = Column(String, nullable=False, index=True)
+    portfolio_id = Column(String, ForeignKey("portfolios.id"), nullable=False, index=True)
+    initiative_id = Column(String, nullable=True, index=True)
+    mission_id = Column(String, nullable=True, index=True)
+    recommendation_type = Column(Enum(RecommendationAction), nullable=False, default=RecommendationAction.REVIEW)
+    title = Column(String, nullable=False)
+    reason = Column(Text, nullable=False)
+    expected_impact = Column(Text, nullable=True)
+    risk_level = Column(String, nullable=False, default="MEDIUM")
+    requires_governance = Column(Boolean, default=False)
+    governance_approval_id = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="PROPOSED")  # PROPOSED, SUBMITTED, APPROVED, REJECTED, APPLIED
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc),
+                        onupdate=lambda: datetime.now(timezone.utc))
+
+    portfolio = relationship("StrategicPortfolioModel", back_populates="recommendations")

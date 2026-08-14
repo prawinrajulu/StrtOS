@@ -4,7 +4,7 @@ from datetime import datetime
 from app.portfolio.models import (
     PortfolioStatus, PortfolioDecisionStatus, ResourceType,
     MissionPriority, PortfolioHealth, PortfolioCheckpointDecision,
-    ConstraintStatus
+    ConstraintStatus, RecommendationAction
 )
 
 
@@ -284,3 +284,114 @@ class PortfolioOverviewResponse(BaseModel):
     missions_at_risk: int
     portfolios_requiring_rebalance: int
     overall_health: str
+
+
+# ─────────────────────── v2.7.0 Initiative & Trade-Off Schemas ───────────────
+
+class PortfolioInitiativeCreate(BaseModel):
+    title: str
+    description: Optional[str] = None
+    strategic_objective_id: Optional[str] = None
+    priority: MissionPriority = MissionPriority.MEDIUM
+    expected_value: float = Field(default=0.0, ge=0.0)
+    expected_roi: float = Field(default=0.0)
+    success_probability: float = Field(default=80.0, ge=0.0, le=100.0)
+    risk_score: float = Field(default=20.0, ge=0.0, le=100.0)
+    time_to_impact_days: int = Field(default=90, ge=1)
+    resource_cost: float = Field(default=0.0, ge=0.0)
+    capital_budget: float = Field(default=0.0, ge=0.0)
+
+
+class PortfolioInitiativeResponse(BaseModel):
+    id: str
+    organization_id: str
+    portfolio_id: str
+    title: str
+    description: Optional[str] = None
+    strategic_objective_id: Optional[str] = None
+    priority: MissionPriority
+    priority_score: float
+    expected_value: float
+    expected_roi: float
+    success_probability: float
+    risk_score: float
+    time_to_impact_days: int
+    resource_cost: float
+    capital_budget: float
+    status: str
+    selection_reason: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PortfolioRecommendationResponse(BaseModel):
+    id: str
+    organization_id: str
+    portfolio_id: str
+    initiative_id: Optional[str] = None
+    mission_id: Optional[str] = None
+    recommendation_type: RecommendationAction
+    title: str
+    reason: str
+    expected_impact: Optional[str] = None
+    risk_level: str
+    requires_governance: bool
+    governance_approval_id: Optional[str] = None
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CapitalAllocationResponse(BaseModel):
+    portfolio_id: str
+    total_budget: Optional[float]
+    current_spend: float
+    allocated_budget: float
+    unused_budget: Optional[float]
+    budget_shortage: float
+    expected_portfolio_roi: Optional[float]
+    allocation_breakdown: List[Dict[str, Any]]
+    data_quality: str  # SUFFICIENT or INSUFFICIENT_DATA
+    explanation: str
+
+
+class TradeoffResult(BaseModel):
+    option_a_id: str
+    option_a_title: str
+    option_b_id: str
+    option_b_title: str
+    prioritize_a_tradeoffs: List[str]
+    prioritize_b_tradeoffs: List[str]
+    expected_value_delta: float
+    risk_delta: float
+    resource_efficiency_delta: float
+    recommendation: str
+
+
+class TradeoffResponse(BaseModel):
+    portfolio_id: str
+    tradeoffs: List[TradeoffResult]
+    summary: str
+
+
+class DoNothingScenarioResult(BaseModel):
+    scenario_type: str  # CURRENT_PORTFOLIO, OPTIMIZED_PORTFOLIO, DO_NOTHING
+    expected_value: float
+    expected_roi: float
+    risk_score: float
+    resource_utilization_pct: float
+    budget_utilization_pct: float
+    mission_completion_rate: float
+    strategic_progress_pct: float
+    summary: str
+
+
+class DoNothingSimulationResponse(BaseModel):
+    portfolio_id: str
+    current: DoNothingScenarioResult
+    optimized: DoNothingScenarioResult
+    do_nothing: DoNothingScenarioResult
+    recommendation: str
+    is_side_effect_free: bool = True

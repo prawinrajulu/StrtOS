@@ -1,216 +1,73 @@
-# StrtOS Portfolio Architecture
+# StrtOS v2.7.0 — Autonomous Strategic Portfolio Optimization & Capital Allocation Architecture
 
-## Version: v2.5.0 — Autonomous Strategic Portfolio Management
+## Overview
 
-StrtOS v2.5 transforms the system from *single-mission execution* into *multi-mission portfolio orchestration*: simultaneously managing multiple strategic missions across constrained resources, governed by deterministic scoring, bounded rebalancing, and GovernanceService sign-off.
+StrtOS v2.7.0 introduces the **Autonomous Strategic Portfolio Optimization & Capital Allocation Layer**, operating directly above Strategy, Missions, and Resource Intelligence.
+
+It enables StrtOS to answer four core strategic questions:
+1. **WHICH STRATEGIC INITIATIVES SHOULD STRtOS PRIORITIZE?**
+2. **WHERE SHOULD LIMITED RESOURCES BE ALLOCATED?**
+3. **WHAT SHOULD BE DELAYED, REDUCED, OR STOPPED?**
+4. **WHAT IS THE EXPECTED BUSINESS VALUE OF THE CURRENT PORTFOLIO?**
 
 ---
 
-## Core Portfolio Loop
+## Operating Loop Extension
 
 ```
-BUSINESS STATE
-      ↓
-STRATEGIC OBJECTIVES
-      ↓
-ACTIVE MISSIONS
-      ↓
-MISSION PERFORMANCE (from v2.4 MissionEvaluationEngine)
-      ↓
-RESOURCE AVAILABILITY
-      ↓
-MISSION PRIORITY SCORING (PortfolioPriorityEngine)
-      ↓
-PORTFOLIO OPTIMIZATION (PortfolioOptimizationEngine — greedy knapsack)
-      ↓
-RESOURCE ALLOCATION (ResourceAllocationEngine)
-      ↓
-CONSTRAINT EVALUATION (PortfolioConstraintEngine)
-      ↓
-GOVERNANCE (GovernanceService — when risk ≥ 70 or budget ≥ 90%)
-      ↓
-MISSION EXECUTION (v2.4 MissionService)
-      ↓
-OUTCOME
-      ↓
-PORTFOLIO EVALUATION (PortfolioEvaluationEngine)
-      ↓
-REBALANCING (PortfolioRebalancingEngine — immutable versioning)
-      ↺
+REAL DATA → STRATEGY → DECISION → PORTFOLIO OPTIMIZATION → INITIATIVE PRIORITIZATION → CAPITAL ALLOCATION → GOVERNANCE → EXECUTION → LEARNING
 ```
 
 ---
 
-## Portfolio Lifecycle
+## Key Components
 
-```
-DRAFT → READY → ACTIVE → REBALANCING → ACTIVE
-                ↓            ↓
-          AWAITING_APPROVAL  AT_RISK
-                ↓
-           COMPLETED / FAILED / CANCELLED / ARCHIVED
-```
+### 1. Data Models (`backend/app/portfolio/models.py`)
+- `StrategicPortfolioModel`: Root multi-tenant portfolio table (`portfolios`).
+- `PortfolioInitiativeModel`: Initiative-level objectives (`portfolio_initiatives`).
+- `PortfolioRecommendationModel`: Action recommendations (`portfolio_recommendations`).
+- `PortfolioMissionModel`, `PortfolioResourceModel`, `PortfolioConstraintModel`, `PortfolioAllocationModel`, `PortfolioEvaluationModel`, `PortfolioDecisionModel`, `PortfolioVersionModel`, `PortfolioCheckpointModel`.
+- All tables enforce strict non-nullable `organization_id` foreign key & index for multi-tenant security.
 
-Invalid state transitions are rejected by the service layer.
+### 2. Analytical & Optimization Engines (`backend/app/portfolio/engine.py` & `optimizer.py`)
+- **`PortfolioOptimizationEngine`**: Greedy knapsack optimizer supporting `CONSERVATIVE`, `BALANCED`, `AGGRESSIVE`, and `CUSTOM` scenarios.
+- **`CapitalAllocationEngine`**: Deterministic budget & capital allocation return. Returns `INSUFFICIENT_DATA` when financial telemetry is unconfigured or zero.
+- **`PortfolioTradeoffEngine`**: Evaluates explicit trade-offs ("What happens if Initiative A is prioritized over Initiative B?").
+- **`DoNothingSimulationEngine`**: Compares `CURRENT PORTFOLIO` vs `OPTIMIZED PORTFOLIO` vs `DO NOTHING` baseline degradation (side-effect free).
+- **`PortfolioRecommendationEngine`**: Classifies recommendations into `CONTINUE`, `ACCELERATE`, `MAINTAIN`, `DELAY`, `REDUCE`, `STOP`, `REVIEW`. `STOP` requires high risk (>= 75), zero/negative expected value, or persistent failure. High-risk actions set `requires_governance = True`.
 
----
+### 3. Service & Integrations (`backend/app/portfolio/service.py`)
+- Integrated with `GovernanceService` for human approval routing on `STOP` or high-risk recommendations.
+- Integrated with `PolicyEngine` for active restriction checks (`POLICY_BLOCKED`).
+- Integrated with `MemoryService` for portfolio decision memory records.
+- Integrated with `KnowledgeService` for causal knowledge graph mapping (Objective → Initiative → Mission → Resource → Execution → Outcome).
+- SSE Event Notifications: `portfolio.updated`, `portfolio.optimized`, `portfolio.recommendation.created`, `portfolio.simulation.completed`, `portfolio.risk.detected`, `portfolio.governance.pending`, `portfolio.allocation.updated`.
 
-## Engine Architecture
+### 4. REST API Contract (`backend/app/portfolio/routes.py`)
+- `GET /api/v1/portfolio/overview`
+- `GET /api/v1/portfolio/initiatives`, `POST /api/v1/portfolio/initiatives`, `GET /api/v1/portfolio/initiatives/{id}`
+- `POST /api/v1/portfolio/optimize`
+- `GET /api/v1/portfolio/recommendations`, `GET /api/v1/portfolio/recommendations/{id}`
+- `POST /api/v1/portfolio/simulate`
+- `POST /api/v1/portfolio/evaluate`
+- `GET /api/v1/portfolio/tradeoffs`
+- `GET /api/v1/portfolio/allocations`, `POST /api/v1/portfolio/allocations/simulate`
+- `GET /api/v1/portfolio/explanation/{id}`
+- `POST /api/v1/portfolio/recommendations/{id}/governance`
 
-### PortfolioConstraintEngine
-Pure, stateless constraint evaluator.
-
-| Utilization | Result |
-|---|---|
-| < 80% | VALID |
-| 80–89% | WARNING |
-| ≥ 90% (soft) | WARNING |
-| ≥ 100% (hard) | VIOLATION |
-
-### PortfolioPriorityEngine
-Deterministic weighted scoring (0–100):
-
-| Factor | Weight |
-|---|---|
-| Strategic Importance | 20% |
-| Business Impact | 20% |
-| Expected Value (normalized) | 15% |
-| Success Probability | 15% |
-| Urgency | 10% |
-| Risk (inverted) | 10% |
-| Resource Efficiency | 10% |
-
-Priority labels: **CRITICAL** (≥80) · **HIGH** (≥60) · **MEDIUM** (≥40) · **LOW** (<40)
-
-### PortfolioOptimizationEngine
-Greedy knapsack: sort missions by `(expected_value × success_probability) / resource_requirement` then fill until budget/capacity exhausted.
-
-Scenario capacity factors:
-- **CONSERVATIVE**: 60% of available budget/capacity
-- **BALANCED**: 80%
-- **AGGRESSIVE**: 100%
-
-Returns: selected, deferred, paused missions + explanation per mission.
-
-### ResourceAllocationEngine
-Per-mission resource allocator. Tracks: BUDGET, TIME, TEAM_CAPACITY, AGENT_CAPACITY, EXECUTION_CAPACITY.
-
-On insufficient resources: `RESOURCE_CONSTRAINED` + recommendation (DEFER/REDUCE_SCOPE/PAUSE/REBALANCE/GOVERNANCE).
-
-### PortfolioEvaluationEngine
-```
-health_score = 0.30 × mission_success_rate
-             + 0.25 × (100 - risk_score)
-             + 0.25 × confidence_score
-             + 0.20 × resource_efficiency
-```
-
-Health labels: **EXCELLENT** (≥90) · **HEALTHY** (≥75) · **WATCH** (≥60) · **AT_RISK** (≥40) · **CRITICAL** (<40)
-
-### PortfolioRebalancingEngine
-Detects triggers: mission failed/completed, forecast delta ≥ 15%, risk crosses 70, resource change, objective shift.
-
-Rebalancing creates an **immutable** new `PortfolioVersionModel` with parent_version link. The previous version is never mutated.
-
-Governance gate: `risk ≥ 70` OR `budget_utilization ≥ 90%`.
-
-### PortfolioCheckpointEngine
-
-| Condition | Decision |
-|---|---|
-| progress ≥ 100% | COMPLETE |
-| constraint violation | ESCALATE |
-| CRITICAL health / risk ≥ 85 | ESCALATE |
-| AT_RISK health / risk ≥ 70 | REBALANCE |
-| WATCH + progress < 30% | PAUSE |
-| Otherwise | CONTINUE |
+### 5. Frontend UI/UX (`src/pages/`)
+- **Invisible AI Architecture**: No AI agent or swarm names exposed in normal UI views.
+- Sub-tab navigation in `PortfolioPage.tsx`:
+  - `PortfolioControlCenterPage.tsx`: Strategic Portfolio Score (0-100), Health, EV, Spend, Initiative Prioritization table, Capital Allocation breakdown, system recommendations.
+  - `PortfolioSimulationPage.tsx`: What-If scenario simulator, Do-Nothing vs Optimized comparison, budget & capacity sliders, trade-off pair evaluation cards.
+  - `PortfolioRecommendationsPage.tsx`: Actionable recommendations with Governance routing buttons.
+  - `PortfolioDetailsPage.tsx`: Detailed causal knowledge explanation chain & version history.
 
 ---
 
-## Database Schema
+## Verification & Compliance
 
-```
-portfolios
-  ├── portfolio_missions      (M2M: Portfolio ↔ Mission)
-  ├── portfolio_resources     (Resource pools per portfolio)
-  ├── portfolio_constraints   (Hard/soft constraint tracking)
-  ├── portfolio_allocations   (Immutable per-mission resource records)
-  ├── portfolio_evaluations   (Health snapshots)
-  ├── portfolio_decisions     (Decision lifecycle)
-  ├── portfolio_versions      (Immutable version history)
-  └── portfolio_checkpoints   (Checkpoint decisions)
-```
-
-All tables: `organization_id NOT NULL` · `created_at` · `updated_at`  
-Indexes: `organization_id`, `status`, `portfolio_id`, `created_at`
-
----
-
-## Integration Map
-
-| System | Integration |
-|---|---|
-| v2.4 Missions | FK `portfolio_missions.mission_id → missions.id`; `MissionEvaluationEngine` read |
-| v2.0 Strategy | FK `portfolios.objective_id → strategic_objectives.id` |
-| v1.6 GovernanceService | `create_approval_request()` on high-risk rebalancing |
-| v2.2 ForecastingEngine | `TrendAnalysisEngine` reused for scenario simulation |
-| v2.3 CommandCenter | `ExecutiveHealthEngine` accepts optional `portfolio_score` |
-| EventPublisher | 18 `portfolio.*` SSE events across all lifecycle transitions |
-
----
-
-## API Reference
-
-```
-GET  /api/v1/portfolio/overview
-POST /api/v1/portfolio/portfolios
-GET  /api/v1/portfolio/portfolios
-GET  /api/v1/portfolio/portfolios/{id}
-GET  /api/v1/portfolio/portfolios/{id}/missions
-GET  /api/v1/portfolio/portfolios/{id}/resources
-GET  /api/v1/portfolio/portfolios/{id}/risk
-GET  /api/v1/portfolio/portfolios/{id}/explanation
-GET  /api/v1/portfolio/portfolios/{id}/versions
-POST /api/v1/portfolio/portfolios/{id}/evaluate
-POST /api/v1/portfolio/portfolios/{id}/optimize
-POST /api/v1/portfolio/portfolios/{id}/simulate
-POST /api/v1/portfolio/portfolios/{id}/rebalance
-POST /api/v1/portfolio/portfolios/{id}/checkpoint
-POST /api/v1/portfolio/portfolios/{id}/approve
-```
-
-All endpoints: JWT authenticated · RBAC protected · organization isolated.
-
----
-
-## Security
-
-- All routes require `Depends(get_current_user)`
-- `organization_id` extracted from JWT and enforced on every DB query
-- No cross-tenant FK references possible
-- `GovernanceService.create_approval_request()` called for all high-risk decisions
-- No secrets in API responses, logs, or SSE payloads
-
----
-
-## SSE Events
-
-```
-portfolio.created
-portfolio.ready
-portfolio.evaluating
-portfolio.priority.updated
-portfolio.resource.allocated
-portfolio.resource.rebalanced
-portfolio.constraint.detected
-portfolio.risk.updated
-portfolio.governance.pending
-portfolio.governance.approved
-portfolio.rebalancing
-portfolio.mission.selected
-portfolio.mission.deferred
-portfolio.mission.paused
-portfolio.checkpoint
-portfolio.completed
-portfolio.failed
-```
+- **Backend Pytest Suite**: 255 passed / 0 failed.
+- **Frontend Production Build**: `npm run build` completed successfully (2039 modules transformed).
+- **Security Audit**: Multi-tenant isolation verified (`organization_id` required across all endpoints & tables).
+- **Backward Compatibility**: Fully backward compatible with StrtOS v1.0–v2.6.0.

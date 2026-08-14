@@ -6,6 +6,7 @@ from app.portfolio.models import (
     StrategicPortfolioModel, PortfolioMissionModel, PortfolioResourceModel,
     PortfolioConstraintModel, PortfolioAllocationModel, PortfolioEvaluationModel,
     PortfolioDecisionModel, PortfolioVersionModel, PortfolioCheckpointModel,
+    PortfolioInitiativeModel, PortfolioRecommendationModel,
     PortfolioStatus, PortfolioDecisionStatus
 )
 
@@ -35,6 +36,8 @@ class PortfolioRepository:
                 selectinload(StrategicPortfolioModel.decisions),
                 selectinload(StrategicPortfolioModel.versions),
                 selectinload(StrategicPortfolioModel.checkpoints),
+                selectinload(StrategicPortfolioModel.initiatives),
+                selectinload(StrategicPortfolioModel.recommendations),
             )
             .where(
                 StrategicPortfolioModel.id == portfolio_id,
@@ -58,6 +61,8 @@ class PortfolioRepository:
                 selectinload(StrategicPortfolioModel.decisions),
                 selectinload(StrategicPortfolioModel.versions),
                 selectinload(StrategicPortfolioModel.checkpoints),
+                selectinload(StrategicPortfolioModel.initiatives),
+                selectinload(StrategicPortfolioModel.recommendations),
             )
             .where(StrategicPortfolioModel.organization_id == org_id)
         )
@@ -164,3 +169,66 @@ class PortfolioRepository:
             select(PortfolioDecisionModel).where(PortfolioDecisionModel.id == decision_id)
         )
         return res.scalars().first()
+
+    # ──────────────────── Initiative Operations ─────────────────────────────
+
+    async def add_initiative(self, init: PortfolioInitiativeModel) -> PortfolioInitiativeModel:
+        self.session.add(init)
+        await self.session.commit()
+        await self.session.refresh(init)
+        return init
+
+    async def list_initiatives(self, portfolio_id: str, org_id: str) -> List[PortfolioInitiativeModel]:
+        stmt = select(PortfolioInitiativeModel).where(
+            PortfolioInitiativeModel.portfolio_id == portfolio_id,
+            PortfolioInitiativeModel.organization_id == org_id
+        ).order_by(PortfolioInitiativeModel.priority_score.desc())
+        res = await self.session.execute(stmt)
+        return list(res.scalars().all())
+
+    async def get_initiative_by_id(self, initiative_id: str, org_id: str) -> Optional[PortfolioInitiativeModel]:
+        stmt = select(PortfolioInitiativeModel).where(
+            PortfolioInitiativeModel.id == initiative_id,
+            PortfolioInitiativeModel.organization_id == org_id
+        )
+        res = await self.session.execute(stmt)
+        return res.scalars().first()
+
+    # ──────────────────── Recommendation Operations ─────────────────────────
+
+    async def add_recommendation(self, rec: PortfolioRecommendationModel) -> PortfolioRecommendationModel:
+        self.session.add(rec)
+        await self.session.commit()
+        await self.session.refresh(rec)
+        return rec
+
+    async def list_recommendations(self, portfolio_id: str, org_id: str) -> List[PortfolioRecommendationModel]:
+        stmt = select(PortfolioRecommendationModel).where(
+            PortfolioRecommendationModel.portfolio_id == portfolio_id,
+            PortfolioRecommendationModel.organization_id == org_id
+        ).order_by(PortfolioRecommendationModel.created_at.desc())
+        res = await self.session.execute(stmt)
+        return list(res.scalars().all())
+
+    async def get_recommendation_by_id(self, rec_id: str, org_id: str) -> Optional[PortfolioRecommendationModel]:
+        stmt = select(PortfolioRecommendationModel).where(
+            PortfolioRecommendationModel.id == rec_id,
+            PortfolioRecommendationModel.organization_id == org_id
+        )
+        res = await self.session.execute(stmt)
+        return res.scalars().first()
+
+    async def update_recommendation_status(
+        self, rec_id: str, org_id: str, new_status: str, **kwargs
+    ) -> Optional[PortfolioRecommendationModel]:
+        stmt = (
+            update(PortfolioRecommendationModel)
+            .where(
+                PortfolioRecommendationModel.id == rec_id,
+                PortfolioRecommendationModel.organization_id == org_id
+            )
+            .values(status=new_status, **kwargs)
+        )
+        await self.session.execute(stmt)
+        await self.session.commit()
+        return await self.get_recommendation_by_id(rec_id, org_id)
