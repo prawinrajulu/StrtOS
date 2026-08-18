@@ -94,43 +94,83 @@ export interface CommandCenterOverview {
 }
 
 export const commandCenterApi = {
-  getOverview: async () => {
-    const res = await fetch(`${API_BASE}/overview`, { headers: getHeaders() });
-    return res.json() as Promise<CommandCenterOverview>;
+  getOverview: async (): Promise<CommandCenterOverview | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/overview`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return (await res.json()) as CommandCenterOverview;
+    } catch {
+      return null;
+    }
   },
 
-  getHealth: async () => {
-    const res = await fetch(`${API_BASE}/health`, { headers: getHeaders() });
-    return res.json() as Promise<ExecutiveHealth>;
+  getHealth: async (): Promise<ExecutiveHealth | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/health`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return (await res.json()) as ExecutiveHealth;
+    } catch {
+      return null;
+    }
   },
 
-  getPriorities: async () => {
-    const res = await fetch(`${API_BASE}/priorities`, { headers: getHeaders() });
-    return res.json() as Promise<StrategicPriority[]>;
+  getPriorities: async (): Promise<StrategicPriority[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/priorities`, { headers: getHeaders() });
+      if (!res.ok) return [];
+      return (await res.json()) as StrategicPriority[];
+    } catch {
+      return [];
+    }
   },
 
-  listDecisions: async () => {
-    const res = await fetch(`${API_BASE}/decisions`, { headers: getHeaders() });
-    return res.json() as Promise<StrategicDecision[]>;
+  listDecisions: async (): Promise<StrategicDecision[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/decisions`, { headers: getHeaders() });
+      if (!res.ok) return [];
+      return (await res.json()) as StrategicDecision[];
+    } catch {
+      return [];
+    }
   },
 
-  getDecision: async (id: string) => {
-    const res = await fetch(`${API_BASE}/decisions/${id}`, { headers: getHeaders() });
-    return res.json() as Promise<StrategicDecision>;
+  getDecision: async (id: string): Promise<StrategicDecision | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/decisions/${id}`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return (await res.json()) as StrategicDecision;
+    } catch {
+      return null;
+    }
   },
 
-  getDecisionAlternatives: async (id: string) => {
-    const res = await fetch(`${API_BASE}/decisions/${id}/alternatives`, { headers: getHeaders() });
-    return res.json() as Promise<DecisionAlternative[]>;
+  getDecisionAlternatives: async (id: string): Promise<DecisionAlternative[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/decisions/${id}/alternatives`, { headers: getHeaders() });
+      if (!res.ok) return [];
+      return (await res.json()) as DecisionAlternative[];
+    } catch {
+      return [];
+    }
   },
 
-  getDecisionExplanation: async (id: string) => {
-    const res = await fetch(`${API_BASE}/decisions/${id}/explanation`, { headers: getHeaders() });
-    return res.json() as Promise<DecisionExplanation>;
+  getDecisionExplanation: async (id: string): Promise<DecisionExplanation | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/decisions/${id}/explanation`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return (await res.json()) as DecisionExplanation;
+    } catch {
+      return null;
+    }
   },
 
-  getMultiAgentConsensus: async (id: string) => {
-    const res = await fetch(`${API_BASE}/decisions/${id}/consensus`, { headers: getHeaders() });
-    return res.json() as Promise<MultiAgentConsensus>;
+  getMultiAgentConsensus: async (id: string): Promise<MultiAgentConsensus | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/decisions/${id}/consensus`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return (await res.json()) as MultiAgentConsensus;
+    } catch {
+      return null;
+    }
   }
 };
