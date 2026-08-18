@@ -21,10 +21,10 @@ export const BusinessStatePage: React.FC = () => {
         businessStateApi.listOpportunities(),
         businessStateApi.listThreats()
       ]);
-      setSnapshot(overview.latest_snapshot);
-      setAlerts(alts);
-      setOpportunities(opps);
-      setThreats(thrts);
+      setSnapshot(overview?.latest_snapshot || null);
+      setAlerts(Array.isArray(alts) ? alts : []);
+      setOpportunities(Array.isArray(opps) ? opps : []);
+      setThreats(Array.isArray(thrts) ? thrts : []);
     } catch (e) {
       console.error('Failed to load business state intelligence data:', e);
     }
@@ -38,6 +38,8 @@ export const BusinessStatePage: React.FC = () => {
       console.error('Failed to resolve alert:', e);
     }
   };
+
+  const activeAlerts = Array.isArray(alerts) ? alerts.filter(a => a.status !== 'RESOLVED') : [];
 
   return (
     <div className="p-8 max-w-7xl mx-auto text-slate-100 space-y-8">
@@ -84,7 +86,7 @@ export const BusinessStatePage: React.FC = () => {
             <AlertTriangle className="w-4 h-4 text-amber-400" />
           </div>
           <p className="text-3xl font-extrabold mt-2 text-amber-400">
-            {alerts.filter(a => a.status !== 'RESOLVED').length}
+            {activeAlerts.length}
           </p>
           <p className="text-xs text-slate-400 mt-1">Actionable strategic warnings</p>
         </div>
@@ -100,100 +102,100 @@ export const BusinessStatePage: React.FC = () => {
 
         <div className="p-5 bg-slate-900/60 border border-slate-800 rounded-xl backdrop-blur-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-mono uppercase">Active Threat Vectors</span>
+            <span className="text-xs text-slate-400 font-mono uppercase">Active Strategic Threats</span>
             <ShieldAlert className="w-4 h-4 text-rose-400" />
           </div>
           <p className="text-3xl font-extrabold mt-2 text-rose-400">{threats.length}</p>
-          <p className="text-xs text-slate-400 mt-1">Proactive threat mitigation</p>
+          <p className="text-xs text-slate-400 mt-1">Monitored risk vectors</p>
         </div>
       </div>
 
-      {/* Early-Warning Alerts */}
+      {/* Active Alerts List */}
       <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
         <h2 className="text-lg font-semibold text-slate-100 flex items-center space-x-2">
           <AlertTriangle className="w-5 h-5 text-amber-400" />
-          <span>Strategic Early-Warning Alerts</span>
+          <span>Active Early-Warning Alerts ({activeAlerts.length})</span>
         </h2>
-
-        {alerts.length === 0 ? (
-          <div className="p-6 text-center text-slate-400 border border-dashed border-slate-800 rounded-lg">
-            No active early-warning alerts detected. Business metrics operating within normal baseline limits.
-          </div>
+        {activeAlerts.length === 0 ? (
+          <p className="text-xs text-slate-400 italic">No active early warning alerts detected.</p>
         ) : (
           <div className="space-y-3">
-            {alerts.map(a => (
-              <div key={a.id} className="p-4 bg-slate-950/80 border border-slate-800 rounded-lg flex items-center justify-between hover:border-slate-700 transition">
-                <div>
-                  <div className="flex items-center space-x-3">
-                    <span className={`px-2 py-0.5 rounded text-xs font-mono font-semibold ${
-                      a.severity === 'CRITICAL' || a.severity === 'HIGH' ? 'bg-rose-950 text-rose-300 border border-rose-800' : 'bg-amber-950 text-amber-300 border border-amber-800'
-                    }`}>
-                      {a.severity}
-                    </span>
-                    <h3 className="font-semibold text-slate-200">{a.title}</h3>
+            {activeAlerts.map((a) => (
+              <div key={a.id} className="p-4 bg-slate-950/80 border border-slate-800 rounded-lg flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <span className="px-2 py-0.5 rounded text-xs font-mono bg-amber-950 text-amber-300 border border-amber-800">{a.severity}</span>
+                    <span className="text-xs font-mono text-slate-400">{a.alert_type}</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">{a.message}</p>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <span className="text-xs font-mono text-slate-400">{a.status}</span>
-                  {a.status !== 'RESOLVED' && (
-                    <button
-                      onClick={() => handleResolveAlert(a.id)}
-                      className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs font-mono text-slate-200 rounded transition flex items-center space-x-1"
-                    >
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>RESOLVE</span>
-                    </button>
+                  <h3 className="font-semibold text-slate-200 mt-1">{a.title}</h3>
+                  <p className="text-xs text-slate-400">{a.message}</p>
+                  {a.recommended_action && (
+                    <p className="text-xs text-cyan-300 pt-1">Recommended Action: {a.recommended_action}</p>
                   )}
                 </div>
+                <button
+                  onClick={() => handleResolveAlert(a.id)}
+                  className="px-3 py-1.5 rounded text-xs font-mono bg-emerald-950 hover:bg-emerald-900 border border-emerald-800 text-emerald-300 flex items-center space-x-1.5 transition"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>RESOLVE</span>
+                </button>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Opportunities & Threats Split Grid */}
+      {/* Opportunities & Threats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Opportunities */}
         <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
           <h2 className="text-lg font-semibold text-slate-100 flex items-center space-x-2">
             <Zap className="w-5 h-5 text-cyan-400" />
-            <span>Growth Opportunities</span>
+            <span>Market Opportunities ({opportunities.length})</span>
           </h2>
-          {opportunities.map((op, idx) => (
-            <div key={idx} className="p-4 bg-slate-950/80 border border-slate-800 rounded-lg space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-cyan-300">{op.category}</span>
-                <span className="text-xs font-mono text-emerald-400">+{op.expected_value}% Expected Value</span>
-              </div>
-              <h3 className="font-semibold text-slate-200">{op.title}</h3>
-              <p className="text-xs text-slate-400">{op.evidence}</p>
-              <div className="pt-2 border-t border-slate-900 flex items-center justify-between text-xs text-slate-300">
-                <span>Action: {op.recommended_action}</span>
-              </div>
+          {opportunities.length === 0 ? (
+            <p className="text-xs text-slate-400 italic">No market opportunities detected.</p>
+          ) : (
+            <div className="space-y-3">
+              {opportunities.map((opp, idx) => (
+                <div key={idx} className="p-4 bg-slate-950/80 border border-slate-800 rounded-lg space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono text-cyan-400 uppercase">{opp.category}</span>
+                    <span className="text-xs font-mono text-slate-400">Value: ${opp.expected_value?.toLocaleString()}</span>
+                  </div>
+                  <h3 className="font-semibold text-slate-200">{opp.title}</h3>
+                  <p className="text-xs text-slate-400">{opp.evidence}</p>
+                  <p className="text-xs text-cyan-300 pt-1">Action: {opp.recommended_action}</p>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
 
         {/* Threats */}
         <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
           <h2 className="text-lg font-semibold text-slate-100 flex items-center space-x-2">
             <ShieldAlert className="w-5 h-5 text-rose-400" />
-            <span>Threat Vectors</span>
+            <span>Strategic Threats ({threats.length})</span>
           </h2>
-          {threats.map((th, idx) => (
-            <div key={idx} className="p-4 bg-slate-950/80 border border-slate-800 rounded-lg space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono text-rose-300">{th.severity} SEVERITY</span>
-                <span className="text-xs font-mono text-slate-400">Confidence: {th.confidence_score}%</span>
-              </div>
-              <h3 className="font-semibold text-slate-200">{th.title}</h3>
-              <p className="text-xs text-slate-400">{th.evidence}</p>
-              <div className="pt-2 border-t border-slate-900 text-xs text-rose-300">
-                <span>Recommended Mitigation: {th.recommended_action}</span>
-              </div>
+          {threats.length === 0 ? (
+            <p className="text-xs text-slate-400 italic">No strategic threats detected.</p>
+          ) : (
+            <div className="space-y-3">
+              {threats.map((thr, idx) => (
+                <div key={idx} className="p-4 bg-slate-950/80 border border-slate-800 rounded-lg space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="px-2 py-0.5 rounded text-xs font-mono bg-rose-950 text-rose-300 border border-rose-800">{thr.severity}</span>
+                    <span className="text-xs font-mono text-slate-400">Confidence: {thr.confidence_score}%</span>
+                  </div>
+                  <h3 className="font-semibold text-slate-200">{thr.title}</h3>
+                  <p className="text-xs text-slate-400">{thr.evidence}</p>
+                  <p className="text-xs text-rose-300 pt-1">Mitigation: {thr.recommended_action}</p>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

@@ -87,47 +87,92 @@ export interface BusinessExplanation {
 
 export const businessStateApi = {
   getOverview: async () => {
-    const res = await fetch(`${API_BASE}/overview`, { headers: getHeaders() });
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/overview`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
-  listSnapshots: async () => {
-    const res = await fetch(`${API_BASE}/snapshots`, { headers: getHeaders() });
-    return res.json() as Promise<StateSnapshot[]>;
+  listSnapshots: async (): Promise<StateSnapshot[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/snapshots`, { headers: getHeaders() });
+      if (!res.ok) return [];
+      return (await res.json()) as StateSnapshot[];
+    } catch {
+      return [];
+    }
   },
 
-  listSignals: async () => {
-    const res = await fetch(`${API_BASE}/signals`, { headers: getHeaders() });
-    return res.json() as Promise<Signal[]>;
+  listSignals: async (): Promise<Signal[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/signals`, { headers: getHeaders() });
+      if (!res.ok) return [];
+      return (await res.json()) as Signal[];
+    } catch {
+      return [];
+    }
   },
 
-  listOpportunities: async () => {
-    const res = await fetch(`${API_BASE}/opportunities`, { headers: getHeaders() });
-    return res.json() as Promise<Opportunity[]>;
+  listOpportunities: async (): Promise<Opportunity[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/opportunities`, { headers: getHeaders() });
+      if (!res.ok) return [];
+      return (await res.json()) as Opportunity[];
+    } catch {
+      return [];
+    }
   },
 
-  listThreats: async () => {
-    const res = await fetch(`${API_BASE}/threats`, { headers: getHeaders() });
-    return res.json() as Promise<Threat[]>;
+  listThreats: async (): Promise<Threat[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/threats`, { headers: getHeaders() });
+      if (!res.ok) return [];
+      return (await res.json()) as Threat[];
+    } catch {
+      return [];
+    }
   },
 
-  listAlerts: async () => {
-    const res = await fetch(`${API_BASE}/alerts`, { headers: getHeaders() });
-    return res.json() as Promise<BusinessAlert[]>;
+  listAlerts: async (): Promise<BusinessAlert[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/alerts`, { headers: getHeaders() });
+      if (!res.ok) return [];
+      return (await res.json()) as BusinessAlert[];
+    } catch {
+      return [];
+    }
   },
 
-  acknowledgeAlert: async (id: string) => {
-    const res = await fetch(`${API_BASE}/alerts/${id}/acknowledge`, { method: 'POST', headers: getHeaders() });
-    return res.json() as Promise<BusinessAlert>;
+  acknowledgeAlert: async (id: string): Promise<BusinessAlert | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/alerts/${id}/acknowledge`, { method: 'POST', headers: getHeaders() });
+      if (!res.ok) return null;
+      return (await res.json()) as BusinessAlert;
+    } catch {
+      return null;
+    }
   },
 
-  resolveAlert: async (id: string) => {
-    const res = await fetch(`${API_BASE}/alerts/${id}/resolve`, { method: 'POST', headers: getHeaders() });
-    return res.json() as Promise<BusinessAlert>;
+  resolveAlert: async (id: string): Promise<BusinessAlert | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/alerts/${id}/resolve`, { method: 'POST', headers: getHeaders() });
+      if (!res.ok) return null;
+      return (await res.json()) as BusinessAlert;
+    } catch {
+      return null;
+    }
   },
 
-  getAlertExplanation: async (id: string) => {
-    const res = await fetch(`${API_BASE}/alerts/${id}/explanation`, { headers: getHeaders() });
-    return res.json() as Promise<BusinessExplanation>;
+  getAlertExplanation: async (id: string): Promise<BusinessExplanation | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/alerts/${id}/explanation`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return (await res.json()) as BusinessExplanation;
+    } catch {
+      return null;
+    }
   }
 };
