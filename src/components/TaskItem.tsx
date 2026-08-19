@@ -1,7 +1,6 @@
 ﻿import React from 'react';
 import { StatusBadge } from './StatusBadge';
 import type { StatusType } from './StatusBadge';
-import { MoveVertical } from 'lucide-react';
 import { mapInternalExecutionToBusinessLanguage } from '../services/eventTranslationLayer';
 
 export interface TaskItemProps {
@@ -13,66 +12,23 @@ export interface TaskItemProps {
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({ title, agent, eta, priority, status }) => {
-  const getPriorityColor = () => {
-    switch (priority) {
-      case 'HIGH':
-        return '#ef4444';
-      case 'MEDIUM':
-        return '#f59e0b';
-      case 'LOW':
-      default:
-        return '#64748b';
-    }
-  };
-
   const businessLabel = mapInternalExecutionToBusinessLanguage(agent);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '14px 16px',
-        backgroundColor: 'rgba(255, 255, 255, 0.02)',
-        border: '1px solid rgba(255, 255, 255, 0.05)',
-        borderRadius: '8px',
-        transition: 'all 0.15s ease',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-        <div style={{ color: '#4b5563', cursor: 'grab' }}>
-          <MoveVertical size={14} />
-        </div>
-        <div>
-          <div style={{ fontSize: '13px', fontWeight: 500, color: '#e5e7eb' }}>{title}</div>
-          <div
-            style={{
-              fontSize: '10px',
-              fontFamily: "'JetBrains Mono', monospace",
-              color: '#6b7280',
-              marginTop: '3px',
-              textTransform: 'uppercase',
-            }}
-          >
-            {businessLabel} • {eta}
-          </div>
+    <div className="flex items-center justify-between p-3.5 bg-[#151518] border border-white/5 rounded-lg text-xs">
+      <div className="space-y-0.5">
+        <div className="font-semibold text-[#F5F5F5]">{title}</div>
+        <div className="text-[10px] font-mono text-[#92929A] uppercase">
+          {businessLabel} • {eta}
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <span
-          style={{
-            fontSize: '9px',
-            fontFamily: "'JetBrains Mono', monospace",
-            color: getPriorityColor(),
-            border: `1px solid ${getPriorityColor()}33`,
-            backgroundColor: `${getPriorityColor()}11`,
-            padding: '2px 6px',
-            borderRadius: '4px',
-            fontWeight: 600,
-          }}
-        >
+      <div className="flex items-center space-x-3">
+        <span className={`px-2 py-0.5 rounded text-[10px] font-mono border ${
+          priority === 'HIGH' ? 'text-rose-300 bg-rose-950/80 border-rose-800' :
+          priority === 'MEDIUM' ? 'text-amber-300 bg-amber-950/80 border-amber-800' :
+          'text-slate-400 bg-slate-900 border-slate-700'
+        }`}>
           {priority}
         </span>
         <StatusBadge status={status} />

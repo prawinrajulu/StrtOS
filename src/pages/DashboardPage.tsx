@@ -1,183 +1,145 @@
 ﻿import React, { useEffect, useState } from 'react';
-import {
-  Users, BrainCircuit, Activity, Award, Sparkles,
-  ListChecks, BarChart2
-} from 'lucide-react';
 import { dashboardApi } from '../services/dashboardApi';
-import type { DashboardOverview } from '../services/dashboardApi';
-import { globalEventStream } from '../services/eventStream';
+import type { DashboardOverview, AgentPerformanceItem, RecentActivityItem } from '../services/dashboardApi';
+import { BarChart3, Sparkles, Activity, Users, ListChecks, Award, BarChart2 } from 'lucide-react';
+import { mapInternalExecutionToBusinessLanguage } from '../services/eventTranslationLayer';
 
-export const DashboardPage: React.FC<{ onOpenCEO: () => void }> = ({ onOpenCEO }) => {
+interface DashboardPageProps {
+  onOpenCEO?: () => void;
+}
+
+export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenCEO }) => {
   const [data, setData] = useState<DashboardOverview | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [days, setDays] = useState(30);
-
-  const loadData = async () => {
-    setLoading(true);
-    const overview = await dashboardApi.getOverview(days);
-    setData(overview);
-    setLoading(false);
-  };
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    loadData();
-    const unsubscribe = globalEventStream.subscribe((event) => {
-      if (['workflow.completed', 'task.completed', 'report.completed', 'dashboard.updated'].includes(event.event_type)) {
-        loadData();
-      }
-    });
-    return () => unsubscribe();
-  }, [days]);
+    fetchDashboard();
+  }, []);
+
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      const dashboardData = await dashboardApi.getOverview();
+      setData(dashboardData);
+    } catch (error) {
+      console.error('Failed to fetch dashboard data', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div style={{ padding: '32px 40px', maxWidth: '1600px', margin: '0 auto' }}>
-      {/* Top Welcome Header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '28px' }}>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto text-slate-100 space-y-6">
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
         <div>
-          <div
-            style={{
-              fontSize: '11px',
-              fontFamily: "'JetBrains Mono', monospace",
-              color: '#6b7280',
-              letterSpacing: '0.12em',
-              textTransform: 'uppercase',
-              marginBottom: '6px',
-            }}
-          >
-            STRTOS EXECUTIVE DASHBOARD â€¢ REAL-TIME INTELLIGENCE
+          <div className="flex items-center space-x-3">
+            <BarChart3 className="w-7 h-7 text-sky-400" />
+            <h1 className="text-2xl font-bold text-[#F5F5F5] tracking-tight">Dashboard</h1>
           </div>
-          <h1 style={{ fontSize: '32px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
-            Executive Operations Brief
-          </h1>
-          <p style={{ fontSize: '14px', color: '#9ca3af', marginTop: '4px' }}>
-            Live performance metrics aggregated from Supabase PostgreSQL & CEO Orchestrator Engine.
+          <p className="text-[#92929A] mt-1 text-xs sm:text-sm">
+            Live performance metrics across all business operations.
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <select
-            value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
-            style={{
-              backgroundColor: '#111827',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '8px',
-              padding: '8px 14px',
-              color: '#e5e7eb',
-              fontSize: '13px'
-            }}
-          >
-            <option value={7}>Last 7 Days</option>
-            <option value={30}>Last 30 Days</option>
-            <option value={90}>Last 90 Days</option>
-          </select>
-
+        {onOpenCEO && (
           <button
             onClick={onOpenCEO}
-            style={{
-              background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 100%)',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '10px 18px',
-              color: '#ffffff',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
-            }}
+            className="px-4 py-2 rounded-lg text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-slate-950 flex items-center space-x-2 transition"
           >
-            <Sparkles size={16} /> Strategic Intelligence
+            <Sparkles className="w-4 h-4" />
+            <span>Strategic Workspace</span>
           </button>
-        </div>
+        )}
       </div>
 
       {loading ? (
-        <div style={{ padding: '80px', textAlign: 'center', color: '#9ca3af' }}>Loading real-time executive metrics...</div>
+        <p className="text-xs text-[#92929A]">Loading metrics...</p>
       ) : !data ? (
-        <div style={{ padding: '60px', textAlign: 'center', color: '#ef4444' }}>
-          Failed loading dashboard metrics. Ensure backend server is running.
+        <div className="p-8 bg-[#111113] border border-white/[0.06] rounded-xl text-center text-xs text-[#92929A] italic">
+          No current data.
         </div>
       ) : (
         <>
           {/* Top KPI Cards Row */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '18px', marginBottom: '28px' }}>
-            <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '20px' }}>
-              <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span>TOTAL CLIENTS</span>
-                <Users size={16} style={{ color: '#6366f1' }} />
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="p-5 bg-[#111113] border border-white/[0.06] rounded-xl space-y-1">
+              <div className="flex items-center justify-between text-xs text-[#92929A] font-mono uppercase">
+                <span>Total Accounts</span>
+                <Users className="w-4 h-4 text-sky-400" />
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '700', color: '#ffffff' }}>{data.clients.total_clients}</div>
-              <div style={{ fontSize: '12px', color: '#10b981', marginTop: '6px' }}>{data.clients.active_clients} Active Accounts</div>
+              <div className="text-2xl font-bold text-[#F5F5F5] mt-1">{data.clients.total_clients}</div>
+              <div className="text-[10px] text-emerald-400 font-mono">{data.clients.active_clients} Active Accounts</div>
             </div>
 
-            <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '20px' }}>
-              <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span>WORKFLOWS</span>
-                <BrainCircuit size={16} style={{ color: '#8b5cf6' }} />
+            <div className="p-5 bg-[#111113] border border-white/[0.06] rounded-xl space-y-1">
+              <div className="flex items-center justify-between text-xs text-[#92929A] font-mono uppercase">
+                <span>Total Workflows</span>
+                <Activity className="w-4 h-4 text-indigo-400" />
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '700', color: '#ffffff' }}>{data.workflows.total_workflows}</div>
-              <div style={{ fontSize: '12px', color: '#8b5cf6', marginTop: '6px' }}>{data.workflows.completed_workflows} Completed Campaigns</div>
+              <div className="text-2xl font-bold text-[#F5F5F5] mt-1">{data.workflows.total_workflows}</div>
+              <div className="text-[10px] text-indigo-400 font-mono">{data.workflows.completed_workflows} Completed</div>
             </div>
 
-            <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '20px' }}>
-              <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span>TASK SUCCESS RATE</span>
-                <ListChecks size={16} style={{ color: '#10b981' }} />
+            <div className="p-5 bg-[#111113] border border-white/[0.06] rounded-xl space-y-1">
+              <div className="flex items-center justify-between text-xs text-[#92929A] font-mono uppercase">
+                <span>Success Rate</span>
+                <ListChecks className="w-4 h-4 text-emerald-400" />
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '700', color: '#10b981' }}>{data.tasks.task_success_rate}%</div>
-              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '6px' }}>{data.tasks.completed_tasks}/{data.tasks.total_tasks} Tasks Executed</div>
+              <div className="text-2xl font-bold text-emerald-400 mt-1">{data.tasks.task_success_rate}%</div>
+              <div className="text-[10px] text-[#92929A] font-mono">{data.tasks.completed_tasks}/{data.tasks.total_tasks} Tasks Executed</div>
             </div>
 
-            <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '20px' }}>
-              <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '8px', display: 'flex', justifyContent: 'space-between' }}>
-                <span>AVG CONFIDENCE</span>
-                <Award size={16} style={{ color: '#f59e0b' }} />
+            <div className="p-5 bg-[#111113] border border-white/[0.06] rounded-xl space-y-1">
+              <div className="flex items-center justify-between text-xs text-[#92929A] font-mono uppercase">
+                <span>Avg Confidence</span>
+                <Award className="w-4 h-4 text-amber-400" />
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '700', color: '#f59e0b' }}>{data.workflows.average_confidence_score}%</div>
-              <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '6px' }}>Based on Report Intelligence</div>
+              <div className="text-2xl font-bold text-amber-400 mt-1">{data.workflows.average_confidence_score}%</div>
+              <div className="text-[10px] text-[#92929A] font-mono">Report Intelligence Baseline</div>
             </div>
           </div>
 
           {/* Automated Executive Insights Banner */}
-          {data.insights.length > 0 && (
-            <div style={{ backgroundColor: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.25)', borderRadius: '14px', padding: '20px', marginBottom: '28px' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#8b5cf6', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Sparkles size={18} /> Automated Backend Executive Insights
+          {data.insights && data.insights.length > 0 && (
+            <div className="p-5 bg-sky-950/30 border border-sky-500/20 rounded-xl space-y-2 text-xs">
+              <h3 className="font-semibold text-sky-400 flex items-center space-x-2">
+                <Sparkles className="w-4 h-4" />
+                <span>Executive Insights</span>
               </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {data.insights.map((insight, idx) => (
-                  <div key={idx} style={{ fontSize: '13.5px', color: '#e5e7eb', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ color: '#8b5cf6' }}>â€¢</span> {insight}
+              <div className="space-y-1 text-[#F5F5F5]">
+                {data.insights.map((insight: string, idx: number) => (
+                  <div key={idx} className="flex items-center space-x-2">
+                    <span className="text-sky-400">•</span>
+                    <span>{insight}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Grid Layout: Agent Performance & Recent Activity */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '24px', marginBottom: '28px' }}>
-            {/* Agent Performance Table */}
-            <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '24px' }}>
-              <h3 style={{ fontSize: '17px', fontWeight: '600', color: '#ffffff', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BarChart2 size={18} style={{ color: '#6366f1' }} /> Operational Execution Performance
+          {/* Grid Layout: Execution Performance & Audit Events */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Operational Execution Performance */}
+            <div className="p-6 bg-[#111113] border border-white/[0.06] rounded-xl space-y-4">
+              <h3 className="text-sm font-semibold text-[#F5F5F5] flex items-center space-x-2">
+                <BarChart2 className="w-4 h-4 text-sky-400" />
+                <span>Operational Execution Performance</span>
               </h3>
 
               {data.agent_performance.length === 0 ? (
-                <div style={{ color: '#9ca3af', fontSize: '13px' }}>No execution records logged yet.</div>
+                <p className="text-xs text-[#92929A] italic">No current data.</p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {data.agent_performance.map((agent) => (
-                    <div key={agent.agent_name} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', backgroundColor: '#1f2937', borderRadius: '8px' }}>
+                <div className="space-y-2.5">
+                  {data.agent_performance.map((agent: AgentPerformanceItem) => (
+                    <div key={agent.agent_name} className="p-3 bg-[#151518] border border-white/5 rounded-lg flex items-center justify-between text-xs">
                       <div>
-                        <div style={{ fontSize: '14px', fontWeight: '600', color: '#f3f4f6' }}>{agent.agent_name}</div>
-                        <div style={{ fontSize: '12px', color: '#9ca3af' }}>{agent.completed_executions} Completed / {agent.total_executions} Total</div>
+                        <div className="font-semibold text-[#F5F5F5]">{mapInternalExecutionToBusinessLanguage(agent.agent_name)}</div>
+                        <div className="text-[10px] text-[#92929A] font-mono">{agent.completed_executions} Completed / {agent.total_executions} Total</div>
                       </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#10b981' }}>{agent.success_rate}% Success</div>
-                        <div style={{ fontSize: '12px', color: '#8b5cf6' }}>{agent.average_confidence}% Conf.</div>
+                      <div className="text-right font-mono">
+                        <div className="font-bold text-emerald-400">{agent.success_rate}% Success</div>
+                        <div className="text-[10px] text-sky-400">{agent.average_confidence}% Conf.</div>
                       </div>
                     </div>
                   ))}
@@ -185,23 +147,24 @@ export const DashboardPage: React.FC<{ onOpenCEO: () => void }> = ({ onOpenCEO }
               )}
             </div>
 
-            {/* Recent Audit Activities */}
-            <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '24px' }}>
-              <h3 style={{ fontSize: '17px', fontWeight: '600', color: '#ffffff', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Activity size={18} style={{ color: '#10b981' }} /> Recent Audit Trail Events
+            {/* Recent Audit Trail Events */}
+            <div className="p-6 bg-[#111113] border border-white/[0.06] rounded-xl space-y-4">
+              <h3 className="text-sm font-semibold text-[#F5F5F5] flex items-center space-x-2">
+                <Activity className="w-4 h-4 text-emerald-400" />
+                <span>Recent Audit Trail Events</span>
               </h3>
 
               {data.recent_activities.length === 0 ? (
-                <div style={{ color: '#9ca3af', fontSize: '13px' }}>No audit events logged yet.</div>
+                <p className="text-xs text-[#92929A] italic">No current data.</p>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {data.recent_activities.map((act) => (
-                    <div key={act.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', borderBottom: '1px solid #1f2937' }}>
+                <div className="space-y-2.5">
+                  {data.recent_activities.map((act: RecentActivityItem) => (
+                    <div key={act.id} className="p-3 bg-[#151518] border border-white/5 rounded-lg flex items-center justify-between text-xs">
                       <div>
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#8b5cf6' }}>{act.event_type}</div>
-                        <div style={{ fontSize: '11px', color: '#6b7280' }}>Workflow: {act.workflow_id}</div>
+                        <div className="font-semibold text-sky-400">{mapInternalExecutionToBusinessLanguage(act.event_type)}</div>
+                        <div className="text-[10px] text-[#92929A] font-mono">Workflow ID: {act.workflow_id}</div>
                       </div>
-                      <div style={{ fontSize: '11px', color: '#9ca3af' }}>
+                      <div className="text-[10px] font-mono text-[#92929A]">
                         {new Date(act.created_at).toLocaleTimeString()}
                       </div>
                     </div>
