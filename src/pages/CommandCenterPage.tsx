@@ -150,7 +150,7 @@ export const CommandCenterPage: React.FC = () => {
     }
   };
 
-  // Loading State (Requirement 14)
+  // Loading State
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-slate-100 space-y-4">
@@ -216,7 +216,7 @@ export const CommandCenterPage: React.FC = () => {
         {/* CENTER COLUMN (Span 2): Workspace & Chronological Tasks */}
         <div className="lg:col-span-2 space-y-6">
 
-          {/* Active / Current Task Card (Requirement 3 & 5) */}
+          {/* Active / Current Task Card (Requirement 3, 5 & 8) */}
           <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-5 backdrop-blur-sm relative overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -235,10 +235,10 @@ export const CommandCenterPage: React.FC = () => {
                     {mapInternalExecutionToBusinessLanguage(activeTask.title)}
                   </h3>
                   <p className="text-xs text-slate-400 mt-1">
-                    {activeTask.statusMessage || 'StrtOS is analyzing current market signals.'}
+                    {activeTask.statusMessage || 'StrtOS is analyzing current business state.'}
                   </p>
 
-                  {/* Progress Bar or Subtle Processing Indicator (Requirement 5) */}
+                  {/* Real Progress % if provided, else subtle processing indicator (Requirement 5) */}
                   <div className="mt-3">
                     {typeof activeTask.progress === 'number' ? (
                       <div>
@@ -262,7 +262,7 @@ export const CommandCenterPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Real Sub-steps / Telemetry Messages */}
+                {/* Real Sub-steps / Messages */}
                 {activeTask.subSteps && activeTask.subSteps.length > 0 && (
                   <div className="space-y-2 pt-2 border-t border-slate-800/80">
                     {activeTask.subSteps.map((step, idx) => (
@@ -275,7 +275,7 @@ export const CommandCenterPage: React.FC = () => {
                 )}
               </div>
             ) : (
-              /* Clean Empty State when no active task (Requirement 12) */
+              /* Clean Empty State when no active task (Requirement 8) */
               <div className="py-8 text-center space-y-4">
                 <div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto text-cyan-400">
                   <Compass className="w-6 h-6" />
@@ -296,7 +296,7 @@ export const CommandCenterPage: React.FC = () => {
             )}
           </div>
 
-          {/* Recent Results (Requirement 2 & 6) */}
+          {/* Recent Results */}
           <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
             <h2 className="text-xs font-mono uppercase tracking-wider text-slate-300 font-semibold flex items-center space-x-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -321,7 +321,7 @@ export const CommandCenterPage: React.FC = () => {
                         </span>
                       </div>
                       <p className="text-xs text-slate-400 pl-6">
-                        {t.summary || `${mapInternalExecutionToBusinessLanguage(t.title)} completed successfully.`}
+                        {t.summary || `${mapInternalExecutionToBusinessLanguage(t.title)} analysis completed.`}
                       </p>
                       <span className="text-[10px] font-mono text-slate-500 pl-6 block">Completed · {t.timestamp}</span>
                     </div>
@@ -335,7 +335,7 @@ export const CommandCenterPage: React.FC = () => {
             )}
           </div>
 
-          {/* Up Next (Requirement 9: Only display if queued tasks actually exist!) */}
+          {/* Up Next (Only display if queued tasks actually exist!) */}
           {upcomingTasks && upcomingTasks.length > 0 && (
             <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
               <h2 className="text-xs font-mono uppercase tracking-wider text-slate-400 font-semibold flex items-center space-x-2">
@@ -358,7 +358,7 @@ export const CommandCenterPage: React.FC = () => {
 
         </div>
 
-        {/* RIGHT COLUMN (Span 1): Executive Overview (Requirement 2 & 9) */}
+        {/* RIGHT COLUMN (Span 1): Executive Overview (Data-Driven, Requirement 9) */}
         <div className="space-y-6">
 
           {/* Business Account Profile */}
@@ -373,10 +373,12 @@ export const CommandCenterPage: React.FC = () => {
             {selectedClient ? (
               <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-lg space-y-2">
                 <h3 className="font-bold text-slate-100">{selectedClient.name}</h3>
-                <p className="text-xs text-slate-400">{selectedClient.industry} Enterprise</p>
+                <p className="text-xs text-slate-400">{selectedClient.industry || 'Enterprise Account'}</p>
                 <div className="flex items-center justify-between pt-2 text-xs font-mono text-slate-400">
                   <span>Health Score:</span>
-                  <span className="text-emerald-400 font-bold">{selectedClient.health_score}%</span>
+                  <span className="text-emerald-400 font-bold">
+                    {typeof selectedClient.health_score === 'number' ? `${selectedClient.health_score}%` : 'Not available yet'}
+                  </span>
                 </div>
               </div>
             ) : (
@@ -397,9 +399,9 @@ export const CommandCenterPage: React.FC = () => {
             <div className="space-y-3 text-xs">
               <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg flex items-center justify-between">
                 <span className="text-slate-400">Business Health</span>
-                {overview?.executive_health ? (
+                {overview?.executive_health?.overall_score ? (
                   <span className="font-mono text-emerald-400 font-bold">
-                    {overview.executive_health.overall_score} ({overview.executive_health.status})
+                    {overview.executive_health.overall_score}% ({overview.executive_health.status})
                   </span>
                 ) : (
                   <span className="font-mono text-slate-500">No current data</span>
@@ -436,18 +438,14 @@ export const CommandCenterPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="space-y-2">
-                <div className="p-2.5 bg-slate-950/40 border border-slate-800/80 rounded-lg text-xs text-slate-300">Revenue Growth</div>
-                <div className="p-2.5 bg-slate-950/40 border border-slate-800/80 rounded-lg text-xs text-slate-300">Market Expansion</div>
-                <div className="p-2.5 bg-slate-950/40 border border-slate-800/80 rounded-lg text-xs text-slate-300">Operational Efficiency</div>
-              </div>
+              <p className="text-xs text-slate-500 italic py-1">No current data</p>
             )}
           </div>
 
         </div>
       </div>
 
-      {/* Result Details Modal (Requirement 6) */}
+      {/* Result Details Modal (Strictly Real Data, Requirement 2) */}
       {selectedCompletedTask && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-xl w-full space-y-4 text-slate-100">
@@ -468,31 +466,31 @@ export const CommandCenterPage: React.FC = () => {
 
             <div className="p-4 bg-slate-950 border border-slate-800 rounded-lg text-xs space-y-3">
               <div>
-                <span className="text-[10px] font-mono text-emerald-400 uppercase font-bold block mb-1">● Completed</span>
+                <span className="text-[10px] font-mono text-emerald-400 uppercase font-bold block mb-1">Status: Completed</span>
                 <span className="text-[10px] font-mono text-slate-500 uppercase block">Summary</span>
                 <p className="text-slate-300 font-semibold mt-0.5">
-                  {selectedCompletedTask.summary || `${mapInternalExecutionToBusinessLanguage(selectedCompletedTask.title)} analysis completed.`}
+                  {selectedCompletedTask.summary || 'Not available yet.'}
                 </p>
               </div>
 
               <div className="pt-2 border-t border-slate-800 space-y-1">
                 <span className="text-[10px] font-mono text-slate-500 uppercase block">Key Findings</span>
                 <p className="text-slate-300">
-                  {selectedCompletedTask.details?.findings
+                  {selectedCompletedTask.details?.findings && Array.isArray(selectedCompletedTask.details.findings) && selectedCompletedTask.details.findings.length > 0
                     ? selectedCompletedTask.details.findings.join('; ')
-                    : `${mapInternalExecutionToBusinessLanguage(selectedCompletedTask.title)} evaluated using verified business telemetry.`}
+                    : 'Not available yet.'}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
                 <div>
                   <span className="text-[10px] font-mono text-slate-500 uppercase block">Completed Time</span>
-                  <span className="text-slate-300 font-mono">{selectedCompletedTask.timestamp}</span>
+                  <span className="text-slate-300 font-mono">{selectedCompletedTask.timestamp || 'Not available yet.'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] font-mono text-slate-500 uppercase block">Confidence</span>
                   <span className="text-emerald-400 font-mono">
-                    {selectedCompletedTask.confidence ? `${selectedCompletedTask.confidence}%` : '94%'}
+                    {typeof selectedCompletedTask.confidence === 'number' ? `${selectedCompletedTask.confidence}%` : 'Not available yet.'}
                   </span>
                 </div>
               </div>
@@ -500,7 +498,7 @@ export const CommandCenterPage: React.FC = () => {
               <div className="pt-2 border-t border-slate-800">
                 <span className="text-[10px] font-mono text-slate-500 uppercase block">Recommended Next Step</span>
                 <p className="text-cyan-300">
-                  {selectedCompletedTask.recommendedNextStep || 'Proceed with continuous strategic execution monitoring.'}
+                  {selectedCompletedTask.recommendedNextStep || 'Not available yet.'}
                 </p>
               </div>
             </div>

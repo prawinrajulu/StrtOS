@@ -155,7 +155,7 @@ export const WorkflowDetailsPage: React.FC<WorkflowDetailsPageProps> = ({ workfl
                 <span>Working...</span>
               </span>
             </div>
-            <p className="text-xs text-slate-400">StrtOS is analyzing verified business information for this request.</p>
+            <p className="text-xs text-slate-400">StrtOS is analyzing verified business state for this request.</p>
           </div>
         ) : (
           <div className="py-4 text-center text-xs text-slate-400 italic">
@@ -201,7 +201,7 @@ export const WorkflowDetailsPage: React.FC<WorkflowDetailsPageProps> = ({ workfl
         )}
       </div>
 
-      {/* Result Details Modal */}
+      {/* Result Details Modal (Data-Driven, Requirement 2) */}
       {selectedTaskReport && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-xl w-full space-y-4 text-slate-100">
@@ -221,11 +221,18 @@ export const WorkflowDetailsPage: React.FC<WorkflowDetailsPageProps> = ({ workfl
             </div>
             <div className="p-4 bg-slate-950 border border-slate-800 rounded-lg text-xs space-y-3">
               <div>
+                <span className="text-[10px] font-mono text-emerald-400 uppercase font-bold block mb-1">Status: Completed</span>
                 <span className="text-[10px] font-mono text-slate-500 uppercase block">Summary</span>
                 <p className="text-slate-300 font-semibold mt-0.5">
-                  {mapInternalExecutionToBusinessLanguage(selectedTaskReport.agent_name || selectedTaskReport.title)} completed successfully using verified telemetry.
+                  {mapInternalExecutionToBusinessLanguage(selectedTaskReport.agent_name || selectedTaskReport.title)} analysis completed.
                 </p>
               </div>
+
+              <div className="pt-2 border-t border-slate-800 space-y-1">
+                <span className="text-[10px] font-mono text-slate-500 uppercase block">Key Findings</span>
+                <p className="text-slate-300">Not available yet.</p>
+              </div>
+
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
                 <div>
                   <span className="text-[10px] font-mono text-slate-500 uppercase block">Status</span>
@@ -233,12 +240,13 @@ export const WorkflowDetailsPage: React.FC<WorkflowDetailsPageProps> = ({ workfl
                 </div>
                 <div>
                   <span className="text-[10px] font-mono text-slate-500 uppercase block">Confidence</span>
-                  <span className="text-cyan-400 font-mono">94%</span>
+                  <span className="text-slate-400 font-mono">Not available yet.</span>
                 </div>
               </div>
+
               <div className="pt-2 border-t border-slate-800">
                 <span className="text-[10px] font-mono text-slate-500 uppercase block">Recommended Next Step</span>
-                <p className="text-slate-300">Proceed with continuous strategic execution monitoring.</p>
+                <p className="text-slate-400">Not available yet.</p>
               </div>
             </div>
           </div>
