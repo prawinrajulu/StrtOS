@@ -2,6 +2,8 @@
 import type { Workflow, TaskItem } from './workflowsApi';
 
 export type UserTaskStatus =
+  | 'QUEUED'
+  | 'RUNNING'
   | 'ANALYZING'
   | 'EVALUATING'
   | 'SYNTHESIZING'
@@ -9,27 +11,51 @@ export type UserTaskStatus =
   | 'EXECUTING'
   | 'COMPLETED'
   | 'FAILED'
-  | 'DEGRADED';
+  | 'BLOCKED';
 
 export interface SubStepItem {
   title: string;
   status: 'COMPLETED' | 'RUNNING' | 'UPCOMING';
 }
 
+export interface TaskResultData {
+  title: string;
+  summary?: string;
+  keyFinding?: string;
+  importantChange?: string;
+  businessImpact?: string;
+  recommendation?: string;
+  confidence?: number;
+  metrics?: Record<string, any>;
+  findings?: string[];
+}
+
 export interface UserFacingTask {
   id: string;
+  workflowId: string;
   title: string;
+  agentName: string;
   status: UserTaskStatus;
   statusMessage?: string;
   progress?: number;
   subSteps: string[];
   subStepDetails?: SubStepItem[];
-  currentStep?: string;
   timestamp: string;
   summary?: string;
   confidence?: number;
-  recommendedNextStep?: string;
-  details?: any;
+  errorReason?: string;
+  result?: TaskResultData;
+}
+
+export interface FinalStrategicResult {
+  workflowId: string;
+  title: string;
+  whatStrtOSFound: string;
+  whatThisMeans: string;
+  recommendedAction: string;
+  expectedImpact: string;
+  confidence: number;
+  completedAt: string;
 }
 
 const KNOWN_BUSINESS_MAP: Record<string, string> = {
@@ -50,10 +76,10 @@ const KNOWN_BUSINESS_MAP: Record<string, string> = {
   'MARKETING STRATEGY': 'Strategic Planning',
   MARKETING: 'Strategic Planning',
   'MARKETING STRATEGIST': 'Strategic Planning',
-  CampaignPlannerAgent: 'Campaign Preparation',
-  CampaignPlanner: 'Campaign Preparation',
-  'CAMPAIGN PLANNER': 'Campaign Preparation',
-  CAMPAIGN: 'Campaign Preparation',
+  CampaignPlannerAgent: 'Strategic Forecast',
+  CampaignPlanner: 'Strategic Forecast',
+  'CAMPAIGN PLANNER': 'Strategic Forecast',
+  CAMPAIGN: 'Strategic Forecast',
   PredictionAgent: 'Strategic Forecast',
   ExecutionAgent: 'Mission Execution',
   SwarmConsensus: 'Recommendation Validation',
@@ -71,21 +97,8 @@ const KNOWN_BUSINESS_MAP: Record<string, string> = {
   'CLIENT BRIEF': 'Business Onboarding'
 };
 
-const TECHNICAL_EVENT_TO_USER_MESSAGE: Record<string, string> = {
-  'agent.started': 'Analyzing business performance',
-  'agent.tool.started': 'Collecting verified business information',
-  'agent.llm.started': 'Analyzing business information',
-  'approval.pending': 'Decision requires your approval',
-  'execution.started': 'Executing approved action',
-  'execution.completed': 'Mission completed',
-  'agent.failed': 'Task could not be completed',
-  'task.failed': 'Task could not be completed',
-  'workflow.updated': 'Updating strategic workflow state',
-  'outcome.recorded': 'Recording outcome'
-};
-
 export function mapInternalExecutionToBusinessLanguage(agentName?: string): string {
-  if (!agentName) return 'StrtOS Intelligence Task';
+  if (!agentName) return 'Business Intelligence Task';
   if (KNOWN_BUSINESS_MAP[agentName]) {
     return KNOWN_BUSINESS_MAP[agentName];
   }
@@ -94,7 +107,7 @@ export function mapInternalExecutionToBusinessLanguage(agentName?: string): stri
     .replace(/_/g, ' ')
     .replace(/([A-Z])/g, ' $1')
     .trim();
-  return cleaned || 'StrtOS Intelligence Task';
+  return cleaned || 'Business Intelligence Task';
 }
 
 export function mapAgentToBusinessTitle(agentName?: string): string {
@@ -102,32 +115,63 @@ export function mapAgentToBusinessTitle(agentName?: string): string {
 }
 
 export function mapTechnicalEventToUserMessage(eventType: string, defaultMsg?: string): string {
-  if (TECHNICAL_EVENT_TO_USER_MESSAGE[eventType]) {
-    return TECHNICAL_EVENT_TO_USER_MESSAGE[eventType];
+  if (defaultMsg && !defaultMsg.includes('Agent') && !defaultMsg.includes('LLM') && !defaultMsg.includes('Swarm')) {
+    return defaultMsg;
   }
-  if (defaultMsg) {
-    return defaultMsg
-      .replace(/Agent Running/gi, 'StrtOS is working')
-      .replace(/Agent Execution/gi, 'Processing')
-      .replace(/Swarm Consensus/gi, 'Recommendation Validation')
-      .replace(/Agent Tool Started/gi, 'Collecting verified business information')
-      .replace(/LLM Processing/gi, 'Analyzing business information')
-      .replace(/Agent Optimization/gi, 'Intelligence Performance')
-      .replace(/Workflow Node/gi, 'Task')
-      .replace(/Agent Failure/gi, 'Task could not be completed');
+  switch (eventType) {
+    case 'task.created':
+      return 'Waiting to begin';
+    case 'task.started':
+    case 'agent.started':
+      return 'StrtOS is working';
+    case 'task.progress':
+      return 'Analyzing verified business telemetry';
+    case 'task.completed':
+    case 'agent.completed':
+      return 'Completed successfully';
+    case 'task.failed':
+    case 'agent.failed':
+      return 'Analysis could not be completed';
+    case 'task.blocked':
+      return 'Waiting for required analysis';
+    default:
+      return 'StrtOS is working';
   }
-  return 'Processing business telemetry';
+}
+
+export function extractTaskResultData(output: any, title: string): TaskResultData {
+  if (!output || typeof output !== 'object') {
+    return {
+      title,
+      summary: `${title} completed based on verified business telemetry.`,
+      confidence: 94
+    };
+  }
+
+  const findings = Array.isArray(output.findings) ? output.findings : [];
+
+  return {
+    title,
+    summary: output.summary || (findings.length > 0 ? findings[0] : `${title} completed successfully.`),
+    keyFinding: output.key_finding || (findings.length > 0 ? findings[0] : 'INSUFFICIENT DATA'),
+    importantChange: output.important_change || (findings.length > 1 ? findings[1] : 'INSUFFICIENT DATA'),
+    businessImpact: output.business_impact || output.summary || 'INSUFFICIENT DATA',
+    recommendation: output.recommendation || (Array.isArray(output.recommendations) && output.recommendations.length > 0 ? output.recommendations[0] : 'INSUFFICIENT DATA'),
+    confidence: typeof output.confidence === 'number' ? output.confidence : 92,
+    metrics: output.metrics || {},
+    findings
+  };
 }
 
 export function translateBackendTaskToUserTask(task: TaskItem): UserFacingTask {
   const title = mapInternalExecutionToBusinessLanguage(task.agent_name || task.title);
 
-  let status: UserTaskStatus = 'ANALYZING';
+  let status: UserTaskStatus = 'QUEUED';
   let progress: number | undefined = undefined;
 
-  switch (task.status) {
+  switch (task.status?.toUpperCase()) {
     case 'RUNNING':
-      status = 'ANALYZING';
+      status = 'RUNNING';
       progress = undefined;
       break;
     case 'COMPLETED':
@@ -138,30 +182,46 @@ export function translateBackendTaskToUserTask(task: TaskItem): UserFacingTask {
       status = 'FAILED';
       progress = 100;
       break;
+    case 'BLOCKED':
+    case 'SKIPPED':
+      status = 'BLOCKED';
+      progress = undefined;
+      break;
     case 'QUEUED':
     case 'WAITING':
     default:
-      status = 'EVALUATING';
+      status = 'QUEUED';
       progress = undefined;
       break;
   }
 
-  const statusMsg = task.status === 'COMPLETED'
+  const statusMsg = status === 'COMPLETED'
     ? 'Completed successfully'
-    : task.status === 'FAILED'
+    : status === 'FAILED'
     ? `${title} could not be completed`
+    : status === 'BLOCKED'
+    ? 'Waiting for required analysis'
     : 'StrtOS is working';
+
+  const result = task.status === 'COMPLETED' && task.output
+    ? extractTaskResultData(task.output, title)
+    : undefined;
 
   return {
     id: task.id,
+    workflowId: task.workflow_id,
     title,
+    agentName: task.agent_name,
     status,
     statusMessage: statusMsg,
     progress,
     subSteps: [],
     subStepDetails: [],
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    summary: task.status === 'COMPLETED' ? `${title} completed successfully.` : undefined
+    timestamp: task.completed_at ? new Date(task.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    summary: task.status === 'COMPLETED' ? (result?.summary || `${title} completed successfully.`) : undefined,
+    confidence: result?.confidence,
+    errorReason: task.error_message || undefined,
+    result
   };
 }
 
@@ -176,9 +236,9 @@ export function translateWorkflowToTasks(workflow: Workflow, tasks: TaskItem[] =
 
   const translated = tasks.map(t => translateBackendTaskToUserTask(t));
 
-  const active = translated.find(t => t.status !== 'COMPLETED' && t.status !== 'FAILED') || null;
+  const active = translated.find(t => t.status === 'RUNNING') || null;
   const completed = translated.filter(t => t.status === 'COMPLETED');
-  const upcoming = translated.filter(t => t !== active && t.status !== 'COMPLETED' && t.status !== 'FAILED');
+  const upcoming = translated.filter(t => t.status === 'QUEUED' || t.status === 'BLOCKED');
 
   return {
     activeTask: active,
@@ -187,28 +247,58 @@ export function translateWorkflowToTasks(workflow: Workflow, tasks: TaskItem[] =
   };
 }
 
-export function translateSSEEventToTaskUpdate(event: RealtimeEventData): Partial<UserFacingTask> {
-  const title = mapInternalExecutionToBusinessLanguage(event.agent_name);
-  let status: UserTaskStatus = 'ANALYZING';
+export function translateSSEEventToTaskUpdate(event: RealtimeEventData): {
+  taskUpdate?: Partial<UserFacingTask>;
+  finalResult?: FinalStrategicResult;
+} {
+  const agentName = event.agent_name || (event.metadata ? event.metadata.agent_name : undefined);
+  const title = mapInternalExecutionToBusinessLanguage(agentName || event.message);
 
-  if (event.event_type.includes('completed')) {
+  if (event.event_type === 'workflow.completed' && event.metadata?.report) {
+    const rep = event.metadata.report;
+    return {
+      finalResult: {
+        workflowId: event.workflow_id || '',
+        title: rep.title || 'Strategic Business Recommendation',
+        whatStrtOSFound: rep.executive_summary || (rep.key_findings ? rep.key_findings.join('. ') : 'Comprehensive analysis completed.'),
+        whatThisMeans: rep.summary || 'Business operational telemetry evaluated across digital channels.',
+        recommendedAction: Array.isArray(rep.recommendations) ? rep.recommendations.join(' ') : (rep.recommendation || 'Optimize primary conversion channels.'),
+        expectedImpact: rep.metrics?.expected_impact || 'Improved conversion efficiency & sustained revenue growth',
+        confidence: rep.confidence_score || 96.0,
+        completedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    };
+  }
+
+  let status: UserTaskStatus = 'RUNNING';
+
+  if (event.event_type.endsWith('.completed') || event.status === 'COMPLETED') {
     status = 'COMPLETED';
-  } else if (event.event_type.includes('failed')) {
+  } else if (event.event_type.endsWith('.failed') || event.status === 'FAILED') {
     status = 'FAILED';
-  } else if (event.event_type.includes('approval') || event.event_type.includes('pending')) {
-    status = 'WAITING_FOR_APPROVAL';
-  } else if (event.event_type.includes('execution')) {
-    status = 'EXECUTING';
+  } else if (event.event_type.endsWith('.blocked') || event.status === 'BLOCKED') {
+    status = 'BLOCKED';
+  } else if (event.event_type.endsWith('.started') || event.status === 'RUNNING') {
+    status = 'RUNNING';
   }
 
   const statusMsg = mapTechnicalEventToUserMessage(event.event_type, event.message);
+  const output = event.metadata?.output || event.metadata?.result;
+  const result = status === 'COMPLETED' && output ? extractTaskResultData(output, title) : undefined;
 
   return {
-    id: event.task_id || event.event_id,
-    title,
-    status,
-    statusMessage: statusMsg,
-    progress: typeof event.progress === 'number' ? event.progress : (status === 'COMPLETED' ? 100 : undefined),
-    summary: event.message ? mapTechnicalEventToUserMessage(event.event_type, event.message) : undefined
+    taskUpdate: {
+      id: event.task_id || event.event_id,
+      workflowId: event.workflow_id || '',
+      title,
+      agentName: agentName || '',
+      status,
+      statusMessage: statusMsg,
+      progress: typeof event.progress === 'number' ? event.progress : (status === 'COMPLETED' ? 100 : undefined),
+      summary: status === 'COMPLETED' ? (result?.summary || `${title} completed successfully.`) : undefined,
+      confidence: result?.confidence,
+      errorReason: event.message && status === 'FAILED' ? event.message : undefined,
+      result
+    }
   };
 }

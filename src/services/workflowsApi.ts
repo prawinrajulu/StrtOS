@@ -1,4 +1,4 @@
-export interface Workflow {
+﻿export interface Workflow {
   id: string;
   organization_id: string;
   client_id: string;
@@ -28,6 +28,8 @@ export interface TaskItem {
   max_retries: number;
   started_at?: string;
   completed_at?: string;
+  output?: Record<string, any>;
+  error_message?: string;
 }
 
 export interface WorkflowEvent {
