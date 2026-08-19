@@ -117,7 +117,7 @@ const MainLayout: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'command-center':
-        return <CommandCenterPage />;
+        return <CommandCenterPage onNavigateToReports={() => setActiveTab('reports')} onNavigateToDecisions={() => setActiveTab('decision-optimization')} />;
       case 'dashboard':
         return <DashboardPage onOpenCEO={() => setActiveTab('command-center')} />;
       case 'business-state':
@@ -284,7 +284,7 @@ const MainLayout: React.FC = () => {
       case 'profile':
         return <ProfilePage onNavigateDiagnostics={(tab) => setActiveTab(tab)} />;
       default:
-        return <CommandCenterPage />;
+        return <CommandCenterPage onNavigateToReports={() => setActiveTab('reports')} onNavigateToDecisions={() => setActiveTab('decision-optimization')} />;
     }
   };
 

@@ -1,11 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Compass, CheckCircle2, Circle, Activity, Play, Building2, ShieldCheck, RefreshCw, FileText, ChevronRight, AlertCircle, Sparkles, Send, ShieldAlert } from 'lucide-react';
+import { Compass, CheckCircle2, Activity, ShieldAlert, Sparkles, Send, ArrowRight, AlertCircle, FileText } from 'lucide-react';
 import { commandCenterApi } from '../services/commandCenterApi';
 import type { CommandCenterOverview } from '../services/commandCenterApi';
 import { workflowsApi } from '../services/workflowsApi';
 import type { Workflow } from '../services/workflowsApi';
-import { clientsApi } from '../services/clientsApi';
-import type { Client } from '../services/clientsApi';
 import { globalEventStream } from '../services/eventStream';
 import {
   translateWorkflowToTasks,
@@ -14,14 +12,19 @@ import {
 } from '../services/eventTranslationLayer';
 import type { UserFacingTask } from '../services/eventTranslationLayer';
 
-export const CommandCenterPage: React.FC = () => {
+interface CommandCenterPageProps {
+  onNavigateToReports?: () => void;
+  onNavigateToDecisions?: () => void;
+}
+
+export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
+  onNavigateToReports,
+  onNavigateToDecisions
+}) => {
   const [overview, setOverview] = useState<CommandCenterOverview | null>(null);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [, setActiveWorkflow] = useState<Workflow | null>(null);
   const [activeTask, setActiveTask] = useState<UserFacingTask | null>(null);
   const [completedTasks, setCompletedTasks] = useState<UserFacingTask[]>([]);
-  const [upcomingTasks, setUpcomingTasks] = useState<UserFacingTask[]>([]);
   const [selectedCompletedTask, setSelectedCompletedTask] = useState<UserFacingTask | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +43,7 @@ export const CommandCenterPage: React.FC = () => {
           if (prev.id === update.id || update.title === prev.title) {
             const nextProgress = update.progress !== undefined ? update.progress : prev.progress;
             if (update.status === 'COMPLETED') {
-              // Move completed task smoothly into Recent Results
+              // Smoothly transition completed task to Recent Results
               const finishedTask: UserFacingTask = {
                 ...prev,
                 ...update,
@@ -75,7 +78,6 @@ export const CommandCenterPage: React.FC = () => {
         const translated = translateWorkflowToTasks(currentWf, tasks);
         setActiveTask(translated.activeTask);
         setCompletedTasks(translated.completedTasks);
-        setUpcomingTasks(translated.upcomingTasks);
       }
     } catch {
       // Ignore background refresh errors
@@ -86,19 +88,13 @@ export const CommandCenterPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [ovData, cls, wfs] = await Promise.all([
+      const [ovData, wfs] = await Promise.all([
         commandCenterApi.getOverview(),
-        clientsApi.listClients(),
         workflowsApi.listWorkflows()
       ]);
 
       setOverview(ovData);
-      setClients(cls);
-      if (cls && cls.length > 0 && !selectedClient) {
-        setSelectedClient(cls[0]);
-      }
 
-      // Populate real tasks from backend
       if (wfs && wfs.length > 0) {
         const currentWf = wfs.find(w => w.status === 'RUNNING' || w.status === 'QUEUED') || wfs[0];
         setActiveWorkflow(currentWf);
@@ -106,11 +102,9 @@ export const CommandCenterPage: React.FC = () => {
         const translated = translateWorkflowToTasks(currentWf, tasks);
         setActiveTask(translated.activeTask);
         setCompletedTasks(translated.completedTasks);
-        setUpcomingTasks(translated.upcomingTasks);
       } else {
         setActiveTask(null);
         setCompletedTasks([]);
-        setUpcomingTasks([]);
       }
     } catch {
       setError('StrtOS couldn\'t complete this request.');
@@ -127,11 +121,8 @@ export const CommandCenterPage: React.FC = () => {
     setStartingWorkflow(true);
     setError(null);
     try {
-      const client = selectedClient || (clients.length > 0 ? clients[0] : null);
-      const clientId = client ? client.id : 'default_org';
-
       const newWf = await workflowsApi.createWorkflow({
-        client_id: clientId,
+        client_id: 'default_org',
         title: queryText,
         directive: queryText
       });
@@ -144,7 +135,6 @@ export const CommandCenterPage: React.FC = () => {
         const translated = translateWorkflowToTasks(newWf, tasks);
         setActiveTask(translated.activeTask);
         setCompletedTasks(translated.completedTasks);
-        setUpcomingTasks(translated.upcomingTasks);
       }
     } catch {
       setError('StrtOS couldn\'t complete this request.');
@@ -153,61 +143,35 @@ export const CommandCenterPage: React.FC = () => {
     }
   };
 
-  const handleStartAnalysis = async () => {
-    setStartingWorkflow(true);
-    setError(null);
-    try {
-      const client = selectedClient || (clients.length > 0 ? clients[0] : null);
-      const clientId = client ? client.id : 'default_org';
-
-      const newWf = await workflowsApi.createWorkflow({
-        client_id: clientId,
-        title: 'Continuous Strategic Intelligence & Growth Analysis',
-        directive: 'Analyze business performance, market signals & generate strategic recommendations'
-      });
-
-      if (newWf) {
-        await workflowsApi.startWorkflow(newWf.id);
-        setActiveWorkflow(newWf);
-
-        const tasks = await workflowsApi.getTasks(newWf.id);
-        const translated = translateWorkflowToTasks(newWf, tasks);
-        setActiveTask(translated.activeTask);
-        setCompletedTasks(translated.completedTasks);
-        setUpcomingTasks(translated.upcomingTasks);
-      }
-    } catch {
-      setError('StrtOS couldn\'t complete this request.');
-    } finally {
-      setStartingWorkflow(false);
-    }
+  const handleQuickPrompt = (prompt: string) => {
+    setAskQuery(prompt);
   };
 
-  // Minimal Loading State
+  // Minimal Contextual Loading
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[450px] text-slate-100 space-y-3">
         <div className="w-8 h-8 rounded-full border-2 border-sky-500 border-t-transparent animate-spin"></div>
         <div className="text-center space-y-1">
           <h2 className="text-sm font-semibold tracking-wider text-slate-300">STRtOS</h2>
-          <p className="text-xs text-[#92929A] font-mono">Loading business data...</p>
+          <p className="text-xs text-[#92929A] font-mono">Loading workspace...</p>
         </div>
       </div>
     );
   }
 
-  // Minimal Error State
+  // Simplified Error State
   if (error && !activeTask && completedTasks.length === 0) {
     return (
       <div className="p-8 max-w-md mx-auto my-16 bg-[#111113] border border-white/10 rounded-xl space-y-4 text-center text-slate-100">
         <AlertCircle className="w-8 h-8 text-amber-400 mx-auto" />
         <div>
           <h2 className="text-sm font-semibold text-slate-200">{error}</h2>
-          <p className="text-xs text-[#92929A] mt-1">Check your network or server connection.</p>
+          <p className="text-xs text-[#92929A] mt-1">Check network or server connection.</p>
         </div>
         <button
           onClick={loadData}
-          className="px-4 py-2 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 transition"
+          className="px-4 py-2 rounded-lg text-xs font-medium bg-[#151518] hover:bg-slate-800 text-slate-200 border border-white/10 transition"
         >
           Retry
         </button>
@@ -221,24 +185,228 @@ export const CommandCenterPage: React.FC = () => {
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto text-slate-100 space-y-6">
-      {/* Ask StrtOS Entry Bar (Requirement 1 & Requirement 3) */}
-      <div className="p-4 bg-[#111113] border border-white/10 rounded-xl space-y-3 shadow-lg">
-        <div className="flex items-center space-x-2 text-xs font-mono text-sky-400 font-semibold">
-          <Sparkles className="w-4 h-4" />
-          <span>Ask StrtOS Anything...</span>
+      {/* Top Header Bar */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <Compass className="w-7 h-7 text-sky-400" />
+          <h1 className="text-2xl font-bold text-[#F5F5F5] tracking-tight">STRtOS</h1>
         </div>
+
+        {/* Global Working / Ready Status */}
+        <div>
+          {activeTask ? (
+            <span className="px-3 py-1.5 rounded-full text-xs font-mono bg-sky-950/60 border border-sky-800 text-sky-300 flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse"></span>
+              <span>● StrtOS is working</span>
+            </span>
+          ) : (
+            <span className="px-3 py-1.5 rounded-full text-xs font-mono bg-emerald-950/60 border border-emerald-800 text-emerald-300 flex items-center space-x-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              <span>StrtOS is ready</span>
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Governance Interrupt Banner */}
+      {pendingDecision && (
+        <div className="p-4 bg-amber-950/40 border border-amber-500/40 rounded-xl space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-xs font-mono text-amber-400 font-bold uppercase tracking-wider">
+              <ShieldAlert className="w-4 h-4" />
+              <span>ATTENTION REQUIRED</span>
+            </div>
+          </div>
+          <div className="space-y-1 text-xs">
+            <h3 className="font-bold text-[#F5F5F5] text-sm">{pendingDecision.title}</h3>
+            <p className="text-slate-300">
+              Risk: <span className="font-mono text-amber-300">{pendingDecision.risk_score || 'LOW'}</span> | Recommended: {pendingDecision.recommended_action || 'Review Decision'}
+            </p>
+          </div>
+          <div className="pt-1">
+            <button
+              onClick={() => onNavigateToDecisions ? onNavigateToDecisions() : null}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500 text-slate-950 hover:bg-amber-400 transition flex items-center space-x-1.5"
+            >
+              <span>Review Required</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Workspace Grid Layout: LEFT = Currently Working, RIGHT = Recent Results */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {/* LEFT COLUMN: CURRENTLY WORKING */}
+        <div className="p-6 bg-[#111113] border border-white/10 rounded-xl space-y-5 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-ping"></span>
+              <h2 className="text-xs font-mono uppercase tracking-wider text-sky-400 font-semibold">● CURRENTLY WORKING</h2>
+            </div>
+            {activeTask && (
+              <span className="text-xs font-mono text-[#92929A]">{activeTask.timestamp}</span>
+            )}
+          </div>
+
+          {activeTask ? (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-2xl font-bold text-[#F5F5F5] tracking-tight">
+                  {mapInternalExecutionToBusinessLanguage(activeTask.title)}
+                </h3>
+                <p className="text-xs text-[#92929A] mt-1.5">
+                  {activeTask.statusMessage || `Analyzing your ${mapInternalExecutionToBusinessLanguage(activeTask.title).toLowerCase()}.`}
+                </p>
+
+                {/* Real Numerical Progress % or Subtle Working State */}
+                <div className="mt-4">
+                  {typeof activeTask.progress === 'number' ? (
+                    <div>
+                      <div className="flex justify-between text-xs font-mono text-[#92929A] mb-1.5">
+                        <span>Progress</span>
+                        <span>{activeTask.progress}%</span>
+                      </div>
+                      <div className="w-full bg-[#151518] rounded-full h-1.5 overflow-hidden border border-white/10">
+                        <div
+                          className="bg-gradient-to-r from-sky-400 to-indigo-500 h-1.5 rounded-full transition-all duration-500"
+                          style={{ width: `${activeTask.progress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center space-x-2 text-xs font-mono text-sky-400 pt-1">
+                      <Activity className="w-3.5 h-3.5 animate-spin" />
+                      <span>Analyzing...</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Real Task Steps from SSE events */}
+              {activeTask.subSteps && activeTask.subSteps.length > 0 ? (
+                <div className="space-y-2 pt-3 border-t border-white/5">
+                  {activeTask.subSteps.map((step, idx) => (
+                    <div key={idx} className="flex items-center space-x-2.5 text-xs">
+                      <Activity className="w-3.5 h-3.5 text-sky-400 animate-spin shrink-0" />
+                      <span className="text-sky-300 font-medium">{step}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : (
+            /* Calm Empty State */
+            <div className="py-12 text-center space-y-3">
+              <div className="w-10 h-10 rounded-full bg-[#151518] border border-white/10 flex items-center justify-center mx-auto text-sky-400">
+                <Compass className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-[#F5F5F5]">STRtOS IS READY</h3>
+              <p className="text-xs text-[#92929A]">No intelligence task is currently running.</p>
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT COLUMN: RECENT RESULTS */}
+        <div className="p-6 bg-[#111113] border border-white/10 rounded-xl space-y-4 shadow-lg">
+          <h2 className="text-xs font-mono uppercase tracking-wider text-[#92929A] font-semibold flex items-center space-x-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>RECENT RESULTS</span>
+          </h2>
+
+          {completedTasks.length === 0 ? (
+            <div className="py-12 text-center text-xs text-[#92929A] italic space-y-1">
+              <p className="font-semibold text-slate-300">NO RECENT RESULTS</p>
+              <p>Completed intelligence will appear here.</p>
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
+              {completedTasks.map((t) => (
+                <div
+                  key={t.id}
+                  onClick={() => setSelectedCompletedTask(t)}
+                  className="p-4 bg-[#151518] border border-white/5 hover:border-white/15 rounded-lg flex items-center justify-between cursor-pointer transition"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span className="font-semibold text-[#F5F5F5] text-sm">
+                        {mapInternalExecutionToBusinessLanguage(t.title)}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-500 pl-5 block">
+                      Completed · {t.timestamp}
+                    </span>
+                    <p className="text-xs text-[#92929A] pl-5">
+                      {t.summary || `${mapInternalExecutionToBusinessLanguage(t.title)} analysis completed.`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onNavigateToReports) {
+                        onNavigateToReports();
+                      } else {
+                        setSelectedCompletedTask(t);
+                      }
+                    }}
+                    className="flex items-center space-x-1 text-xs font-mono text-sky-400 shrink-0 hover:underline pl-2"
+                  >
+                    <span>View Report</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {/* BOTTOM WORKSPACE BAR: ASK STRtOS */}
+      <div className="p-5 bg-[#111113] border border-white/10 rounded-xl space-y-3 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2 text-xs font-mono text-sky-400 font-semibold">
+            <Sparkles className="w-4 h-4" />
+            <span>Ask StrtOS anything...</span>
+          </div>
+
+          {/* Quick Examples */}
+          <div className="hidden sm:flex items-center space-x-2">
+            <button
+              onClick={() => handleQuickPrompt('Analyze my business performance')}
+              className="px-2.5 py-1 rounded bg-[#151518] hover:bg-slate-800 text-[10px] font-mono text-[#92929A] hover:text-[#F5F5F5] border border-white/5 transition"
+            >
+              Analyze my business
+            </button>
+            <button
+              onClick={() => handleQuickPrompt('Find growth opportunities')}
+              className="px-2.5 py-1 rounded bg-[#151518] hover:bg-slate-800 text-[10px] font-mono text-[#92929A] hover:text-[#F5F5F5] border border-white/5 transition"
+            >
+              Find growth opportunities
+            </button>
+            <button
+              onClick={() => handleQuickPrompt('Prepare a 90-day strategy')}
+              className="px-2.5 py-1 rounded bg-[#151518] hover:bg-slate-800 text-[10px] font-mono text-[#92929A] hover:text-[#F5F5F5] border border-white/5 transition"
+            >
+              Prepare a 90-day strategy
+            </button>
+          </div>
+        </div>
+
         <form onSubmit={handleAskSubmit} className="flex items-center space-x-3">
           <input
             type="text"
             value={askQuery}
             onChange={(e) => setAskQuery(e.target.value)}
-            placeholder="e.g. Analyze my business performance, Find growth opportunities, or Prepare a 90-day plan..."
+            placeholder="Ask StrtOS anything... e.g. Analyze my business performance, Find growth opportunities"
             className="flex-1 bg-[#151518] border border-white/10 rounded-lg px-4 py-2.5 text-xs text-[#F5F5F5] outline-none placeholder:text-[#92929A]"
           />
           <button
             type="submit"
             disabled={startingWorkflow || !askQuery.trim()}
-            className="px-4 py-2.5 rounded-lg text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-slate-950 flex items-center space-x-2 transition disabled:opacity-50"
+            className="px-5 py-2.5 rounded-lg text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-slate-950 flex items-center space-x-2 transition disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
             <span>{startingWorkflow ? 'Starting...' : 'Ask StrtOS'}</span>
@@ -246,299 +414,7 @@ export const CommandCenterPage: React.FC = () => {
         </form>
       </div>
 
-      {/* Header Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-3">
-            <Compass className="w-7 h-7 text-sky-400" />
-            <h1 className="text-2xl font-bold text-[#F5F5F5] tracking-tight">Strategic Intelligence</h1>
-          </div>
-          <p className="text-[#92929A] mt-1 text-xs sm:text-sm">StrtOS continuously analyzes your business and prepares useful insights.</p>
-        </div>
-
-        <div className="flex items-center space-x-3 shrink-0">
-          <button
-            onClick={loadData}
-            className="px-3 py-1.5 rounded-lg text-xs bg-[#151518] border border-white/10 hover:border-white/20 text-[#92929A] hover:text-[#F5F5F5] flex items-center space-x-2 transition"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Refresh</span>
-          </button>
-
-          <span className="px-3 py-1.5 rounded-full text-xs font-mono bg-emerald-950/60 border border-emerald-800/80 text-emerald-300 flex items-center space-x-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>STRtOS OPERATIONAL</span>
-          </span>
-        </div>
-      </div>
-
-      {/* Approval Interrupt Banner (Requirement 8) */}
-      {pendingDecision && (
-        <div className="p-5 bg-amber-950/40 border border-amber-500/40 rounded-xl space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-xs font-mono text-amber-400 font-bold uppercase tracking-wider">
-              <ShieldAlert className="w-4 h-4" />
-              <span>YOUR ATTENTION IS REQUIRED</span>
-            </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-900/60 border border-amber-700 text-amber-300">
-              Governance Approval Pending
-            </span>
-          </div>
-          <div className="space-y-1 text-xs">
-            <h3 className="font-bold text-[#F5F5F5] text-sm">{pendingDecision.title}</h3>
-            <p className="text-slate-300">{pendingDecision.problem_statement || 'Decision requires executive approval before execution.'}</p>
-          </div>
-          <div className="flex items-center space-x-3 pt-1">
-            <button
-              onClick={() => alert(`Approved: ${pendingDecision.title}`)}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition"
-            >
-              Approve
-            </button>
-            <button
-              onClick={() => alert(`Rejected: ${pendingDecision.title}`)}
-              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-950 border border-rose-800 text-rose-300 hover:bg-rose-900 transition"
-            >
-              Reject
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Main 12-Column Responsive Layout: Left/Center 68% (span 8), Right 32% (span 4) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-        {/* LEFT / CENTER COLUMN (Span 8): Primary Work Workspace */}
-        <div className="lg:col-span-8 space-y-6">
-
-          {/* Hero Currently Working Card (Requirement 2, 4 & 5) */}
-          <div className="p-6 bg-[#111113] border border-white/10 rounded-xl space-y-5 relative overflow-hidden shadow-lg">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-ping"></span>
-                <h2 className="text-xs font-mono uppercase tracking-wider text-sky-400 font-semibold">● Currently Working</h2>
-              </div>
-              {activeTask && (
-                <span className="text-xs font-mono text-[#92929A]">{activeTask.timestamp}</span>
-              )}
-            </div>
-
-            {activeTask ? (
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-2xl font-bold text-[#F5F5F5] tracking-tight">
-                    {mapInternalExecutionToBusinessLanguage(activeTask.title)}
-                  </h3>
-                  <p className="text-xs text-[#92929A] mt-1.5">
-                    {activeTask.statusMessage || 'StrtOS is analyzing current business state.'}
-                  </p>
-
-                  {/* Real Progress % or Processing Indicator */}
-                  <div className="mt-4">
-                    {typeof activeTask.progress === 'number' ? (
-                      <div>
-                        <div className="flex justify-between text-xs font-mono text-[#92929A] mb-1.5">
-                          <span>Progress</span>
-                          <span>{activeTask.progress}%</span>
-                        </div>
-                        <div className="w-full bg-[#151518] rounded-full h-1.5 overflow-hidden border border-white/10">
-                          <div
-                            className="bg-gradient-to-r from-sky-400 to-indigo-500 h-1.5 rounded-full transition-all duration-500"
-                            style={{ width: `${activeTask.progress}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center space-x-2 text-xs font-mono text-sky-400 pt-1">
-                        <Activity className="w-3.5 h-3.5 animate-spin" />
-                        <span>Analyzing...</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Sub-steps if present */}
-                {activeTask.subSteps && activeTask.subSteps.length > 0 && (
-                  <div className="space-y-2 pt-3 border-t border-white/5">
-                    {activeTask.subSteps.map((step, idx) => (
-                      <div key={idx} className="flex items-center space-x-2.5 text-xs">
-                        <Activity className="w-3.5 h-3.5 text-sky-400 animate-spin shrink-0" />
-                        <span className="text-sky-300 font-medium">{step}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Calm Empty State (Requirement 13) */
-              <div className="py-8 text-center space-y-4">
-                <div className="w-10 h-10 rounded-full bg-[#151518] border border-white/10 flex items-center justify-center mx-auto text-sky-400">
-                  <Compass className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-[#F5F5F5]">STRtOS IS READY</h3>
-                  <p className="text-xs text-[#92929A] mt-1">No intelligence task is currently running.</p>
-                </div>
-                <button
-                  onClick={handleStartAnalysis}
-                  disabled={startingWorkflow}
-                  className="px-5 py-2.5 rounded-lg text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-slate-950 flex items-center space-x-2 mx-auto transition shadow-md"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>{startingWorkflow ? 'Starting...' : '+ START ANALYSIS'}</span>
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Recent Results (Requirement 6) */}
-          <div className="p-6 bg-[#111113] border border-white/10 rounded-xl space-y-4">
-            <h2 className="text-xs font-mono uppercase tracking-wider text-[#92929A] font-semibold flex items-center space-x-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Recent Results</span>
-            </h2>
-
-            {completedTasks.length === 0 ? (
-              <p className="text-xs text-[#92929A] italic py-2">No completed results logged yet.</p>
-            ) : (
-              <div className="space-y-2.5">
-                {completedTasks.map((t) => (
-                  <div
-                    key={t.id}
-                    onClick={() => setSelectedCompletedTask(t)}
-                    className="p-3.5 bg-[#151518] border border-white/5 hover:border-white/15 rounded-lg flex items-center justify-between cursor-pointer transition"
-                  >
-                    <div className="space-y-0.5">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span className="font-semibold text-[#F5F5F5] text-xs sm:text-sm">
-                          {mapInternalExecutionToBusinessLanguage(t.title)}
-                        </span>
-                      </div>
-                      <p className="text-xs text-[#92929A] pl-5">
-                        {t.summary || `${mapInternalExecutionToBusinessLanguage(t.title)} analysis completed.`}
-                      </p>
-                      <span className="text-[10px] font-mono text-slate-500 pl-5 block">Completed · {t.timestamp}</span>
-                    </div>
-                    <div className="flex items-center space-x-1 text-xs font-mono text-sky-400 shrink-0 hover:underline">
-                      <span>View Result</span>
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Up Next (Only displayed if queued tasks exist) */}
-          {upcomingTasks && upcomingTasks.length > 0 && (
-            <div className="p-6 bg-[#111113] border border-white/10 rounded-xl space-y-3">
-              <h2 className="text-xs font-mono uppercase tracking-wider text-[#92929A] font-semibold flex items-center space-x-2">
-                <Circle className="w-3.5 h-3.5 text-slate-500" />
-                <span>Up Next</span>
-              </h2>
-              <div className="space-y-2">
-                {upcomingTasks.map((t) => (
-                  <div key={t.id} className="p-3 bg-[#151518]/60 border border-white/5 rounded-lg flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-2">
-                      <Circle className="w-3 h-3 text-slate-600" />
-                      <span className="text-[#F5F5F5]">{mapInternalExecutionToBusinessLanguage(t.title)}</span>
-                    </div>
-                    <span className="font-mono text-slate-500 text-[10px]">QUEUED</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* RIGHT COLUMN (Span 4): Supporting Business Context */}
-        <div className="lg:col-span-4 space-y-6">
-
-          {/* Business Account Profile */}
-          <div className="p-5 bg-[#111113] border border-white/10 rounded-xl space-y-3">
-            <h2 className="text-xs font-mono uppercase tracking-wider text-[#92929A] font-semibold flex items-center space-x-2">
-              <Building2 className="w-3.5 h-3.5 text-sky-400" />
-              <span>Business Account</span>
-            </h2>
-
-            {selectedClient ? (
-              <div className="p-3.5 bg-[#151518] border border-white/5 rounded-lg space-y-1.5">
-                <h3 className="font-semibold text-[#F5F5F5] text-sm">{selectedClient.name}</h3>
-                <p className="text-xs text-[#92929A]">{selectedClient.industry || 'Enterprise Account'}</p>
-                <div className="flex items-center justify-between pt-2 text-xs font-mono text-[#92929A]">
-                  <span>Health Score:</span>
-                  <span className="text-emerald-400 font-semibold">
-                    {typeof selectedClient.health_score === 'number' ? `${selectedClient.health_score}%` : 'No current data'}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="p-3.5 bg-[#151518] border border-white/5 rounded-lg text-center space-y-1">
-                <p className="text-xs text-[#92929A]">Enterprise Account</p>
-                <span className="text-[10px] font-mono text-slate-500 block">No current data</span>
-              </div>
-            )}
-          </div>
-
-          {/* Executive Overview & Health */}
-          <div className="p-5 bg-[#111113] border border-white/10 rounded-xl space-y-3">
-            <h2 className="text-xs font-mono uppercase tracking-wider text-[#92929A] font-semibold flex items-center space-x-2">
-              <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Executive Overview</span>
-            </h2>
-
-            <div className="space-y-2 text-xs">
-              <div className="p-3 bg-[#151518] border border-white/5 rounded-lg flex items-center justify-between">
-                <span className="text-[#92929A]">Business Health</span>
-                {overview?.executive_health?.overall_score ? (
-                  <span className="font-mono text-emerald-400 font-semibold">
-                    {overview.executive_health.overall_score}% ({overview.executive_health.status})
-                  </span>
-                ) : (
-                  <span className="font-mono text-slate-500">No current data</span>
-                )}
-              </div>
-
-              <div className="p-3 bg-[#151518] border border-white/5 rounded-lg flex items-center justify-between">
-                <span className="text-[#92929A]">Attention Required</span>
-                {overview?.active_decisions && overview.active_decisions.length > 0 ? (
-                  <span className="font-mono text-amber-400 font-semibold">
-                    {overview.active_decisions.length} items
-                  </span>
-                ) : (
-                  <span className="font-mono text-emerald-400">0 items</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Strategic Priorities */}
-          <div className="p-5 bg-[#111113] border border-white/10 rounded-xl space-y-3">
-            <h2 className="text-xs font-mono uppercase tracking-wider text-[#92929A] font-semibold flex items-center space-x-2">
-              <Compass className="w-3.5 h-3.5 text-sky-400" />
-              <span>Strategic Priorities</span>
-            </h2>
-
-            {overview?.top_priorities && overview.top_priorities.length > 0 ? (
-              <div className="space-y-2">
-                {overview.top_priorities.map((p) => (
-                  <div key={p.id} className="p-3 bg-[#151518] border border-white/5 rounded-lg space-y-0.5">
-                    <span className="text-xs font-semibold text-[#F5F5F5] block">{p.title}</span>
-                    <span className="text-[10px] text-[#92929A] block">{p.why_it_matters}</span>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-slate-500 italic py-1">No current data</p>
-            )}
-          </div>
-
-        </div>
-      </div>
-
-      {/* Result Details Report Modal */}
+      {/* Result Details Report Modal (Optional view if modal pattern is triggered) */}
       {selectedCompletedTask && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#111113] border border-white/10 rounded-xl p-6 max-w-lg w-full space-y-4 text-slate-100">
@@ -562,7 +438,7 @@ export const CommandCenterPage: React.FC = () => {
                 <span className="text-[10px] font-mono text-emerald-400 uppercase font-bold block mb-1">Status: Completed</span>
                 <span className="text-[10px] font-mono text-slate-500 uppercase block">Summary</span>
                 <p className="text-slate-300 font-medium mt-0.5">
-                  {selectedCompletedTask.summary || 'Not available yet.'}
+                  {selectedCompletedTask.summary || 'Summary not available yet.'}
                 </p>
               </div>
 
