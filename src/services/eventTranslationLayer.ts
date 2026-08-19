@@ -168,7 +168,11 @@ export function extractTaskResultData(output: any, title: string): TaskResultDat
   };
 }
 
-export function translateBackendTaskToUserTask(task: TaskItem): UserFacingTask {
+export function translateBackendTaskToUserTask(task: TaskItem): UserFacingTask | null {
+  if (!task || !task.id) {
+    return null;
+  }
+
   const title = mapInternalExecutionToBusinessLanguage(task.agent_name || task.title);
 
   let status: UserTaskStatus = 'QUEUED';
@@ -212,17 +216,20 @@ export function translateBackendTaskToUserTask(task: TaskItem): UserFacingTask {
     ? extractTaskResultData(task.output, title)
     : undefined;
 
+  const timestampString = task.completed_at || task.started_at;
+  const formattedTime = timestampString ? new Date(timestampString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Time unavailable';
+
   return {
     id: task.id,
-    workflowId: task.workflow_id,
+    workflowId: task.workflow_id || '',
     title,
-    agentName: task.agent_name,
+    agentName: task.agent_name || task.title || '',
     status,
     statusMessage: statusMsg,
     progress,
     subSteps: [],
     subStepDetails: [],
-    timestamp: task.completed_at ? new Date(task.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    timestamp: formattedTime,
     summary: task.status === 'COMPLETED' ? (result?.summary || 'INSUFFICIENT DATA') : undefined,
     confidence: result?.confidence,
     errorReason: task.error_message || undefined,
@@ -235,11 +242,13 @@ export function translateWorkflowToTasks(workflow: Workflow, tasks: TaskItem[] =
   completedTasks: UserFacingTask[];
   upcomingTasks: UserFacingTask[];
 } {
-  if (!workflow || !Array.isArray(tasks)) {
+  if (!workflow || !workflow.id || !Array.isArray(tasks)) {
     return { activeTask: null, completedTasks: [], upcomingTasks: [] };
   }
 
-  const translated = tasks.map(t => translateBackendTaskToUserTask(t));
+  const translated = tasks
+    .map(t => translateBackendTaskToUserTask(t))
+    .filter((t): t is UserFacingTask => t !== null);
 
   const active = translated.find(t => t.status === 'RUNNING') || null;
   const completed = translated.filter(t => t.status === 'COMPLETED');
@@ -256,24 +265,39 @@ export function translateSSEEventToTaskUpdate(event: RealtimeEventData): {
   taskUpdate?: Partial<UserFacingTask>;
   finalResult?: FinalStrategicResult;
 } {
-  const agentName = event.agent_name || (event.metadata ? event.metadata.agent_name : undefined);
-  const title = mapInternalExecutionToBusinessLanguage(agentName || event.message);
+  if (!event) return {};
 
   if (event.event_type === 'workflow.completed' && event.metadata?.report) {
+    if (!event.workflow_id) {
+      console.warn('Diagnostic: SSE workflow.completed missing workflow_id, ignoring mutation.');
+      return {};
+    }
     const rep = event.metadata.report;
+    const timestampString = rep.created_at || event.timestamp;
+    const formattedTime = timestampString ? new Date(timestampString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Time unavailable';
+
     return {
       finalResult: {
-        workflowId: event.workflow_id || '',
+        workflowId: event.workflow_id,
         title: rep.title || 'Strategic Business Recommendation',
         whatStrtOSFound: rep.executive_summary || (rep.key_findings ? rep.key_findings.join('. ') : 'INSUFFICIENT DATA'),
         whatThisMeans: rep.summary || 'INSUFFICIENT DATA',
         recommendedAction: Array.isArray(rep.recommendations) ? rep.recommendations.join(' ') : (rep.recommendation || 'No recommendation available'),
         expectedImpact: rep.metrics?.expected_impact || 'INSUFFICIENT DATA',
         confidence: typeof rep.confidence_score === 'number' ? rep.confidence_score : undefined,
-        completedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        completedAt: formattedTime
       }
     };
   }
+
+  // Strictly enforce: Task events must have event.task_id
+  if (!event.task_id) {
+    console.warn(`Diagnostic: SSE event '${event.event_type}' missing task_id, ignoring task-state mutation.`);
+    return {};
+  }
+
+  const agentName = event.agent_name || (event.metadata ? event.metadata.agent_name : undefined);
+  const title = mapInternalExecutionToBusinessLanguage(agentName || event.message);
 
   let status: UserTaskStatus = 'RUNNING';
 
@@ -290,19 +314,21 @@ export function translateSSEEventToTaskUpdate(event: RealtimeEventData): {
   const statusMsg = mapTechnicalEventToUserMessage(event.event_type, event.message);
   const output = event.metadata?.output || event.metadata?.result;
   const result = status === 'COMPLETED' && output ? extractTaskResultData(output, title) : undefined;
+  const formattedTime = event.timestamp ? new Date(event.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Time unavailable';
 
   return {
     taskUpdate: {
-      id: event.task_id || event.event_id,
+      id: event.task_id,
       workflowId: event.workflow_id || '',
       title,
-      agentName: agentName || '',
+      agentName: agentName || title,
       status,
       statusMessage: statusMsg,
       progress: typeof event.progress === 'number' ? event.progress : (status === 'COMPLETED' ? 100 : undefined),
       summary: status === 'COMPLETED' ? (result?.summary || 'INSUFFICIENT DATA') : undefined,
       confidence: result?.confidence,
       errorReason: event.message && status === 'FAILED' ? event.message : undefined,
+      timestamp: formattedTime,
       result
     }
   };

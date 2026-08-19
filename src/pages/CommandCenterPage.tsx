@@ -47,21 +47,24 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
         return;
       }
 
-      if (taskUpdate) {
+      if (taskUpdate && taskUpdate.id) {
         if (taskUpdate.status === 'RUNNING') {
-          setActiveTask(prev => ({
-            ...prev,
-            ...taskUpdate,
-            id: taskUpdate.id || prev?.id || 't-running',
-            title: taskUpdate.title || prev?.title || 'Business Performance Analysis',
-            status: 'RUNNING',
-            agentName: taskUpdate.agentName || prev?.agentName || '',
-            subSteps: [],
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          } as UserFacingTask));
+          setActiveTask(prev => {
+            if (!prev && !taskUpdate.id) return null;
+            return {
+              ...prev,
+              ...taskUpdate,
+              id: taskUpdate.id!,
+              title: taskUpdate.title || prev?.title || 'Business Performance Analysis',
+              status: 'RUNNING',
+              agentName: taskUpdate.agentName || prev?.agentName || '',
+              subSteps: [],
+              timestamp: taskUpdate.timestamp || prev?.timestamp || 'Time unavailable'
+            } as UserFacingTask;
+          });
         } else if (taskUpdate.status === 'COMPLETED') {
           const finishedTask: UserFacingTask = {
-            id: taskUpdate.id || `t-completed-${Date.now()}`,
+            id: taskUpdate.id,
             workflowId: taskUpdate.workflowId || '',
             title: taskUpdate.title || 'Business Performance Analysis',
             agentName: taskUpdate.agentName || '',
@@ -69,7 +72,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
             statusMessage: 'Completed successfully',
             progress: 100,
             subSteps: [],
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            timestamp: taskUpdate.timestamp || 'Time unavailable',
             summary: taskUpdate.summary || 'INSUFFICIENT DATA',
             confidence: taskUpdate.confidence,
             result: taskUpdate.result
@@ -86,7 +89,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
           refreshTasksFromBackend();
         } else if (taskUpdate.status === 'FAILED') {
           setActiveTask({
-            id: taskUpdate.id || 't-failed',
+            id: taskUpdate.id,
             workflowId: taskUpdate.workflowId || '',
             title: taskUpdate.title || 'Business Performance Analysis',
             agentName: taskUpdate.agentName || '',
@@ -94,7 +97,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
             statusMessage: 'Analysis could not be completed',
             errorReason: taskUpdate.errorReason || 'StrtOS could not complete this analysis.',
             subSteps: [],
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            timestamp: taskUpdate.timestamp || 'Time unavailable'
           });
         }
       }
@@ -135,7 +138,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
               recommendedAction: Array.isArray(rep.recommendations) ? rep.recommendations.join(' ') : 'No recommendation available',
               expectedImpact: rep.metrics?.expected_impact || 'INSUFFICIENT DATA',
               confidence: typeof rep.confidence_score === 'number' ? rep.confidence_score : undefined,
-              completedAt: new Date(rep.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              completedAt: rep.created_at ? new Date(rep.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Time unavailable'
             });
           }
         }
@@ -175,7 +178,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
               recommendedAction: Array.isArray(rep.recommendations) ? rep.recommendations.join(' ') : 'No recommendation available',
               expectedImpact: rep.metrics?.expected_impact || 'INSUFFICIENT DATA',
               confidence: typeof rep.confidence_score === 'number' ? rep.confidence_score : undefined,
-              completedAt: new Date(rep.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              completedAt: rep.created_at ? new Date(rep.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Time unavailable'
             });
           }
         }
@@ -194,20 +197,27 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
     e.preventDefault();
     if (!askQuery.trim()) return;
     const queryText = askQuery;
+
+    // Strict Tenant Identity Check
+    const tenantClientId = activeWorkflow?.client_id || user?.organization_id;
+    if (!tenantClientId) {
+      setError('Organization identity could not be resolved. Please log in to an active enterprise workspace.');
+      return;
+    }
+
     setAskQuery('');
     setStartingWorkflow(true);
     setError(null);
     setFinalResult(null);
 
     try {
-      const tenantClientId = activeWorkflow?.client_id || user?.organization_id || 'org_primary';
       const newWf = await workflowsApi.createWorkflow({
         client_id: tenantClientId,
         title: queryText,
         directive: queryText
       });
 
-      if (newWf) {
+      if (newWf && newWf.id) {
         await workflowsApi.startWorkflow(newWf.id);
         setActiveWorkflow(newWf);
 
