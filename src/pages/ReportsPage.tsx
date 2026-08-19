@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   FileText, Search, Activity, Award, Calendar, ChevronRight
 } from 'lucide-react';
@@ -48,7 +48,7 @@ export const ReportsPage: React.FC<ReportsPageProps> = ({ onSelectReport }) => {
           Executive Intelligence Reports
         </h1>
         <p style={{ color: '#9ca3af', fontSize: '14px', marginTop: '4px', margin: 0 }}>
-          Consolidated strategic intelligence synthesized by CEO Agent & Specialist Agents.
+          Consolidated strategic intelligence synthesized by STRtOS Intelligence Engine.
         </p>
       </div>
 

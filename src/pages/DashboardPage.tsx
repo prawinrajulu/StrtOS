@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   Users, BrainCircuit, Activity, Award, Sparkles,
   ListChecks, BarChart2
@@ -44,7 +44,7 @@ export const DashboardPage: React.FC<{ onOpenCEO: () => void }> = ({ onOpenCEO }
               marginBottom: '6px',
             }}
           >
-            STRTOS EXECUTIVE DASHBOARD • REAL-TIME INTELLIGENCE
+            STRTOS EXECUTIVE DASHBOARD â€¢ REAL-TIME INTELLIGENCE
           </div>
           <h1 style={{ fontSize: '32px', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.02em', margin: 0 }}>
             Executive Operations Brief
@@ -89,7 +89,7 @@ export const DashboardPage: React.FC<{ onOpenCEO: () => void }> = ({ onOpenCEO }
               boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
             }}
           >
-            <Sparkles size={16} /> Open CEO Agent
+            <Sparkles size={16} /> Strategic Intelligence
           </button>
         </div>
       </div>
@@ -150,7 +150,7 @@ export const DashboardPage: React.FC<{ onOpenCEO: () => void }> = ({ onOpenCEO }
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {data.insights.map((insight, idx) => (
                   <div key={idx} style={{ fontSize: '13.5px', color: '#e5e7eb', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ color: '#8b5cf6' }}>•</span> {insight}
+                    <span style={{ color: '#8b5cf6' }}>â€¢</span> {insight}
                   </div>
                 ))}
               </div>

@@ -1,41 +1,31 @@
-import React, { useEffect, useState } from 'react';
-import {
-  ArrowLeft, BrainCircuit, Play, Pause, RefreshCw, XCircle, CheckCircle2,
-  Clock, Activity, ListChecks
-} from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Play, Pause, RefreshCw, XCircle, CheckCircle2, Clock, Activity, BrainCircuit, ListChecks } from 'lucide-react';
 import { workflowsApi } from '../services/workflowsApi';
 import type { Workflow, TaskItem } from '../services/workflowsApi';
-import { EventStreamClient } from '../services/eventStream';
+import { mapInternalExecutionToBusinessLanguage } from '../services/eventTranslationLayer';
 
 interface WorkflowDetailsPageProps {
   workflow: Workflow;
   onBack: () => void;
 }
 
-export const WorkflowDetailsPage: React.FC<WorkflowDetailsPageProps> = ({ workflow: initialWf, onBack }) => {
-  const [workflow, setWorkflow] = useState<Workflow>(initialWf);
+export const WorkflowDetailsPage: React.FC<WorkflowDetailsPageProps> = ({ workflow: initialWorkflow, onBack }) => {
+  const [workflow, setWorkflow] = useState<Workflow>(initialWorkflow);
   const [tasks, setTasks] = useState<TaskItem[]>([]);
-  const [loadingAction, setLoadingAction] = useState(false);
-
-  const refreshData = async () => {
-    const [wf, taskList] = await Promise.all([
-      workflowsApi.getWorkflow(workflow.id),
-      workflowsApi.getTasks(workflow.id)
-    ]);
-    if (wf) setWorkflow(wf);
-    setTasks(taskList);
-  };
+  const [loadingAction, setLoadingAction] = useState<boolean>(false);
 
   useEffect(() => {
     refreshData();
-    const stream = new EventStreamClient(`/api/v1/workflows/${workflow.id}/stream`);
-    const unsubscribe = stream.subscribe((event) => {
-      if (event.workflow_id === workflow.id) {
-        refreshData();
-      }
-    });
-    return () => unsubscribe();
   }, [workflow.id]);
+
+  const refreshData = async () => {
+    try {
+      const ts = await workflowsApi.getTasks(workflow.id);
+      setTasks(ts);
+    } catch {
+      // Ignore background errors
+    }
+  };
 
   const handleStart = async () => {
     setLoadingAction(true);
@@ -69,14 +59,14 @@ export const WorkflowDetailsPage: React.FC<WorkflowDetailsPageProps> = ({ workfl
   };
 
   const stages = [
-    { name: 'CLIENT BRIEF', agent: 'Client Onboarding Agent' },
-    { name: 'CEO AGENT', agent: 'CEO Orchestrator' },
-    { name: 'BUSINESS ANALYSIS', agent: 'Business Analysis Agent' },
-    { name: 'SEO AUDIT', agent: 'SEO Audit Agent' },
-    { name: 'COMPETITOR RESEARCH', agent: 'Competitor Research Agent' },
-    { name: 'MARKETING STRATEGY', agent: 'Marketing Strategy Agent' },
-    { name: 'CAMPAIGN PLANNER', agent: 'Campaign Planner Agent' },
-    { name: 'REPORT GENERATION', agent: 'Report Generator Agent' },
+    { name: 'Business Onboarding' },
+    { name: 'Executive Alignment' },
+    { name: 'Business Performance Analysis' },
+    { name: 'Website Performance Analysis' },
+    { name: 'Market Intelligence' },
+    { name: 'Strategic Planning' },
+    { name: 'Campaign Preparation' },
+    { name: 'Intelligence Reporting' },
   ];
 
   return (
@@ -147,7 +137,7 @@ export const WorkflowDetailsPage: React.FC<WorkflowDetailsPageProps> = ({ workfl
       {/* Execution Graph / Stages */}
       <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '24px', marginBottom: '24px' }}>
         <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#f9fafb', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <BrainCircuit style={{ color: '#8b5cf6' }} size={20} /> Execution Stage Graph
+          <BrainCircuit style={{ color: '#8b5cf6' }} size={20} /> Execution Pipeline Graph
         </h3>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
@@ -176,7 +166,6 @@ export const WorkflowDetailsPage: React.FC<WorkflowDetailsPageProps> = ({ workfl
                 )}
                 <div>
                   <div style={{ fontSize: '13px', fontWeight: '700', color: '#f3f4f6' }}>{stg.name}</div>
-                  <div style={{ fontSize: '11px', color: '#9ca3af' }}>{stg.agent}</div>
                 </div>
               </div>
             );
@@ -192,7 +181,7 @@ export const WorkflowDetailsPage: React.FC<WorkflowDetailsPageProps> = ({ workfl
 
         {tasks.length === 0 ? (
           <div style={{ color: '#9ca3af', fontSize: '14px', textAlign: 'center', padding: '20px' }}>
-            No tasks logged yet. Start workflow to trigger agent execution.
+            No tasks logged yet. Start workflow to trigger execution.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -200,7 +189,9 @@ export const WorkflowDetailsPage: React.FC<WorkflowDetailsPageProps> = ({ workfl
               <div key={task.id} style={{ padding: '14px', backgroundColor: '#1f2937', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                   <div style={{ fontSize: '14px', fontWeight: '600', color: '#f9fafb' }}>{task.title}</div>
-                  <div style={{ fontSize: '12px', color: '#8b5cf6' }}>Agent: {task.agent_name} | Priority: {task.priority}</div>
+                  <div style={{ fontSize: '12px', color: '#8b5cf6' }}>
+                    Category: {mapInternalExecutionToBusinessLanguage(task.agent_name)} | Priority: {task.priority}
+                  </div>
                 </div>
                 <span style={{ fontSize: '12px', fontWeight: '700', color: task.status === 'COMPLETED' ? '#10b981' : '#f59e0b' }}>
                   {task.status}

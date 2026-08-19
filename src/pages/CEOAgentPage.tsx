@@ -2,23 +2,12 @@
 import { StatusBadge } from '../components/StatusBadge';
 import { TaskItem } from '../components/TaskItem';
 import type { TaskItemProps } from '../components/TaskItem';
-import { Brain, Plus, FileText } from 'lucide-react';
+import { Compass, Plus, FileText } from 'lucide-react';
 import { DirectiveModal } from '../components/DirectiveModal';
 import { ExecutiveReportModal } from '../components/ExecutiveReportModal';
 import { CEOApiService } from '../services/ceoApi';
 import type { ExecutionStateData, ExecutiveReportData } from '../services/ceoApi';
-
-const defaultStages = [
-  { name: 'CLIENT BRIEF', agent_name: 'Client Onboarding Agent', status: 'COMPLETED' as const },
-  { name: 'CEO AGENT', agent_name: 'CEO Agent', status: 'RUNNING' as const },
-  { name: 'BUSINESS', agent_name: 'Business Analysis Agent', status: 'WAITING' as const },
-  { name: 'SEO', agent_name: 'SEO Audit Agent', status: 'WAITING' as const },
-  { name: 'COMPETITOR', agent_name: 'Competitor Research Agent', status: 'WAITING' as const },
-  { name: 'MARKETING', agent_name: 'Marketing Strategy Agent', status: 'WAITING' as const },
-  { name: 'CAMPAIGN', agent_name: 'Campaign Planner Agent', status: 'WAITING' as const },
-  { name: 'ANALYTICS', agent_name: 'Analytics Agent', status: 'WAITING' as const },
-  { name: 'REPORT', agent_name: 'Report Generator Agent', status: 'WAITING' as const },
-];
+import { mapInternalExecutionToBusinessLanguage } from '../services/eventTranslationLayer';
 
 export const CEOAgentPage: React.FC = () => {
   const [executionState, setExecutionState] = useState<ExecutionStateData | null>(null);
@@ -54,7 +43,7 @@ export const CEOAgentPage: React.FC = () => {
   const displayTasks: TaskItemProps[] = executionState?.tasks
     ? executionState.tasks.map((t) => ({
         title: t.title,
-        agent: t.agent_name,
+        agent: mapInternalExecutionToBusinessLanguage(t.agent_name),
         eta: t.eta,
         priority: t.priority,
         status: t.status,
@@ -62,8 +51,11 @@ export const CEOAgentPage: React.FC = () => {
     : [];
 
   const displayStages = executionState?.stages && executionState.stages.length > 0
-    ? executionState.stages
-    : defaultStages;
+    ? executionState.stages.map((stg) => ({
+        name: mapInternalExecutionToBusinessLanguage(stg.name || stg.agent_name),
+        status: stg.status,
+      }))
+    : [];
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8">
@@ -71,16 +63,16 @@ export const CEOAgentPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center space-x-3">
-            <Brain className="w-8 h-8 text-indigo-400" />
-            <h1 className="text-3xl font-bold text-slate-100 tracking-tight">Executive Swarm Engine</h1>
+            <Compass className="w-8 h-8 text-cyan-400" />
+            <h1 className="text-3xl font-bold text-slate-100 tracking-tight">Strategic Intelligence</h1>
           </div>
-          <p className="text-slate-400 mt-1">Autonomous orchestration engine executing strategic business workflows.</p>
+          <p className="text-slate-400 mt-1">Autonomous business state monitoring, predictive strategy & executive alignment.</p>
         </div>
 
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setIsDirectiveOpen(true)}
-            className="px-4 py-2 rounded-lg text-xs font-mono font-bold bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white flex items-center space-x-2 transition shadow-lg shadow-indigo-500/20"
+            className="px-4 py-2 rounded-lg text-xs font-mono font-bold bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-black flex items-center space-x-2 transition shadow-lg shadow-cyan-500/20"
           >
             <Plus className="w-4 h-4" />
             <span>NEW DIRECTIVE</span>
@@ -99,9 +91,11 @@ export const CEOAgentPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
-            <h2 className="text-sm font-semibold text-slate-100 uppercase font-mono tracking-wider">Active Tasks</h2>
+            <h2 className="text-sm font-semibold text-slate-100 uppercase font-mono tracking-wider">Current Activity</h2>
             {displayTasks.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">No active tasks in queue.</p>
+              <div className="py-6 text-center text-xs text-slate-400 italic">
+                No active intelligence tasks in queue.
+              </div>
             ) : (
               <div className="space-y-3">
                 {displayTasks.map((task, idx) => (
@@ -114,15 +108,22 @@ export const CEOAgentPage: React.FC = () => {
 
         <div className="space-y-6">
           <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
-            <h2 className="text-sm font-semibold text-slate-100 uppercase font-mono tracking-wider">Workflow Stages</h2>
-            <div className="space-y-2">
-              {displayStages.map((stg, idx) => (
-                <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-950/60 border border-slate-800/80 rounded-lg text-xs">
-                  <span className="text-slate-300 font-medium">{stg.name}</span>
-                  <StatusBadge status={stg.status} />
-                </div>
-              ))}
-            </div>
+            <h2 className="text-sm font-semibold text-slate-100 uppercase font-mono tracking-wider">Workflow Pipeline</h2>
+            {displayStages.length === 0 ? (
+              <div className="py-6 text-center text-xs text-slate-400 italic space-y-1">
+                <p className="font-semibold text-slate-300">No active intelligence workflow.</p>
+                <p className="text-[10px]">Trigger a strategic directive to initiate execution.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {displayStages.map((stg, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-950/60 border border-slate-800/80 rounded-lg text-xs">
+                    <span className="text-slate-300 font-medium">{stg.name}</span>
+                    <StatusBadge status={stg.status} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

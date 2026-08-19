@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   Users, Plus, Search, DollarSign, Building2, ChevronRight, X
 } from 'lucide-react';
@@ -79,7 +79,7 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({ onSelectClient }) => {
             Client Portfolio
           </h1>
           <p style={{ color: '#9ca3af', fontSize: '14px', marginTop: '4px', margin: 0 }}>
-            Enterprise multi-tenant business contexts feeding the CEO Agent Orchestrator.
+            Enterprise multi-tenant business contexts powering StrtOS Strategic Execution.
           </p>
         </div>
         <button
@@ -329,7 +329,7 @@ export const ClientsPage: React.FC<ClientsPageProps> = ({ onSelectClient }) => {
                 <label style={{ fontSize: '13px', color: '#d1d5db', fontWeight: '500', marginBottom: '4px', display: 'block' }}>Business Objective / Directive Goal</label>
                 <textarea
                   rows={3}
-                  placeholder="Describe primary growth objective feeding CEO Agent Orchestrator..."
+                  placeholder="Describe primary growth objective driving StrtOS Strategic Execution..."
                   value={formData.business_goal}
                   onChange={(e) => setFormData({ ...formData, business_goal: e.target.value })}
                   style={{ width: '100%', padding: '10px', backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', color: '#fff', resize: 'vertical' }}

@@ -1,7 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 import { StatusBadge } from './StatusBadge';
 import type { StatusType } from './StatusBadge';
 import { MoveVertical } from 'lucide-react';
+import { mapInternalExecutionToBusinessLanguage } from '../services/eventTranslationLayer';
 
 export interface TaskItemProps {
   title: string;
@@ -23,6 +24,8 @@ export const TaskItem: React.FC<TaskItemProps> = ({ title, agent, eta, priority,
         return '#64748b';
     }
   };
+
+  const businessLabel = mapInternalExecutionToBusinessLanguage(agent);
 
   return (
     <div
@@ -52,7 +55,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ title, agent, eta, priority,
               textTransform: 'uppercase',
             }}
           >
-            {agent} • {eta}
+            {businessLabel} • {eta}
           </div>
         </div>
       </div>

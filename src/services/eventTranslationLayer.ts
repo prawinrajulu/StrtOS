@@ -16,7 +16,7 @@ export interface UserFacingTask {
   title: string;
   status: UserTaskStatus;
   statusMessage?: string;
-  progress?: number; // Real percentage if provided by backend, otherwise undefined (showing "Working...")
+  progress?: number;
   subSteps: string[];
   currentStep?: string;
   timestamp: string;
@@ -26,47 +26,73 @@ export interface UserFacingTask {
   details?: any;
 }
 
-const AGENT_TO_BUSINESS_TITLE: Record<string, string> = {
+const KNOWN_BUSINESS_MAP: Record<string, string> = {
   BusinessAnalysisAgent: 'Business Performance Analysis',
   BusinessAnalysis: 'Business Performance Analysis',
+  'BUSINESS ANALYSIS': 'Business Performance Analysis',
+  BUSINESS: 'Business Performance Analysis',
   SEOAuditAgent: 'Website Performance Analysis',
   SEOAudit: 'Website Performance Analysis',
+  SEO: 'Website Performance Analysis',
   CompetitorResearchAgent: 'Market Intelligence',
   CompetitorResearch: 'Market Intelligence',
+  'COMPETITOR RESEARCH': 'Market Intelligence',
+  COMPETITOR: 'Market Intelligence',
+  'COMPETITOR SCOUT': 'Market Intelligence',
   MarketingStrategyAgent: 'Strategic Planning',
   MarketingStrategy: 'Strategic Planning',
+  'MARKETING STRATEGY': 'Strategic Planning',
+  MARKETING: 'Strategic Planning',
+  'MARKETING STRATEGIST': 'Strategic Planning',
   CampaignPlannerAgent: 'Campaign Preparation',
   CampaignPlanner: 'Campaign Preparation',
+  'CAMPAIGN PLANNER': 'Campaign Preparation',
+  CAMPAIGN: 'Campaign Preparation',
   PredictionAgent: 'Strategic Forecast',
   ExecutionAgent: 'Mission Execution',
   SwarmConsensus: 'Recommendation Validation',
   SwarmAgent: 'Recommendation Validation',
   CEOAgent: 'Executive Alignment',
-  PolicyEvolutionAgent: 'Policy Governance Validation'
+  'CEO Agent': 'Executive Alignment',
+  'CEO AGENT': 'Executive Alignment',
+  'CEO Orchestrator': 'Executive Alignment',
+  PolicyEvolutionAgent: 'Policy Governance Validation',
+  AnalyticsAgent: 'Intelligence Reporting',
+  ANALYTICS: 'Intelligence Reporting',
+  ReportGeneratorAgent: 'Intelligence Reporting',
+  REPORT: 'Intelligence Reporting',
+  ClientOnboardingAgent: 'Business Onboarding',
+  'CLIENT BRIEF': 'Business Onboarding'
 };
 
 const TECHNICAL_EVENT_TO_USER_MESSAGE: Record<string, string> = {
   'agent.started': 'Analyzing business performance',
-  'agent.tool.started': 'Collecting business information',
-  'agent.llm.started': 'Analyzing information',
+  'agent.tool.started': 'Collecting verified business information',
+  'agent.llm.started': 'Analyzing business information',
   'approval.pending': 'Decision requires your approval',
-  'execution.started': 'Executing strategic mission',
-  'execution.completed': 'Mission execution completed',
+  'execution.started': 'Executing approved action',
+  'execution.completed': 'Mission completed',
   'agent.failed': 'Task could not be completed',
   'task.failed': 'Task could not be completed',
   'workflow.updated': 'Updating strategic workflow state',
-  'outcome.recorded': 'Performance outcome recorded'
+  'outcome.recorded': 'Recording outcome'
 };
 
-export function mapAgentToBusinessTitle(agentName?: string): string {
-  if (!agentName) return 'Business Intelligence Task';
-  if (AGENT_TO_BUSINESS_TITLE[agentName]) {
-    return AGENT_TO_BUSINESS_TITLE[agentName];
+export function mapInternalExecutionToBusinessLanguage(agentName?: string): string {
+  if (!agentName) return 'StrtOS Intelligence Task';
+  if (KNOWN_BUSINESS_MAP[agentName]) {
+    return KNOWN_BUSINESS_MAP[agentName];
   }
-  return agentName
-    .replace(/Agent$/, '')
+  const cleaned = agentName
+    .replace(/Agent$/i, '')
+    .replace(/_/g, ' ')
     .replace(/([A-Z])/g, ' $1')
     .trim();
+  return cleaned || 'StrtOS Intelligence Task';
+}
+
+export function mapAgentToBusinessTitle(agentName?: string): string {
+  return mapInternalExecutionToBusinessLanguage(agentName);
 }
 
 export function mapTechnicalEventToUserMessage(eventType: string, defaultMsg?: string): string {
@@ -78,8 +104,8 @@ export function mapTechnicalEventToUserMessage(eventType: string, defaultMsg?: s
       .replace(/Agent Running/gi, 'StrtOS is working')
       .replace(/Agent Execution/gi, 'Processing')
       .replace(/Swarm Consensus/gi, 'Recommendation Validation')
-      .replace(/Agent Tool Started/gi, 'Collecting business information')
-      .replace(/LLM Processing/gi, 'Analyzing information')
+      .replace(/Agent Tool Started/gi, 'Collecting verified business information')
+      .replace(/LLM Processing/gi, 'Analyzing business information')
       .replace(/Agent Optimization/gi, 'Intelligence Performance')
       .replace(/Workflow Node/gi, 'Task')
       .replace(/Agent Failure/gi, 'Task could not be completed');
@@ -88,7 +114,7 @@ export function mapTechnicalEventToUserMessage(eventType: string, defaultMsg?: s
 }
 
 export function translateBackendTaskToUserTask(task: TaskItem): UserFacingTask {
-  const title = mapAgentToBusinessTitle(task.agent_name || task.title);
+  const title = mapInternalExecutionToBusinessLanguage(task.agent_name || task.title);
 
   let status: UserTaskStatus = 'ANALYZING';
   let progress: number | undefined = undefined;
@@ -96,7 +122,7 @@ export function translateBackendTaskToUserTask(task: TaskItem): UserFacingTask {
   switch (task.status) {
     case 'RUNNING':
       status = 'ANALYZING';
-      progress = undefined; // Real progress if available, otherwise show indeterminate "Working..."
+      progress = undefined;
       break;
     case 'COMPLETED':
       status = 'COMPLETED';
@@ -155,7 +181,7 @@ export function translateWorkflowToTasks(workflow: Workflow, tasks: TaskItem[] =
 }
 
 export function translateSSEEventToTaskUpdate(event: RealtimeEventData): Partial<UserFacingTask> {
-  const title = mapAgentToBusinessTitle(event.agent_name);
+  const title = mapInternalExecutionToBusinessLanguage(event.agent_name);
   let status: UserTaskStatus = 'ANALYZING';
 
   if (event.event_type.includes('completed')) {

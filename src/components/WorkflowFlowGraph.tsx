@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+﻿import React, { useMemo } from 'react';
 import { ReactFlow, Background, Handle, Position } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { StatusType } from './StatusBadge';
@@ -14,7 +14,7 @@ interface StageNodeData {
 const getIcon = (name: string) => {
   switch (name) {
     case 'CLIENT BRIEF': return ShieldCheck;
-    case 'CEO AGENT': return Brain;
+    case 'EXECUTIVE ALIGNMENT': return Brain;
     case 'BUSINESS': return Cpu;
     case 'SEO': return Search;
     case 'COMPETITOR': return Target;

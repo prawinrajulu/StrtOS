@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
   BrainCircuit, Plus, Search, ChevronRight, X, Activity
 } from 'lucide-react';
@@ -88,7 +88,7 @@ export const WorkflowsPage: React.FC<WorkflowsPageProps> = ({ onSelectWorkflow }
             Executive Workflows
           </h1>
           <p style={{ color: '#9ca3af', fontSize: '14px', marginTop: '4px', margin: 0 }}>
-            Durable workflow lifecycle management feeding the CEO Agent Orchestrator.
+            Durable workflow lifecycle management driving StrtOS Strategic Execution.
           </p>
         </div>
         <button
@@ -293,7 +293,7 @@ export const WorkflowsPage: React.FC<WorkflowsPageProps> = ({ onSelectWorkflow }
                 <label style={{ fontSize: '13px', color: '#d1d5db', fontWeight: '500', marginBottom: '4px', display: 'block' }}>Executive Directive</label>
                 <textarea
                   rows={3}
-                  placeholder="Specific goal for CEO Agent & Specialist Orchestration..."
+                  placeholder="Specific directive for StrtOS Strategic Execution..."
                   value={formData.directive}
                   onChange={(e) => setFormData({ ...formData, directive: e.target.value })}
                   style={{ width: '100%', padding: '10px', backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', color: '#fff' }}
