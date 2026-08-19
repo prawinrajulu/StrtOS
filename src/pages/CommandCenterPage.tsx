@@ -6,6 +6,7 @@ import { workflowsApi } from '../services/workflowsApi';
 import type { Workflow } from '../services/workflowsApi';
 import { reportsApi } from '../services/reportsApi';
 import { globalEventStream } from '../services/eventStream';
+import { useAuth } from '../context/AuthContext';
 import {
   translateWorkflowToTasks,
   translateSSEEventToTaskUpdate,
@@ -21,6 +22,7 @@ interface CommandCenterPageProps {
 export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
   onNavigateToReports,
 }) => {
+  const { user } = useAuth();
   const [, setOverview] = useState<CommandCenterOverview | null>(null);
   const [activeWorkflow, setActiveWorkflow] = useState<Workflow | null>(null);
   const [activeTask, setActiveTask] = useState<UserFacingTask | null>(null);
@@ -68,8 +70,8 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
             progress: 100,
             subSteps: [],
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            summary: taskUpdate.summary || `${taskUpdate.title} completed successfully.`,
-            confidence: taskUpdate.confidence || 94,
+            summary: taskUpdate.summary || 'INSUFFICIENT DATA',
+            confidence: taskUpdate.confidence,
             result: taskUpdate.result
           };
 
@@ -128,11 +130,11 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
             setFinalResult({
               workflowId: currentWf.id,
               title: rep.title || 'Strategic Business Recommendation',
-              whatStrtOSFound: rep.executive_summary || 'Comprehensive strategic analysis completed.',
-              whatThisMeans: 'Business performance telemetry evaluated across operational channels.',
-              recommendedAction: Array.isArray(rep.recommendations) ? rep.recommendations.join(' ') : 'Optimize conversion efficiency before scaling acquisition spend.',
-              expectedImpact: rep.metrics?.expected_impact || 'Improved operational conversion & sustained revenue growth',
-              confidence: rep.confidence_score || 96.0,
+              whatStrtOSFound: rep.executive_summary || 'INSUFFICIENT DATA',
+              whatThisMeans: rep.summary_json?.summary || 'INSUFFICIENT DATA',
+              recommendedAction: Array.isArray(rep.recommendations) ? rep.recommendations.join(' ') : 'No recommendation available',
+              expectedImpact: rep.metrics?.expected_impact || 'INSUFFICIENT DATA',
+              confidence: typeof rep.confidence_score === 'number' ? rep.confidence_score : undefined,
               completedAt: new Date(rep.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
           }
@@ -168,11 +170,11 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
             setFinalResult({
               workflowId: currentWf.id,
               title: rep.title || 'Strategic Business Recommendation',
-              whatStrtOSFound: rep.executive_summary || 'Comprehensive strategic analysis completed.',
-              whatThisMeans: 'Business performance telemetry evaluated across operational channels.',
-              recommendedAction: Array.isArray(rep.recommendations) ? rep.recommendations.join(' ') : 'Optimize conversion efficiency before scaling acquisition spend.',
-              expectedImpact: rep.metrics?.expected_impact || 'Improved operational conversion & sustained revenue growth',
-              confidence: rep.confidence_score || 96.0,
+              whatStrtOSFound: rep.executive_summary || 'INSUFFICIENT DATA',
+              whatThisMeans: rep.summary_json?.summary || 'INSUFFICIENT DATA',
+              recommendedAction: Array.isArray(rep.recommendations) ? rep.recommendations.join(' ') : 'No recommendation available',
+              expectedImpact: rep.metrics?.expected_impact || 'INSUFFICIENT DATA',
+              confidence: typeof rep.confidence_score === 'number' ? rep.confidence_score : undefined,
               completedAt: new Date(rep.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             });
           }
@@ -198,8 +200,9 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
     setFinalResult(null);
 
     try {
+      const tenantClientId = activeWorkflow?.client_id || user?.organization_id || 'org_primary';
       const newWf = await workflowsApi.createWorkflow({
-        client_id: activeWorkflow?.client_id || 'default_org',
+        client_id: tenantClientId,
         title: queryText,
         directive: queryText
       });
@@ -289,7 +292,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
               <h2 className="text-base font-bold text-[#F5F5F5] tracking-tight">STRATEGIC RESULT</h2>
             </div>
             <span className="text-xs font-mono text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2.5 py-1 rounded">
-              Confidence: {finalResult.confidence}%
+              {typeof finalResult.confidence === 'number' ? `Confidence: ${finalResult.confidence}%` : 'Confidence unavailable'}
             </span>
           </div>
 
@@ -446,7 +449,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
                       Completed {t.timestamp}
                     </span>
                     <p className="text-xs text-[#92929A] pl-5">
-                      {t.summary || `${mapInternalExecutionToBusinessLanguage(t.title)} analysis completed.`}
+                      {t.summary || 'INSUFFICIENT DATA'}
                     </p>
                   </div>
                   <button
@@ -508,11 +511,11 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
 
               <div className="p-3.5 bg-[#151518] border border-white/5 rounded-lg space-y-1">
                 <span className="text-[10px] font-mono text-emerald-400 font-bold uppercase block">RECOMMENDATION</span>
-                <p className="text-[#F5F5F5] font-semibold leading-relaxed">{selectedTaskResult.recommendation || 'INSUFFICIENT DATA'}</p>
+                <p className="text-[#F5F5F5] font-semibold leading-relaxed">{selectedTaskResult.recommendation || 'No recommendation available'}</p>
               </div>
 
               <div className="pt-2 flex items-center justify-between text-[11px] font-mono text-[#92929A]">
-                <span>Confidence Baseline: <strong className="text-emerald-400">{selectedTaskResult.confidence || 92}%</strong></span>
+                <span>Confidence: <strong className="text-emerald-400">{typeof selectedTaskResult.confidence === 'number' ? `${selectedTaskResult.confidence}%` : 'Confidence unavailable'}</strong></span>
                 <button
                   onClick={() => setSelectedTaskResult(null)}
                   className="px-3 py-1.5 rounded bg-[#151518] hover:bg-slate-800 text-slate-200 border border-white/10 transition"

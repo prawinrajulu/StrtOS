@@ -54,7 +54,7 @@ export interface FinalStrategicResult {
   whatThisMeans: string;
   recommendedAction: string;
   expectedImpact: string;
-  confidence: number;
+  confidence?: number;
   completedAt: string;
 }
 
@@ -143,8 +143,13 @@ export function extractTaskResultData(output: any, title: string): TaskResultDat
   if (!output || typeof output !== 'object') {
     return {
       title,
-      summary: `${title} completed based on verified business telemetry.`,
-      confidence: 94
+      summary: 'INSUFFICIENT DATA',
+      keyFinding: 'INSUFFICIENT DATA',
+      importantChange: 'INSUFFICIENT DATA',
+      businessImpact: 'INSUFFICIENT DATA',
+      recommendation: 'No recommendation available',
+      confidence: undefined,
+      findings: []
     };
   }
 
@@ -152,12 +157,12 @@ export function extractTaskResultData(output: any, title: string): TaskResultDat
 
   return {
     title,
-    summary: output.summary || (findings.length > 0 ? findings[0] : `${title} completed successfully.`),
+    summary: output.summary || (findings.length > 0 ? findings[0] : 'INSUFFICIENT DATA'),
     keyFinding: output.key_finding || (findings.length > 0 ? findings[0] : 'INSUFFICIENT DATA'),
     importantChange: output.important_change || (findings.length > 1 ? findings[1] : 'INSUFFICIENT DATA'),
     businessImpact: output.business_impact || output.summary || 'INSUFFICIENT DATA',
-    recommendation: output.recommendation || (Array.isArray(output.recommendations) && output.recommendations.length > 0 ? output.recommendations[0] : 'INSUFFICIENT DATA'),
-    confidence: typeof output.confidence === 'number' ? output.confidence : 92,
+    recommendation: output.recommendation || (Array.isArray(output.recommendations) && output.recommendations.length > 0 ? output.recommendations[0] : 'No recommendation available'),
+    confidence: typeof output.confidence === 'number' ? output.confidence : undefined,
     metrics: output.metrics || {},
     findings
   };
@@ -218,7 +223,7 @@ export function translateBackendTaskToUserTask(task: TaskItem): UserFacingTask {
     subSteps: [],
     subStepDetails: [],
     timestamp: task.completed_at ? new Date(task.completed_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    summary: task.status === 'COMPLETED' ? (result?.summary || `${title} completed successfully.`) : undefined,
+    summary: task.status === 'COMPLETED' ? (result?.summary || 'INSUFFICIENT DATA') : undefined,
     confidence: result?.confidence,
     errorReason: task.error_message || undefined,
     result
@@ -260,11 +265,11 @@ export function translateSSEEventToTaskUpdate(event: RealtimeEventData): {
       finalResult: {
         workflowId: event.workflow_id || '',
         title: rep.title || 'Strategic Business Recommendation',
-        whatStrtOSFound: rep.executive_summary || (rep.key_findings ? rep.key_findings.join('. ') : 'Comprehensive analysis completed.'),
-        whatThisMeans: rep.summary || 'Business operational telemetry evaluated across digital channels.',
-        recommendedAction: Array.isArray(rep.recommendations) ? rep.recommendations.join(' ') : (rep.recommendation || 'Optimize primary conversion channels.'),
-        expectedImpact: rep.metrics?.expected_impact || 'Improved conversion efficiency & sustained revenue growth',
-        confidence: rep.confidence_score || 96.0,
+        whatStrtOSFound: rep.executive_summary || (rep.key_findings ? rep.key_findings.join('. ') : 'INSUFFICIENT DATA'),
+        whatThisMeans: rep.summary || 'INSUFFICIENT DATA',
+        recommendedAction: Array.isArray(rep.recommendations) ? rep.recommendations.join(' ') : (rep.recommendation || 'No recommendation available'),
+        expectedImpact: rep.metrics?.expected_impact || 'INSUFFICIENT DATA',
+        confidence: typeof rep.confidence_score === 'number' ? rep.confidence_score : undefined,
         completedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     };
@@ -295,7 +300,7 @@ export function translateSSEEventToTaskUpdate(event: RealtimeEventData): {
       status,
       statusMessage: statusMsg,
       progress: typeof event.progress === 'number' ? event.progress : (status === 'COMPLETED' ? 100 : undefined),
-      summary: status === 'COMPLETED' ? (result?.summary || `${title} completed successfully.`) : undefined,
+      summary: status === 'COMPLETED' ? (result?.summary || 'INSUFFICIENT DATA') : undefined,
       confidence: result?.confidence,
       errorReason: event.message && status === 'FAILED' ? event.message : undefined,
       result
