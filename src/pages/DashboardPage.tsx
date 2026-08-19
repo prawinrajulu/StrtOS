@@ -162,11 +162,11 @@ export const DashboardPage: React.FC<{ onOpenCEO: () => void }> = ({ onOpenCEO }
             {/* Agent Performance Table */}
             <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '24px' }}>
               <h3 style={{ fontSize: '17px', fontWeight: '600', color: '#ffffff', marginBottom: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BarChart2 size={18} style={{ color: '#6366f1' }} /> Specialist Agent Execution Performance
+                <BarChart2 size={18} style={{ color: '#6366f1' }} /> Operational Execution Performance
               </h3>
 
               {data.agent_performance.length === 0 ? (
-                <div style={{ color: '#9ca3af', fontSize: '13px' }}>No agent executions logged yet.</div>
+                <div style={{ color: '#9ca3af', fontSize: '13px' }}>No execution records logged yet.</div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   {data.agent_performance.map((agent) => (

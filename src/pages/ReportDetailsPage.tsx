@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   ArrowLeft, FileText, Award, Activity, Download, CheckCircle2,
   TrendingUp, Search, Target, Megaphone, Calendar, ShieldCheck, Briefcase
@@ -77,7 +77,7 @@ export const ReportDetailsPage: React.FC<ReportDetailsPageProps> = ({ report, on
           </div>
         </div>
         <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '20px' }}>
-          <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '8px' }}>ORCHESTRATOR CONFIDENCE</div>
+          <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '8px' }}>CONFIDENCE SCORE</div>
           <div style={{ fontSize: '32px', fontWeight: '700', color: '#8b5cf6', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Activity size={28} /> {report.confidence_score}%
           </div>
@@ -134,7 +134,7 @@ export const ReportDetailsPage: React.FC<ReportDetailsPageProps> = ({ report, on
       {/* Specialist Agent Results Breakdown */}
       <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '24px' }}>
         <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#f9fafb', marginBottom: '20px' }}>
-          Specialist Agent Intelligence Findings
+          Strategic Intelligence Findings
         </h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
