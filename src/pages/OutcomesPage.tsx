@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Target, PlusCircle, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { Target, PlusCircle, CheckCircle2, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { memoryApi } from '../services/memoryApi';
 import type { MemoryRecord, OutcomeResponse } from '../services/memoryApi';
 
@@ -7,169 +7,184 @@ export const OutcomesPage: React.FC = () => {
   const [outcomes, setOutcomes] = useState<MemoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-
-  // Form State
-  const [metricName, setMetricName] = useState('ROAS');
-  const [predictedValue, setPredictedValue] = useState('4.2');
-  const [actualValue, setActualValue] = useState('2.8');
-  const [unit, setUnit] = useState('x');
-  const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [metricName, setMetricName] = useState('Monthly Revenue Growth');
+  const [predictedValue, setPredictedValue] = useState('15.0');
+  const [actualValue, setActualValue] = useState('18.2');
+  const [unit, setUnit] = useState('%');
+  const [notes, setNotes] = useState('');
   const [result, setResult] = useState<OutcomeResponse | null>(null);
 
-  const fetchOutcomes = async () => {
-    setLoading(true);
-    const data = await memoryApi.getMemories({ memory_type: 'OUTCOME' });
-    setOutcomes(data.memories);
-    setLoading(false);
-  };
-
   useEffect(() => {
-    fetchOutcomes();
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const res = await memoryApi.getMemories({ memory_type: 'OUTCOME' });
+      setOutcomes(res && Array.isArray(res.memories) ? res.memories : []);
+    } catch {
+      setOutcomes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await memoryApi.submitOutcome({
+      const evalRes = await memoryApi.submitOutcome({
         metric_name: metricName,
         predicted_value: parseFloat(predictedValue),
         actual_value: parseFloat(actualValue),
-        unit: unit,
-        notes: notes
+        unit,
+        notes: notes || undefined,
       });
-      setResult(res);
-      fetchOutcomes();
+      setResult(evalRes);
       setShowForm(false);
-    } catch (err: any) {
-      alert(err.message || 'Outcome submission failed');
+      loadData();
+    } catch {
+      alert('Failed to record outcome.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const getOutcomeBadge = (status: string, pctVar: number) => {
+  const getOutcomeBadge = (status?: string, variance?: number) => {
     switch (status) {
       case 'SUCCESS':
-        return <span style={{ color: '#10b981', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CheckCircle2 size={14} /> SUCCESS ({pctVar}% var)</span>;
+        return (
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center space-x-1">
+            <CheckCircle2 className="w-3 h-3" />
+            <span>Success (+{variance || 0}%)</span>
+          </span>
+        );
       case 'PARTIAL':
-        return <span style={{ color: '#f59e0b', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><AlertTriangle size={14} /> PARTIAL ({pctVar}% var)</span>;
-      case 'FAILED':
-        return <span style={{ color: '#ef4444', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><XCircle size={14} /> FAILED ({pctVar}% var)</span>;
+        return (
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-sky-950 text-sky-300 border border-sky-800 flex items-center space-x-1">
+            <ShieldCheck className="w-3 h-3" />
+            <span>Partial Match</span>
+          </span>
+        );
       default:
-        return null;
+        return (
+          <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-950 text-amber-300 border border-amber-800 flex items-center space-x-1">
+            <AlertTriangle className="w-3 h-3" />
+            <span>Variance Recorded</span>
+          </span>
+        );
     }
   };
 
   return (
-    <div style={{ padding: '28px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto text-slate-100 space-y-6">
       {/* Header */}
-      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="flex items-center justify-between">
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#f9fafb', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Target style={{ color: '#10b981' }} size={28} /> Measured Outcome Tracking & Variance Engine
-          </h1>
-          <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
-            Compare AI predictions against actual business KPI performance to extract deterministic learned signals
+          <div className="flex items-center space-x-3">
+            <Target className="w-7 h-7 text-sky-400" />
+            <h1 className="text-2xl font-bold text-[#F5F5F5] tracking-tight">Outcomes</h1>
+          </div>
+          <p className="text-[#92929A] mt-1 text-xs sm:text-sm">
+            See what happened after decisions were made.
           </p>
         </div>
 
         <button
           onClick={() => setShowForm(!showForm)}
-          style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px 20px', backgroundColor: '#6366f1', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: '700', cursor: 'pointer' }}
+          className="px-4 py-2 rounded-lg text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-slate-950 flex items-center space-x-2 transition"
         >
-          <PlusCircle size={18} /> Submit Actual Outcome
+          <PlusCircle className="w-4 h-4" />
+          <span>Record KPI Outcome</span>
         </button>
       </div>
 
       {/* Result Alert */}
       {result && (
-        <div style={{ backgroundColor: '#111827', border: '1px solid #10b981', borderRadius: '14px', padding: '20px', marginBottom: '24px' }}>
-          <h3 style={{ color: '#10b981', fontSize: '16px', fontWeight: '700', margin: '0 0 8px 0' }}>Outcome Successfully Recorded!</h3>
-          <p style={{ color: '#d1d5db', fontSize: '14px', margin: '0 0 8px 0' }}>{result.lesson_summary}</p>
-          <div style={{ fontSize: '12px', color: '#9ca3af' }}>
-            Absolute Variance: {result.absolute_variance}{result.unit} | Percentage Variance: {result.percentage_variance}% | Status: {result.outcome_status}
-          </div>
+        <div className="p-4 bg-emerald-950/60 border border-emerald-800 rounded-xl space-y-1 text-xs">
+          <h3 className="font-bold text-emerald-400">Outcome Successfully Recorded</h3>
+          <p className="text-slate-200">{result.lesson_summary || 'Outcome evaluation complete.'}</p>
         </div>
       )}
 
-      {/* Submission Form Modal / Panel */}
+      {/* Form Panel */}
       {showForm && (
-        <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '16px', padding: '24px', marginBottom: '28px' }}>
-          <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#f9fafb', marginBottom: '16px' }}>Submit Actual Business KPI Outcome</h3>
+        <div className="p-6 bg-[#111113] border border-white/10 rounded-xl space-y-4 text-xs">
+          <h3 className="font-bold text-[#F5F5F5] text-sm">Submit Actual Business KPI Outcome</h3>
 
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '6px' }}>METRIC NAME</label>
+              <label className="text-[#92929A] block mb-1">METRIC NAME</label>
               <input
                 type="text"
                 value={metricName}
                 onChange={(e) => setMetricName(e.target.value)}
                 required
-                style={{ width: '100%', backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', padding: '10px', color: '#f9fafb', fontSize: '14px' }}
+                className="w-full bg-[#151518] border border-white/10 rounded-lg p-2 text-[#F5F5F5] outline-none"
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '6px' }}>PREDICTED VALUE</label>
+              <label className="text-[#92929A] block mb-1">PREDICTED VALUE</label>
               <input
                 type="number"
                 step="0.01"
                 value={predictedValue}
                 onChange={(e) => setPredictedValue(e.target.value)}
                 required
-                style={{ width: '100%', backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', padding: '10px', color: '#f9fafb', fontSize: '14px' }}
+                className="w-full bg-[#151518] border border-white/10 rounded-lg p-2 text-[#F5F5F5] outline-none"
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '6px' }}>ACTUAL VALUE</label>
+              <label className="text-[#92929A] block mb-1">ACTUAL VALUE</label>
               <input
                 type="number"
                 step="0.01"
                 value={actualValue}
                 onChange={(e) => setActualValue(e.target.value)}
                 required
-                style={{ width: '100%', backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', padding: '10px', color: '#f9fafb', fontSize: '14px' }}
+                className="w-full bg-[#151518] border border-white/10 rounded-lg p-2 text-[#F5F5F5] outline-none"
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '6px' }}>UNIT</label>
+              <label className="text-[#92929A] block mb-1">UNIT</label>
               <input
                 type="text"
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                style={{ width: '100%', backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', padding: '10px', color: '#f9fafb', fontSize: '14px' }}
+                className="w-full bg-[#151518] border border-white/10 rounded-lg p-2 text-[#F5F5F5] outline-none"
               />
             </div>
 
-            <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ display: 'block', fontSize: '12px', color: '#9ca3af', fontWeight: '600', marginBottom: '6px' }}>NOTES / CONTEXT</label>
+            <div className="md:col-span-4">
+              <label className="text-[#92929A] block mb-1">OPERATIONAL CONTEXT / NOTES</label>
               <input
                 type="text"
-                placeholder="Optional operational context or channel details..."
+                placeholder="Optional notes or details..."
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                style={{ width: '100%', backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', padding: '10px', color: '#f9fafb', fontSize: '14px' }}
+                className="w-full bg-[#151518] border border-white/10 rounded-lg p-2 text-[#F5F5F5] outline-none"
               />
             </div>
 
-            <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '12px' }}>
-              <button
-                type="submit"
-                disabled={submitting}
-                style={{ padding: '12px 24px', backgroundColor: '#10b981', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: '700', cursor: 'pointer' }}
-              >
-                Evaluate & Record Outcome
-              </button>
+            <div className="md:col-span-4 flex justify-end space-x-2 pt-2">
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                style={{ padding: '12px 20px', backgroundColor: '#374151', color: '#9ca3af', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                className="px-3 py-2 rounded-lg bg-[#151518] text-[#92929A] border border-white/10 hover:text-[#F5F5F5] transition"
               >
                 Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-semibold transition"
+              >
+                {submitting ? 'Submitting...' : 'Record Outcome'}
               </button>
             </div>
           </form>
@@ -178,37 +193,37 @@ export const OutcomesPage: React.FC = () => {
 
       {/* Outcomes List */}
       {loading ? (
-        <div style={{ color: '#9ca3af', textAlign: 'center', padding: '40px' }}>Loading outcome tracking records...</div>
+        <p className="text-xs text-[#92929A]">Loading outcome records...</p>
       ) : outcomes.length === 0 ? (
-        <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
-          No actual outcomes submitted yet. Submit your first KPI result above!
+        <div className="p-8 bg-[#111113] border border-white/[0.06] rounded-xl text-center text-xs text-[#92929A] italic space-y-1">
+          <p className="font-semibold text-slate-300">No current data.</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div className="space-y-3">
           {outcomes.map((mem) => {
             const data = mem.structured_data || {};
             return (
               <div
                 key={mem.id}
-                style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}
+                className="p-4 bg-[#111113] border border-white/[0.06] rounded-xl flex items-center justify-between text-xs space-x-4"
               >
-                <div style={{ flex: 1, minWidth: '280px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                <div className="space-y-1 flex-1">
+                  <div className="flex items-center space-x-2">
                     {getOutcomeBadge(mem.outcome_status, data.percentage_variance || 0)}
-                    <span style={{ fontSize: '12px', color: '#6b7280' }}>{new Date(mem.created_at).toLocaleDateString()}</span>
+                    <span className="text-[10px] font-mono text-[#92929A]">{new Date(mem.created_at).toLocaleDateString()}</span>
                   </div>
-                  <h3 style={{ fontSize: '17px', fontWeight: '700', color: '#f9fafb', margin: '0 0 6px 0' }}>{mem.title}</h3>
-                  <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>{mem.content}</p>
+                  <h3 className="font-semibold text-[#F5F5F5] text-sm mt-1">{mem.title}</h3>
+                  <p className="text-[#92929A]">{mem.content}</p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '20px' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '600' }}>PREDICTED</div>
-                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#60a5fa' }}>{data.predicted_value || '0'}{data.unit || ''}</div>
+                <div className="flex items-center space-x-4 shrink-0 font-mono text-right">
+                  <div>
+                    <span className="text-[10px] text-[#92929A] block">PREDICTED</span>
+                    <span className="text-sky-300 font-bold text-sm">{data.predicted_value || '0'}{data.unit || ''}</span>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '600' }}>ACTUAL</div>
-                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#10b981' }}>{data.actual_value || '0'}{data.unit || ''}</div>
+                  <div>
+                    <span className="text-[10px] text-[#92929A] block">ACTUAL</span>
+                    <span className="text-emerald-400 font-bold text-sm">{data.actual_value || '0'}{data.unit || ''}</span>
                   </div>
                 </div>
               </div>
