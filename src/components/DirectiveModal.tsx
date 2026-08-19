@@ -77,9 +77,9 @@ export const DirectiveModal: React.FC<DirectiveModalProps> = ({ isOpen, onClose,
             <Sparkles size={18} />
           </div>
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>New Strategic Directive</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>New Strategic Request</h3>
             <div style={{ fontSize: '11px', fontFamily: "'JetBrains Mono', monospace", color: '#6b7280' }}>
-              ORCHESTRATE STRATEGIC WORKFLOW
+              REQUEST STRATEGIC ANALYSIS
             </div>
           </div>
         </div>
@@ -128,7 +128,7 @@ export const DirectiveModal: React.FC<DirectiveModalProps> = ({ isOpen, onClose,
                 marginBottom: '6px',
               }}
             >
-              EXECUTIVE GOAL / DIRECTIVE
+              BUSINESS GOAL / REQUEST
             </label>
             <textarea
               rows={4}
@@ -181,7 +181,7 @@ export const DirectiveModal: React.FC<DirectiveModalProps> = ({ isOpen, onClose,
                 boxShadow: '0 0 16px rgba(168, 85, 247, 0.4)',
               }}
             >
-              Dispatch Directive
+              Submit Request
             </button>
           </div>
         </form>

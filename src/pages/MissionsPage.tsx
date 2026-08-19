@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Target, RefreshCw, Play, BarChart2, AlertTriangle, CheckCircle, Clock, Layers } from 'lucide-react';
 import { missionsApi } from '../services/missionsApi';
 import type { Mission, MissionEvaluation } from '../services/missionsApi';
@@ -122,10 +122,10 @@ export const MissionsPage: React.FC = () => {
       {/* Selected Mission Detail */}
       {selected && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Execution Pipeline (DAG Steps) */}
+          {/* Mission Execution Tasks */}
           <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
             <h2 className="text-lg font-semibold flex items-center space-x-2">
-              <Layers className="w-5 h-5 text-cyan-400" /><span>Execution Pipeline (DAG)</span>
+              <Layers className="w-5 h-5 text-cyan-400" /><span>Mission Execution Tasks</span>
             </h2>
             <div className="space-y-2">
               {selected.steps.map((step, idx) => (
@@ -134,7 +134,7 @@ export const MissionsPage: React.FC = () => {
                   {stepStatusIcons[step.status] || <Clock className="w-4 h-4 text-slate-500" />}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-slate-200 truncate">{step.title}</p>
-                    <p className="text-xs text-slate-500 font-mono">{step.action_type} · {step.autonomy_level} · {step.risk_level} risk</p>
+                    <p className="text-xs text-slate-500 font-mono">{step.action_type} Â· {step.autonomy_level} Â· {step.risk_level} risk</p>
                   </div>
                   <span className={`px-2 py-0.5 rounded text-xs font-mono border ${statusColors[step.status] || 'text-slate-400 bg-slate-900 border-slate-700'}`}>{step.status}</span>
                 </div>
@@ -199,7 +199,7 @@ export const MissionsPage: React.FC = () => {
                 <div key={p.id} className="flex justify-between text-xs font-mono p-2 bg-slate-950 rounded border border-slate-800">
                   <span className="text-cyan-300">{p.version}</span>
                   <span className="text-slate-400">{p.adaptation_reason}</span>
-                  <span className="text-slate-500">Δ{p.delta_percentage}%</span>
+                  <span className="text-slate-500">Î”{p.delta_percentage}%</span>
                 </div>
               ))}
             </div>

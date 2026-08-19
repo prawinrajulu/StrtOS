@@ -108,7 +108,7 @@ export const CEOAgentPage: React.FC = () => {
 
         <div className="space-y-6">
           <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
-            <h2 className="text-sm font-semibold text-slate-100 uppercase font-mono tracking-wider">Workflow Pipeline</h2>
+            <h2 className="text-sm font-semibold text-slate-100 uppercase font-mono tracking-wider">Recent Activity</h2>
             {displayStages.length === 0 ? (
               <div className="py-6 text-center text-xs text-slate-400 italic space-y-1">
                 <p className="font-semibold text-slate-300">No active intelligence workflow.</p>
