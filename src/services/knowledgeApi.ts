@@ -128,60 +128,89 @@ export interface KnowledgeOverviewRecord {
 }
 
 export const knowledgeApi = {
-  async getOverview(): Promise<KnowledgeOverviewRecord> {
-    const res = await fetch(`${API_BASE}/overview`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
-    if (!res.ok) throw new Error('Failed to fetch knowledge graph overview');
-    return res.json();
+  async getOverview(): Promise<KnowledgeOverviewRecord | null> {
+    try {
+      const res = await fetch(`${API_BASE}/overview`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
   async listNodes(): Promise<KnowledgeNodeRecord[]> {
-    const res = await fetch(`${API_BASE}/nodes`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
-    if (!res.ok) throw new Error('Failed to fetch knowledge nodes');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/nodes`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) return [];
+      const json = await res.json();
+      return Array.isArray(json) ? json : [];
+    } catch {
+      return [];
+    }
   },
 
-  async getNode(id: string): Promise<KnowledgeNodeRecord> {
-    const res = await fetch(`${API_BASE}/nodes/${id}`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
-    if (!res.ok) throw new Error('Failed to fetch knowledge node');
-    return res.json();
+  async getNode(id: string): Promise<KnowledgeNodeRecord | null> {
+    try {
+      const res = await fetch(`${API_BASE}/nodes/${id}`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
-  async getDecisionChain(id: string): Promise<DecisionChainRecord> {
-    const res = await fetch(`${API_BASE}/decisions/${id}/chain`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
-    if (!res.ok) throw new Error('Failed to fetch decision explanation chain');
-    return res.json();
+  async getDecisionChain(id: string): Promise<DecisionChainRecord | null> {
+    try {
+      const res = await fetch(`${API_BASE}/decisions/${id}/chain`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
-  async getOutcomeRootCause(id: string): Promise<OutcomeRootCauseRecord> {
-    const res = await fetch(`${API_BASE}/outcomes/${id}/root-cause`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
-    if (!res.ok) throw new Error('Failed to fetch outcome root-cause analysis');
-    return res.json();
+  async getOutcomeRootCause(id: string): Promise<OutcomeRootCauseRecord | null> {
+    try {
+      const res = await fetch(`${API_BASE}/outcomes/${id}/root-cause`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
-  async getAgentInfluence(agentName: string): Promise<AgentInfluenceRecord> {
-    const res = await fetch(`${API_BASE}/agents/${encodeURIComponent(agentName)}/influence`, {
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
-    if (!res.ok) throw new Error('Failed to fetch agent influence');
-    return res.json();
+  async getAgentInfluence(agentName: string): Promise<AgentInfluenceRecord | null> {
+    try {
+      const res = await fetch(`${API_BASE}/agents/${encodeURIComponent(agentName)}/influence`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
-  async rebuildGraph(): Promise<{ status: string; message: string }> {
-    const res = await fetch(`${API_BASE}/rebuild`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${getToken()}` },
-    });
-    if (!res.ok) throw new Error('Failed to rebuild knowledge graph');
-    return res.json();
+  async rebuildGraph(): Promise<{ status: string; message: string } | null> {
+    try {
+      const res = await fetch(`${API_BASE}/rebuild`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${getToken()}` },
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 };

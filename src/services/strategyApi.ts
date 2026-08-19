@@ -122,67 +122,120 @@ export interface StrategyExplanationResponse {
 
 export const strategyApi = {
   getOverview: async () => {
-    const res = await fetch(`${API_BASE}/overview`, { headers: getHeaders() });
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/overview`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
-  createObjective: async (data: Partial<StrategicObjective>) => {
-    const res = await fetch(`${API_BASE}/objectives`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    return res.json() as Promise<StrategicObjective>;
+  createObjective: async (data: Partial<StrategicObjective>): Promise<StrategicObjective | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/objectives`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return null;
+      return (await res.json()) as StrategicObjective;
+    } catch {
+      return null;
+    }
   },
 
-  listObjectives: async () => {
-    const res = await fetch(`${API_BASE}/objectives`, { headers: getHeaders() });
-    return res.json() as Promise<StrategicObjective[]>;
+  listObjectives: async (): Promise<StrategicObjective[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/objectives`, { headers: getHeaders() });
+      if (!res.ok) return [];
+      const json = await res.json();
+      return Array.isArray(json) ? json : [];
+    } catch {
+      return [];
+    }
   },
 
-  createPlan: async (data: { objective_id: string; title: string; scenario_type?: string; horizon?: string }) => {
-    const res = await fetch(`${API_BASE}/plans`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    return res.json() as Promise<StrategicPlan>;
+  createPlan: async (data: { objective_id: string; title: string; scenario_type?: string; horizon?: string }): Promise<StrategicPlan | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/plans`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return null;
+      return (await res.json()) as StrategicPlan;
+    } catch {
+      return null;
+    }
   },
 
-  listPlans: async () => {
-    const res = await fetch(`${API_BASE}/plans`, { headers: getHeaders() });
-    return res.json() as Promise<StrategicPlan[]>;
+  listPlans: async (): Promise<StrategicPlan[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/plans`, { headers: getHeaders() });
+      if (!res.ok) return [];
+      const json = await res.json();
+      return Array.isArray(json) ? json : [];
+    } catch {
+      return [];
+    }
   },
 
-  getPlan: async (id: string) => {
-    const res = await fetch(`${API_BASE}/plans/${id}`, { headers: getHeaders() });
-    return res.json() as Promise<StrategicPlan>;
+  getPlan: async (id: string): Promise<StrategicPlan | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/plans/${id}`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return (await res.json()) as StrategicPlan;
+    } catch {
+      return null;
+    }
   },
 
-  simulateScenarios: async (planId: string) => {
-    const res = await fetch(`${API_BASE}/plans/${planId}/simulate`, { method: 'POST', headers: getHeaders() });
-    return res.json() as Promise<ScenarioResponse[]>;
+  simulateScenarios: async (planId: string): Promise<ScenarioResponse[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/plans/${planId}/simulate`, { method: 'POST', headers: getHeaders() });
+      if (!res.ok) return [];
+      const json = await res.json();
+      return Array.isArray(json) ? json : [];
+    } catch {
+      return [];
+    }
   },
 
-  activatePlan: async (planId: string) => {
-    const res = await fetch(`${API_BASE}/plans/${planId}/activate`, { method: 'POST', headers: getHeaders() });
-    return res.json() as Promise<StrategicPlan>;
+  activatePlan: async (planId: string): Promise<StrategicPlan | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/plans/${planId}/activate`, { method: 'POST', headers: getHeaders() });
+      if (!res.ok) return null;
+      return (await res.json()) as StrategicPlan;
+    } catch {
+      return null;
+    }
   },
 
-  getExplanation: async (planId: string) => {
-    const res = await fetch(`${API_BASE}/plans/${planId}/explanation`, { headers: getHeaders() });
-    return res.json() as Promise<StrategyExplanationResponse>;
+  getExplanation: async (planId: string): Promise<StrategyExplanationResponse | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/plans/${planId}/explanation`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return (await res.json()) as StrategyExplanationResponse;
+    } catch {
+      return null;
+    }
   },
 
   adaptPlan: async (planId: string, actualPerformance: number, reason: string) => {
-    const res = await fetch(`${API_BASE}/plans/${planId}/adapt`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({
-        actual_performance: actualPerformance,
-        adaptation_reason: reason,
-      }),
-    });
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/plans/${planId}/adapt`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+          actual_performance: actualPerformance,
+          adaptation_reason: reason,
+        }),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 };

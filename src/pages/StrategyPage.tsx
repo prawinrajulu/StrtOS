@@ -19,8 +19,8 @@ export const StrategyPage: React.FC = () => {
         strategyApi.listObjectives(),
         strategyApi.listPlans()
       ]);
-      setObjectives(objs);
-      setPlans(pls);
+      setObjectives(Array.isArray(objs) ? objs : []);
+      setPlans(Array.isArray(pls) ? pls : []);
     } catch (e) {
       console.error('Failed to load strategy data:', e);
     } finally {
@@ -28,7 +28,7 @@ export const StrategyPage: React.FC = () => {
     }
   };
 
-  const activePlan = plans.find(p => p.status === 'ACTIVE') || plans[0];
+  const activePlan = Array.isArray(plans) && plans.length > 0 ? (plans.find(p => p.status === 'ACTIVE') || plans[0]) : null;
 
   return (
     <div className="p-8 max-w-7xl mx-auto text-slate-100 space-y-8">
@@ -88,7 +88,7 @@ export const StrategyPage: React.FC = () => {
             <Clock className="w-4 h-4 text-indigo-400" />
           </div>
           <p className="text-3xl font-extrabold mt-2 text-indigo-400">
-            {activePlan ? activePlan.horizon.replace('_', ' ') : '90 DAYS'}
+            {activePlan && activePlan.horizon ? activePlan.horizon.replace('_', ' ') : '90 DAYS'}
           </p>
           <p className="text-xs text-slate-400 mt-1">Multi-horizon checkpoint</p>
         </div>
@@ -148,7 +148,7 @@ export const StrategyPage: React.FC = () => {
                   <tr key={o.id} className="hover:bg-slate-800/40 transition">
                     <td className="p-3 font-semibold text-slate-100">{o.title}</td>
                     <td className="p-3"><span className="px-2 py-1 rounded bg-slate-800 text-xs font-mono text-cyan-300">{o.category}</span></td>
-                    <td className="p-3 font-mono text-xs">{o.target_horizon.replace('_', ' ')}</td>
+                    <td className="p-3 font-mono text-xs">{o.target_horizon ? o.target_horizon.replace('_', ' ') : ''}</td>
                     <td className="p-3 font-mono">{o.baseline_value} / {o.target_value} {o.unit}</td>
                     <td className="p-3">
                       <span className="px-2 py-1 rounded-full text-xs font-mono bg-emerald-950 border border-emerald-800 text-emerald-300">

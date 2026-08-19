@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { decisionOptimizationApi } from '../services/decisionOptimizationApi';
 import type { Recommendation } from '../services/decisionOptimizationApi';
-import { Compass, ShieldCheck, Activity } from 'lucide-react';
+import { Compass, Activity } from 'lucide-react';
 
 export const DecisionOptimizationDetailsPage: React.FC = () => {
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
@@ -17,7 +17,7 @@ export const DecisionOptimizationDetailsPage: React.FC = () => {
       setLoading(true);
       const rec = await decisionOptimizationApi.getRecommendation();
       setRecommendation(rec);
-      if (rec.decision_id) {
+      if (rec && rec.decision_id) {
         const exp = await decisionOptimizationApi.getExplanation(rec.decision_id);
         setExplanation(exp);
       }
@@ -29,48 +29,40 @@ export const DecisionOptimizationDetailsPage: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-cyan-400">Loading Decision Explanation Details...</div>;
+    return (
+      <div className="flex items-center justify-center h-64 text-cyan-400">
+        <Activity className="animate-spin mr-2" /> Loading Decision Details...
+      </div>
+    );
   }
 
   return (
-    <div className="p-6 space-y-6 bg-slate-950 text-slate-100 min-h-screen">
-      <div className="border-b border-slate-800 pb-4">
-        <h1 className="text-2xl font-bold text-cyan-400 flex items-center gap-2">
-          <Compass className="h-6 w-6" /> Decision Audit & Causal Explanation
-        </h1>
-        <p className="text-sm text-slate-400">
-          Traceable proof linking verified evidence, historical outcomes, prediction models, and governance policies.
-        </p>
+    <div className="p-8 max-w-7xl mx-auto text-slate-100 space-y-8">
+      <div className="flex items-center space-x-3">
+        <Compass className="w-8 h-8 text-cyan-400" />
+        <h1 className="text-3xl font-bold text-slate-100">Decision Optimization & Causal Trace</h1>
       </div>
 
-      {recommendation && (
-        <div className="space-y-6">
-          <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4 backdrop-blur-md">
-            <h2 className="text-lg font-bold text-slate-100">Decision Context: {recommendation.decision_id}</h2>
-            <p className="text-sm text-slate-300">{recommendation.explanation}</p>
+      {recommendation ? (
+        <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-slate-100">{recommendation.recommended_action?.action_type || 'Recommended Strategy'}</h2>
+            <span className="px-3 py-1 rounded bg-emerald-950 text-emerald-300 text-xs font-mono border border-emerald-800">
+              Risk: {recommendation.risk_level}
+            </span>
           </div>
+          <p className="text-sm text-slate-300">{recommendation.explanation}</p>
 
           {explanation && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3 backdrop-blur-md">
-                <h3 className="text-sm font-semibold text-cyan-400 flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4" /> Current Verified Evidence
-                </h3>
-                <pre className="text-xs bg-slate-950 p-4 rounded-lg border border-slate-800 text-slate-300 overflow-x-auto">
-                  {JSON.stringify(explanation.evidence, null, 2)}
-                </pre>
-              </div>
-
-              <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3 backdrop-blur-md">
-                <h3 className="text-sm font-semibold text-emerald-400 flex items-center gap-2">
-                  <Activity className="h-4 w-4" /> Historical Memory Links
-                </h3>
-                <pre className="text-xs bg-slate-950 p-4 rounded-lg border border-slate-800 text-slate-300 overflow-x-auto">
-                  {JSON.stringify(explanation.memory_links, null, 2)}
-                </pre>
-              </div>
+            <div className="mt-4 p-4 bg-slate-950/80 border border-slate-800 rounded-lg space-y-2">
+              <span className="text-xs font-mono text-cyan-400 uppercase">Causal Evidence</span>
+              <p className="text-xs text-slate-400">{JSON.stringify(explanation)}</p>
             </div>
           )}
+        </div>
+      ) : (
+        <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl text-slate-400">
+          No recommendation details available.
         </div>
       )}
     </div>

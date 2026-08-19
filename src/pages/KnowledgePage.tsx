@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Network, AlertTriangle, ArrowRight, RefreshCw, HelpCircle, ShieldAlert } from 'lucide-react';
+import { Network, AlertTriangle, RefreshCw, HelpCircle } from 'lucide-react';
 import { knowledgeApi } from '../services/knowledgeApi';
 import type {
   KnowledgeOverviewRecord,
-  KnowledgeNodeRecord,
-  KnowledgeRelationRecord
+  KnowledgeNodeRecord
 } from '../services/knowledgeApi';
 
 interface KnowledgePageProps {
@@ -12,10 +11,7 @@ interface KnowledgePageProps {
   onNavigateToRootCause?: (outcomeId: string) => void;
 }
 
-export const KnowledgePage: React.FC<KnowledgePageProps> = ({
-  onNavigateToExplainability,
-  onNavigateToRootCause,
-}) => {
+export const KnowledgePage: React.FC<KnowledgePageProps> = () => {
   const [overview, setOverview] = useState<KnowledgeOverviewRecord | null>(null);
   const [, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,13 +26,13 @@ export const KnowledgePage: React.FC<KnowledgePageProps> = ({
       setLoading(true);
       setError(null);
       const data = await knowledgeApi.getOverview();
-      setOverview(data);
-      if (data.nodes.length > 0) {
+      setOverview(data || null);
+      if (data?.nodes && data.nodes.length > 0) {
         setSelectedNode(data.nodes[0]);
       }
     } catch (err: any) {
       console.error('Error loading knowledge graph overview:', err);
-      setError(err.message || 'Failed to load knowledge graph');
+      setError(err?.message || 'Failed to load knowledge graph');
     } finally {
       setLoading(false);
     }
@@ -48,236 +44,119 @@ export const KnowledgePage: React.FC<KnowledgePageProps> = ({
       await knowledgeApi.rebuildGraph();
       await loadData();
     } catch (err: any) {
-      setError(err.message || 'Failed to rebuild graph');
-    } finally {
+      console.error('Error rebuilding graph:', err);
+      setError(err?.message || 'Failed to rebuild graph');
       setLoading(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'VALIDATED':
-        return { bg: 'rgba(16, 185, 129, 0.2)', color: '#34d399' };
-      case 'SUPPORTED':
-        return { bg: 'rgba(56, 189, 248, 0.2)', color: '#38bdf8' };
-      case 'HYPOTHESIS':
-        return { bg: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24' };
-      case 'CONTRADICTED':
-        return { bg: 'rgba(239, 68, 68, 0.2)', color: '#f87171' };
-      default:
-        return { bg: 'rgba(148, 163, 184, 0.2)', color: '#94a3b8' };
-    }
-  };
+  const nodes = overview?.nodes || [];
 
   return (
-    <div style={{ padding: '24px', color: '#fff', backgroundColor: '#070709', minHeight: '100vh' }}>
+    <div className="p-8 max-w-7xl mx-auto text-slate-100 space-y-8">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <div className="flex items-center justify-between">
         <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Network style={{ color: '#a855f7' }} size={28} />
-            Causal Intelligence & Knowledge Graph
-          </h1>
-          <p style={{ margin: '4px 0 0 0', color: '#94a3b8', fontSize: '14px' }}>
-            v1.8.0 — Grounded directed graph tracking causality across Evidence, Decisions, Predictions, Actions, Policies, Outcomes, and Lessons.
-          </p>
+          <div className="flex items-center space-x-3">
+            <Network className="w-8 h-8 text-cyan-400" />
+            <h1 className="text-3xl font-bold text-slate-100 tracking-tight">Enterprise Knowledge & Causal Graph</h1>
+          </div>
+          <p className="text-slate-400 mt-1">Multi-entity causal links, evidence validation, contradictions & decision trace paths.</p>
         </div>
-
-        <div style={{ display: 'flex', gap: '12px' }}>
-          {onNavigateToExplainability && (
-            <button
-              onClick={() => onNavigateToExplainability('dec_301')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backgroundColor: '#1e293b',
-                color: '#38bdf8',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                padding: '10px 14px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <HelpCircle size={16} /> Decision Explainability
-            </button>
-          )}
-
-          {onNavigateToRootCause && (
-            <button
-              onClick={() => onNavigateToRootCause('out_801')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                backgroundColor: '#1e293b',
-                color: '#f87171',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                padding: '10px 14px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              <ShieldAlert size={16} /> Root Cause Analysis
-            </button>
-          )}
-
-          <button
+        <div className="flex space-x-3">
+          <button 
             onClick={handleRebuild}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              backgroundColor: '#4f46e5',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '10px 16px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(79, 70, 229, 0.4)',
-            }}
+            className="px-3 py-1.5 rounded-lg text-xs font-mono bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 flex items-center space-x-2 transition"
           >
-            <RefreshCw size={16} /> Rebuild & Validate Graph
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>REBUILD GRAPH</span>
           </button>
         </div>
       </div>
 
       {error && (
-        <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid #ef4444', borderRadius: '8px', padding: '12px 16px', marginBottom: '24px', color: '#fca5a5' }}>
-          <AlertTriangle size={18} style={{ display: 'inline', marginRight: '8px' }} />
-          {error}
+        <div className="p-4 bg-rose-950/60 border border-rose-800 rounded-xl flex items-center space-x-3 text-rose-200">
+          <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+          <span className="text-sm font-mono">{error}</span>
         </div>
       )}
 
-      {/* KPI Summary Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '28px' }}>
-        <div style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>Total Nodes</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#f8fafc' }}>{overview?.total_nodes ?? 12}</div>
+      {/* KPI Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="p-5 bg-slate-900/60 border border-slate-800 rounded-xl backdrop-blur-sm">
+          <span className="text-xs text-slate-400 font-mono uppercase">Total Entities/Nodes</span>
+          <p className="text-3xl font-extrabold mt-2 text-cyan-400">{overview?.total_nodes || 0}</p>
         </div>
-
-        <div style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>Total Relations</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#a855f7' }}>{overview?.total_relations ?? 11}</div>
+        <div className="p-5 bg-slate-900/60 border border-slate-800 rounded-xl backdrop-blur-sm">
+          <span className="text-xs text-slate-400 font-mono uppercase">Total Causal Relations</span>
+          <p className="text-3xl font-extrabold mt-2 text-indigo-400">{overview?.total_relations || 0}</p>
         </div>
-
-        <div style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>Validated Causal Links</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#34d399' }}>{overview?.validated_causal_links ?? 9}</div>
+        <div className="p-5 bg-slate-900/60 border border-slate-800 rounded-xl backdrop-blur-sm">
+          <span className="text-xs text-slate-400 font-mono uppercase">Validated Causal Links</span>
+          <p className="text-3xl font-extrabold mt-2 text-emerald-400">{overview?.validated_causal_links || 0}</p>
         </div>
-
-        <div style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>Causal Hypotheses</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#fbbf24' }}>{overview?.causal_hypotheses ?? 2}</div>
-        </div>
-
-        <div style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>Contradictions</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#ef4444' }}>{overview?.contradictions_count ?? 0}</div>
-        </div>
-
-        <div style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '16px' }}>
-          <div style={{ fontSize: '13px', color: '#94a3b8', marginBottom: '4px' }}>Avg Causal Confidence</div>
-          <div style={{ fontSize: '24px', fontWeight: 700, color: '#38bdf8' }}>{overview?.average_causal_confidence ?? 89.2}%</div>
+        <div className="p-5 bg-slate-900/60 border border-slate-800 rounded-xl backdrop-blur-sm">
+          <span className="text-xs text-slate-400 font-mono uppercase">Graph Contradictions</span>
+          <p className="text-3xl font-extrabold mt-2 text-amber-400">{overview?.contradictions_count || 0}</p>
         </div>
       </div>
 
-      {/* Visual Pipeline Flow */}
-      <div style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '20px', marginBottom: '28px' }}>
-        <h2 style={{ fontSize: '16px', fontWeight: 600, margin: '0 0 16px 0', color: '#f8fafc' }}>
-          Standard Causal Graph Traversal Path
-        </h2>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: '8px', alignItems: 'center' }}>
-          {['CLIENT', 'EVIDENCE', 'AGENT', 'DECISION', 'PREDICTION', 'POLICY', 'ACTION', 'OUTCOME', 'LESSON'].map((type, i, arr) => (
-            <React.Fragment key={type}>
-              <div style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', padding: '10px 4px', textAlign: 'center' }}>
-                <div style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8' }}>{type}</div>
-              </div>
-              {i < arr.length - 1 && <ArrowRight size={14} style={{ color: '#475569', margin: '0 auto' }} />}
-            </React.Fragment>
-          ))}
-        </div>
-      </div>
-
-      {/* Graph Node Explorer & Relationship Matrix */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-        {/* Knowledge Nodes */}
-        <div style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '20px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, margin: '0 0 16px 0', color: '#f8fafc' }}>
-            Knowledge Nodes Explorer
+      {/* Graph Visualizer Placeholder / Nodes Explorer */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
+          <h2 className="text-lg font-semibold text-slate-100 flex items-center space-x-2">
+            <Network className="w-5 h-5 text-cyan-400" />
+            <span>Knowledge Graph Explorer</span>
           </h2>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '420px', overflowY: 'auto' }}>
-            {overview?.nodes.map((node: KnowledgeNodeRecord) => (
-              <div
-                key={node.id}
-                onClick={() => setSelectedNode(node)}
-                style={{
-                  backgroundColor: selectedNode?.id === node.id ? 'rgba(168, 85, 247, 0.15)' : 'rgba(255,255,255,0.02)',
-                  border: selectedNode?.id === node.id ? '1px solid #a855f7' : '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: '8px',
-                  padding: '12px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: 600, color: '#f1f5f9' }}>{node.label}</div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
-                    Type: <strong style={{ color: '#38bdf8' }}>{node.node_type}</strong> | Ref: #{node.entity_id.slice(0, 8)}
-                  </div>
+          {nodes.length === 0 ? (
+            <p className="text-xs text-slate-400 italic">No knowledge nodes stored in graph.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto pr-2">
+              {nodes.map((node) => (
+                <div
+                  key={node.id}
+                  onClick={() => setSelectedNode(node)}
+                  className={`p-3 rounded-lg border cursor-pointer transition ${
+                    selectedNode?.id === node.id
+                      ? 'bg-cyan-950/60 border-cyan-500/80 text-cyan-200'
+                      : 'bg-slate-950/80 border-slate-800 hover:border-slate-700 text-slate-300'
+                  }`}
+                >
+                  <span className="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                    {node.node_type}
+                  </span>
+                  <p className="text-xs font-semibold mt-1 truncate">{node.label}</p>
+                  <span className="text-[10px] text-slate-400 mt-1 block">Confidence: {node.confidence}%</span>
                 </div>
-
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#34d399' }}>
-                  {node.confidence}%
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Knowledge Relations */}
-        <div style={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '20px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 600, margin: '0 0 16px 0', color: '#f8fafc' }}>
-            Directed Causal Relations
+        {/* Node Inspector */}
+        <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
+          <h2 className="text-lg font-semibold text-slate-100 flex items-center space-x-2">
+            <HelpCircle className="w-5 h-5 text-indigo-400" />
+            <span>Node Inspector</span>
           </h2>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '420px', overflowY: 'auto' }}>
-            {overview?.relations.map((rel: KnowledgeRelationRecord) => {
-              const badge = getStatusBadge(rel.causal_status);
-              return (
-                <div key={rel.id} style={{ backgroundColor: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#a855f7' }}>
-                      {rel.relation_type}
-                    </span>
-                    <span style={{ backgroundColor: badge.bg, color: badge.color, padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>
-                      {rel.causal_status}
-                    </span>
-                  </div>
-
-                  <div style={{ fontSize: '12px', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>Node #{rel.source_node_id.slice(0, 8)}</span>
-                    <ArrowRight size={12} />
-                    <span>Node #{rel.target_node_id.slice(0, 8)}</span>
-                  </div>
-
-                  <div style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '6px' }}>
-                    Confidence: <strong style={{ color: '#38bdf8' }}>{rel.confidence}%</strong> | Weight: {rel.weight}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          {selectedNode ? (
+            <div className="space-y-3 text-xs text-slate-300">
+              <div>
+                <span className="text-slate-400 block font-mono text-[10px]">ENTITY LABEL</span>
+                <p className="font-semibold text-slate-100 text-sm">{selectedNode.label}</p>
+              </div>
+              <div>
+                <span className="text-slate-400 block font-mono text-[10px]">NODE TYPE</span>
+                <span className="px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 font-mono">{selectedNode.node_type}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 block font-mono text-[10px]">CONFIDENCE SCORE</span>
+                <p className="text-emerald-400 font-mono font-bold">{selectedNode.confidence}%</p>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-slate-400 italic">Select a node from the explorer to inspect details.</p>
+          )}
         </div>
       </div>
     </div>

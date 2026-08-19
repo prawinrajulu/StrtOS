@@ -75,68 +75,102 @@ export interface Recommendation {
 }
 
 export const decisionOptimizationApi = {
-  getOverview: async (): Promise<DecisionOverview> => {
-    const res = await fetch(`${API_BASE}/overview`, { headers: getHeaders() });
-    if (!res.ok) throw new Error('Failed to fetch overview');
-    return res.json();
+  getOverview: async (): Promise<DecisionOverview | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/overview`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
   getCandidates: async (): Promise<{ candidates: ActionCandidate[]; total: number }> => {
-    const res = await fetch(`${API_BASE}/candidates`, { headers: getHeaders() });
-    if (!res.ok) throw new Error('Failed to fetch candidates');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/candidates`, { headers: getHeaders() });
+      if (!res.ok) return { candidates: [], total: 0 };
+      const json = await res.json();
+      return { candidates: Array.isArray(json.candidates) ? json.candidates : [], total: json.total || 0 };
+    } catch {
+      return { candidates: [], total: 0 };
+    }
   },
 
   generateCandidates: async (data: { client_id?: string; workflow_id?: string; decision_id?: string }): Promise<ActionCandidate[]> => {
-    const res = await fetch(`${API_BASE}/candidates`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error('Failed to generate candidates');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/candidates`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return [];
+      const json = await res.json();
+      return Array.isArray(json) ? json : [];
+    } catch {
+      return [];
+    }
   },
 
-  getRecommendation: async (): Promise<Recommendation> => {
-    const res = await fetch(`${API_BASE}/recommend`, {
-      method: 'POST',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to fetch recommendation');
-    return res.json();
+  getRecommendation: async (): Promise<Recommendation | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/recommend`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
-  createPlan: async (data: { candidates: string[]; dependencies?: Record<string, string[]> }): Promise<ActionPlan> => {
-    const res = await fetch(`${API_BASE}/plan`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error('Failed to create plan');
-    return res.json();
+  createPlan: async (data: { candidates: string[]; dependencies?: Record<string, string[]> }): Promise<ActionPlan | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/plan`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
   executeAction: async (actionId: string): Promise<any> => {
-    const res = await fetch(`${API_BASE}/${actionId}/execute`, {
-      method: 'POST',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to execute action');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/${actionId}/execute`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
   getExplanation: async (decisionId: string): Promise<any> => {
-    const res = await fetch(`${API_BASE}/${decisionId}/explanation`, { headers: getHeaders() });
-    if (!res.ok) throw new Error('Failed to fetch explanation');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/${decisionId}/explanation`, { headers: getHeaders() });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 
   submitGovernance: async (decisionId: string): Promise<any> => {
-    const res = await fetch(`${API_BASE}/${decisionId}/submit-governance`, {
-      method: 'POST',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to submit governance');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/${decisionId}/submit-governance`, {
+        method: 'POST',
+        headers: getHeaders(),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch {
+      return null;
+    }
   },
 };
