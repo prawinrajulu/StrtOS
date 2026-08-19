@@ -1,146 +1,82 @@
-import React from 'react';
-import { Search, Bell } from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { Search, Bell, Activity } from 'lucide-react';
+import { globalEventStream } from '../services/eventStream';
+import { mapInternalExecutionToBusinessLanguage } from '../services/eventTranslationLayer';
 
 interface TopNavProps {
   breadcrumbs: string[];
 }
 
 export const TopNav: React.FC<TopNavProps> = ({ breadcrumbs }) => {
+  const [activeTaskTitle, setActiveTaskTitle] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = globalEventStream.subscribe((event) => {
+      if (event.event_type.includes('completed')) {
+        setActiveTaskTitle(null);
+      } else if (event.agent_name || event.message) {
+        const title = mapInternalExecutionToBusinessLanguage(event.agent_name);
+        setActiveTaskTitle(title);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   return (
-    <header
-      style={{
-        height: '64px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-        backgroundColor: 'rgba(8, 8, 10, 0.8)',
-        backdropFilter: 'blur(12px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 32px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 10,
-      }}
-    >
+    <header className="h-16 border-b border-white/[0.06] bg-[#0D0D0F]/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-10 select-none">
       {/* Breadcrumbs */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          fontSize: '11px',
-          fontFamily: "'JetBrains Mono', monospace",
-          color: '#6b7280',
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-        }}
-      >
+      <div className="flex items-center gap-2 text-xs font-mono text-[#92929A] uppercase tracking-wider">
         {breadcrumbs.map((crumb, idx) => (
           <React.Fragment key={crumb}>
-            {idx > 0 && <span style={{ color: '#374151' }}>/</span>}
-            <span style={{ color: idx === breadcrumbs.length - 1 ? '#f3f4f6' : '#6b7280', fontWeight: idx === breadcrumbs.length - 1 ? 600 : 400 }}>
+            {idx > 0 && <span className="text-slate-600">/</span>}
+            <span className={idx === breadcrumbs.length - 1 ? 'text-[#F5F5F5] font-semibold' : 'text-[#92929A]'}>
               {crumb}
             </span>
           </React.Fragment>
         ))}
       </div>
 
+      {/* Center Status / Active Task Indicator (Requirement 17) */}
+      {activeTaskTitle && (
+        <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-sky-950/60 border border-sky-800/60 text-sky-300 text-xs font-mono">
+          <Activity className="w-3.5 h-3.5 animate-spin text-sky-400" />
+          <span className="font-semibold">● StrtOS is working:</span>
+          <span>{activeTaskTitle}</span>
+        </div>
+      )}
+
       {/* Right Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div className="flex items-center gap-4">
         {/* Search Bar */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            backgroundColor: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.06)',
-            borderRadius: '8px',
-            padding: '6px 12px',
-            width: '240px',
-          }}
-        >
-          <Search size={14} color="#6b7280" />
+        <div className="hidden sm:flex items-center gap-2 bg-[#111113] border border-white/[0.06] rounded-lg px-3 py-1.5 w-56">
+          <Search size={14} className="text-[#92929A]" />
           <input
             type="text"
-            placeholder="Search or ask anything..."
-            style={{
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              color: '#e5e7eb',
-              fontSize: '12px',
-              width: '100%',
-            }}
+            placeholder="Search analysis..."
+            className="bg-transparent border-none outline-none text-[#F5F5F5] text-xs w-full placeholder:text-[#92929A]"
           />
-          <kbd
-            style={{
-              fontSize: '9px',
-              fontFamily: "'JetBrains Mono', monospace",
-              backgroundColor: 'rgba(255, 255, 255, 0.06)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              borderRadius: '4px',
-              padding: '2px 4px',
-              color: '#6b7280',
-            }}
-          >
+          <kbd className="text-[9px] font-mono bg-white/[0.06] border border-white/10 rounded px-1 text-[#92929A]">
             ⌘K
           </kbd>
         </div>
 
         {/* Notifications */}
-        <button
-          style={{
-            position: 'relative',
-            width: '36px',
-            height: '36px',
-            borderRadius: '8px',
-            backgroundColor: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.06)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#9ca3af',
-            cursor: 'pointer',
-          }}
-        >
+        <button className="relative w-9 h-9 rounded-lg bg-[#111113] border border-white/[0.06] flex items-center justify-center text-[#92929A] hover:text-[#F5F5F5] transition">
           <Bell size={16} />
-          <span
-            style={{
-              position: 'absolute',
-              top: '8px',
-              right: '8px',
-              width: '6px',
-              height: '6px',
-              borderRadius: '50%',
-              backgroundColor: '#6366f1',
-            }}
-          />
+          <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-sky-400" />
         </button>
 
         {/* User Profile */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div
-            style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, #00e599 0%, #3b82f6 100%)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '12px',
-              fontWeight: 700,
-              color: '#000000',
-            }}
-          >
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-sky-500 text-slate-950 font-bold flex items-center justify-center text-xs">
             AC
           </div>
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: '#f3f4f6' }}>Ava Chen</div>
-            <div style={{ fontSize: '9px', color: '#6b7280', fontFamily: "'JetBrains Mono', monospace" }}>
-              FOUNDER
-            </div>
+          <div className="hidden sm:block">
+            <div className="text-xs font-semibold text-[#F5F5F5]">Ava Chen</div>
+            <div className="text-[9px] text-[#92929A] font-mono">EXECUTIVE</div>
           </div>
         </div>
       </div>

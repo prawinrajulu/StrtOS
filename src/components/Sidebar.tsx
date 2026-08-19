@@ -7,7 +7,6 @@ import {
   Target,
   GitFork,
   Network,
-  Briefcase,
   Zap,
   Server,
   ShieldCheck,
@@ -28,34 +27,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
     {
       group: 'MAIN',
       items: [
-        { id: 'command-center', label: 'Command Center', icon: Compass, badgeDot: true },
-        { id: 'dashboard', label: 'Executive Dashboard', icon: BarChart3 },
+        { id: 'command-center', label: 'Command Center', icon: Compass },
+        { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
       ],
     },
     {
       group: 'INTELLIGENCE',
       items: [
-        { id: 'business-state', label: 'Business State', icon: Activity, badgeDot: true },
-        { id: 'strategy', label: 'Strategy Engine', icon: Target, badgeDot: true },
-        { id: 'forecasting', label: 'Strategic Forecasting', icon: TrendingUp },
-        { id: 'decision-optimization', label: 'Decisions', icon: GitFork, badgeDot: true },
-        { id: 'knowledge', label: 'Knowledge Graph', icon: Network, badgeDot: true },
+        { id: 'business-state', label: 'Business State', icon: Activity },
+        { id: 'strategy', label: 'Strategy', icon: Target },
+        { id: 'forecasting', label: 'Forecasting', icon: TrendingUp },
+        { id: 'decision-optimization', label: 'Decisions', icon: GitFork },
+        { id: 'knowledge', label: 'Knowledge', icon: Network },
       ],
     },
     {
       group: 'EXECUTION',
       items: [
-        { id: 'missions', label: 'Missions', icon: Target, badgeDot: true },
-        { id: 'portfolio', label: 'Portfolio Control', icon: Briefcase },
+        { id: 'missions', label: 'Missions', icon: Target },
+        { id: 'resources', label: 'Resources', icon: Server },
         { id: 'workflows', label: 'Workflows', icon: Zap },
-        { id: 'resources', label: 'Resource Intelligence', icon: Server, badgeDot: true },
       ],
     },
     {
       group: 'INSIGHTS',
       items: [
         { id: 'reports', label: 'Reports', icon: FileText },
-        { id: 'memory', label: 'Memory Engine', icon: Brain },
+        { id: 'memory', label: 'Memory', icon: Brain },
         { id: 'outcomes', label: 'Outcomes', icon: FileText },
       ],
     },
@@ -76,44 +74,44 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
   ];
 
   return (
-    <aside className="w-64 bg-[#0b0b0e] border-r border-white/10 flex flex-col justify-between h-screen sticky top-0 z-20 select-none">
+    <aside className="w-64 bg-[#0D0D0F] border-r border-white/[0.06] flex flex-col justify-between h-screen sticky top-0 z-20 select-none">
       <div>
-        {/* Top Logo */}
-        <div className="p-5 border-b border-white/5 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-[0_0_16px_rgba(99,102,241,0.5)]">
+        {/* Top Brand Logo */}
+        <div className="p-5 border-b border-white/[0.06] flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-sky-500 flex items-center justify-center font-bold text-slate-950 text-sm shadow-md">
             S
           </div>
           <div>
-            <div className="text-base font-bold text-slate-100 tracking-tight">
-              StrtOS
+            <div className="text-base font-bold text-[#F5F5F5] tracking-tight">
+              STRtOS
             </div>
-            <div className="text-[9px] font-mono text-slate-500 tracking-widest uppercase">
-              INTELLIGENCE ENGINE • v2.6
+            <div className="text-[9px] font-mono text-[#92929A] tracking-widest uppercase">
+              INTELLIGENCE ENGINE
             </div>
           </div>
         </div>
 
-        {/* Enterprise Selector */}
+        {/* Account Selector */}
         <div className="p-4 pb-2">
-          <div className="bg-white/5 border border-white/10 rounded-lg p-2.5 flex items-center justify-between cursor-pointer hover:border-white/20 transition">
+          <div className="bg-[#111113] border border-white/[0.06] rounded-lg p-2.5 flex items-center justify-between cursor-pointer hover:border-white/15 transition">
             <div className="flex items-center gap-2.5">
-              <div className="w-6 h-6 rounded bg-indigo-500 text-white text-xs font-bold flex items-center justify-center">
+              <div className="w-6 h-6 rounded bg-sky-500/20 text-sky-400 text-xs font-bold flex items-center justify-center">
                 EA
               </div>
               <div>
-                <div className="text-xs font-semibold text-slate-200">Enterprise Account</div>
-                <div className="text-[9px] text-slate-500 font-mono">ORGANIZATION</div>
+                <div className="text-xs font-semibold text-[#F5F5F5]">Enterprise Account</div>
+                <div className="text-[9px] text-[#92929A] font-mono">ORGANIZATION</div>
               </div>
             </div>
-            <ChevronDown size={14} className="text-slate-500" />
+            <ChevronDown size={14} className="text-[#92929A]" />
           </div>
         </div>
 
         {/* Navigation Sections */}
-        <div className="p-4 space-y-5 max-h-[calc(100vh-210px)] overflow-y-auto">
+        <div className="p-4 space-y-4 max-h-[calc(100vh-210px)] overflow-y-auto">
           {sections.map((sec) => (
             <div key={sec.group}>
-              <div className="text-[9px] font-mono text-slate-500 tracking-widest mb-2 pl-2">
+              <div className="text-[9px] font-mono text-[#92929A] tracking-widest mb-1.5 pl-2">
                 {sec.group}
               </div>
               <div className="space-y-0.5">
@@ -126,17 +124,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                       onClick={() => setActiveTab(item.id)}
                       className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-xs font-medium transition ${
                         isActive
-                          ? 'bg-white/10 text-white font-semibold'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                          ? 'bg-[#151518] text-[#F5F5F5] font-semibold border border-white/10'
+                          : 'text-[#92929A] hover:text-[#F5F5F5] hover:bg-[#111113]'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <Icon size={16} className={isActive ? 'text-cyan-400' : 'text-slate-500'} />
+                        <Icon size={16} className={isActive ? 'text-sky-400' : 'text-[#92929A]'} />
                         <span>{item.label}</span>
                       </div>
-                      {item.badgeDot && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7]" />
-                      )}
                     </button>
                   );
                 })}
@@ -147,13 +142,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       </div>
 
       {/* Bottom Health Bar */}
-      <div className="p-4 border-t border-white/5 bg-black/20">
-        <div className="flex items-center gap-2 mb-1">
+      <div className="p-4 border-t border-white/[0.06] bg-[#111113]/50">
+        <div className="flex items-center gap-2 mb-0.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs font-medium text-slate-200">StrtOS Engine Operational</span>
+          <span className="text-xs font-medium text-[#F5F5F5]">StrtOS Operational</span>
         </div>
-        <div className="text-[9px] font-mono text-slate-500 tracking-wide pl-3.5">
-          INTELLIGENCE ENGINE • 128K CTX
+        <div className="text-[9px] font-mono text-[#92929A] tracking-wide pl-3.5">
+          SYSTEM ACTIVE
         </div>
       </div>
     </aside>

@@ -1,8 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import {
-  Brain, Search, CheckCircle2, AlertTriangle, XCircle,
-  Lightbulb, Sparkles, ChevronRight
-} from 'lucide-react';
+﻿import React, { useState, useEffect } from 'react';
+import { Brain, Search, ChevronRight, CheckCircle2, AlertTriangle, XCircle, Lightbulb, Sparkles } from 'lucide-react';
 import { memoryApi } from '../services/memoryApi';
 import type { MemoryRecord } from '../services/memoryApi';
 import { globalEventStream } from '../services/eventStream';
@@ -13,20 +10,26 @@ interface MemoryPageProps {
 
 export const MemoryPage: React.FC<MemoryPageProps> = ({ onSelectMemory }) => {
   const [memories, setMemories] = useState<MemoryRecord[]>([]);
-  const [total, setTotal] = useState(0);
+  const [total, setTotal] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('');
 
   const fetchMemories = async () => {
     setLoading(true);
-    const data = await memoryApi.getMemories({
-      memory_type: typeFilter,
-      search: search
-    });
-    setMemories(data.memories);
-    setTotal(data.total);
-    setLoading(false);
+    try {
+      const data = await memoryApi.getMemories({
+        memory_type: typeFilter,
+        search: search
+      });
+      setMemories(data.memories || []);
+      setTotal(data.total || 0);
+    } catch {
+      setMemories([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -43,60 +46,61 @@ export const MemoryPage: React.FC<MemoryPageProps> = ({ onSelectMemory }) => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'SUCCESS':
-        return <span style={{ color: '#10b981', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}><CheckCircle2 size={13} /> SUCCESS</span>;
+        return <span className="text-emerald-400 font-medium inline-flex items-center gap-1 text-xs"><CheckCircle2 size={12} /> SUCCESS</span>;
       case 'PARTIAL':
-        return <span style={{ color: '#f59e0b', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}><AlertTriangle size={13} /> PARTIAL</span>;
+        return <span className="text-amber-400 font-medium inline-flex items-center gap-1 text-xs"><AlertTriangle size={12} /> PARTIAL</span>;
       case 'FAILED':
-        return <span style={{ color: '#ef4444', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px' }}><XCircle size={13} /> FAILED</span>;
+        return <span className="text-rose-400 font-medium inline-flex items-center gap-1 text-xs"><XCircle size={12} /> FAILED</span>;
       default:
-        return <span style={{ color: '#9ca3af', fontWeight: '600', fontSize: '11px' }}>UNVALUATED</span>;
+        return <span className="text-[#92929A] text-xs">RECORDED</span>;
     }
   };
 
   const getTypeBadge = (type: string) => {
     switch (type) {
       case 'LESSON':
-        return <span style={{ padding: '3px 8px', backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', borderRadius: '6px', fontSize: '11px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Lightbulb size={12} /> LESSON</span>;
+        return <span className="px-2 py-0.5 bg-amber-950/60 text-amber-300 border border-amber-800/60 rounded text-[10px] font-mono inline-flex items-center gap-1"><Lightbulb size={11} /> LESSON</span>;
       case 'OUTCOME':
-        return <span style={{ padding: '3px 8px', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', borderRadius: '6px', fontSize: '11px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CheckCircle2 size={12} /> OUTCOME</span>;
+        return <span className="px-2 py-0.5 bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 rounded text-[10px] font-mono inline-flex items-center gap-1"><CheckCircle2 size={11} /> OUTCOME</span>;
       case 'DECISION':
-        return <span style={{ padding: '3px 8px', backgroundColor: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', borderRadius: '6px', fontSize: '11px', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><Sparkles size={12} /> DECISION</span>;
+        return <span className="px-2 py-0.5 bg-sky-950/60 text-sky-300 border border-sky-800/60 rounded text-[10px] font-mono inline-flex items-center gap-1"><Sparkles size={11} /> DECISION</span>;
       default:
-        return <span style={{ padding: '3px 8px', backgroundColor: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}>{type}</span>;
+        return <span className="px-2 py-0.5 bg-slate-800 text-slate-300 border border-white/10 rounded text-[10px] font-mono">{type}</span>;
     }
   };
 
   return (
-    <div style={{ padding: '28px', maxWidth: '1300px', margin: '0 auto' }}>
+    <div className="p-8 max-w-7xl mx-auto text-slate-100 space-y-6">
       {/* Header */}
-      <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#f9fafb', margin: '0 0 6px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Brain style={{ color: '#8b5cf6' }} size={28} /> Client Adaptive Memory & Intelligence
-          </h1>
-          <p style={{ color: '#9ca3af', fontSize: '14px', margin: 0 }}>
-            Historical decision memory, variance calibration, and learned signals ({total} Total Records)
+          <div className="flex items-center space-x-3">
+            <Brain className="w-7 h-7 text-sky-400" />
+            <h1 className="text-2xl font-bold text-[#F5F5F5] tracking-tight">Business Memory</h1>
+          </div>
+          <p className="text-[#92929A] mt-1 text-xs sm:text-sm">
+            StrtOS remembers important context and decisions about your business ({total} Records).
           </p>
         </div>
       </div>
 
       {/* Search & Filter Bar */}
-      <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '12px', padding: '16px', marginBottom: '24px', display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
-          <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#6b7280' }} />
+      <div className="p-4 bg-[#111113] border border-white/[0.06] rounded-xl flex flex-wrap items-center gap-4">
+        <div className="flex-1 min-w-[240px] relative">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#92929A]" />
           <input
             type="text"
-            placeholder="Search historical memory, decisions, or learned signals..."
+            placeholder="Search business memory, decisions, or historical context..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', padding: '10px 12px 10px 38px', color: '#f9fafb', fontSize: '14px' }}
+            className="w-full bg-[#151518] border border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-[#F5F5F5] outline-none placeholder:text-[#92929A]"
           />
         </div>
 
         <select
           value={typeFilter}
           onChange={(e) => setTypeFilter(e.target.value)}
-          style={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px', padding: '10px 14px', color: '#f9fafb', fontSize: '14px' }}
+          className="bg-[#151518] border border-white/10 rounded-lg px-3 py-2 text-xs text-[#F5F5F5] outline-none"
         >
           <option value="">All Memory Types</option>
           <option value="LESSON">Learned Lessons</option>
@@ -110,59 +114,42 @@ export const MemoryPage: React.FC<MemoryPageProps> = ({ onSelectMemory }) => {
 
       {/* Memory Cards */}
       {loading ? (
-        <div style={{ color: '#9ca3af', textAlign: 'center', padding: '40px' }}>Loading adaptive memory records...</div>
+        <div className="text-[#92929A] text-xs text-center py-12">Loading business memory records...</div>
       ) : memories.length === 0 ? (
-        <div style={{ backgroundColor: '#111827', border: '1px solid #1f2937', borderRadius: '14px', padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
-          No historical memory records found matching criteria.
+        <div className="p-12 bg-[#111113] border border-white/[0.06] rounded-xl text-center text-xs text-[#92929A]">
+          No business memory records found.
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div className="space-y-3">
           {memories.map((mem) => (
             <div
               key={mem.id}
               onClick={() => onSelectMemory(mem)}
-              style={{
-                backgroundColor: '#111827',
-                border: '1px solid #1f2937',
-                borderRadius: '14px',
-                padding: '20px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '16px'
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#6366f1')}
-              onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#1f2937')}
+              className="p-5 bg-[#111113] border border-white/[0.06] hover:border-white/15 rounded-xl cursor-pointer transition flex flex-wrap items-center justify-between gap-4"
             >
-              <div style={{ flex: 1, minWidth: '280px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+              <div className="flex-1 min-w-[280px] space-y-2">
+                <div className="flex items-center space-x-3">
                   {getTypeBadge(mem.memory_type)}
                   {getStatusBadge(mem.outcome_status)}
-                  <span style={{ fontSize: '11px', color: '#6b7280' }}>
+                  <span className="text-[10px] font-mono text-slate-500">
                     {new Date(mem.occurred_at || mem.created_at).toLocaleDateString()}
                   </span>
                 </div>
-                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#f9fafb', margin: '0 0 6px 0' }}>{mem.title}</h3>
+                <h3 className="text-base font-bold text-[#F5F5F5]">{mem.title}</h3>
                 {mem.content && (
-                  <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0, lineHeight: '1.4' }}>{mem.content}</p>
+                  <p className="text-xs text-[#92929A] leading-relaxed">{mem.content}</p>
                 )}
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '600' }}>CONFIDENCE</div>
-                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#8b5cf6' }}>{mem.confidence_score}%</div>
+              <div className="flex items-center space-x-6 shrink-0">
+                <div className="text-right">
+                  <div className="text-[10px] font-mono text-slate-500 uppercase">CONFIDENCE</div>
+                  <div className="text-sm font-semibold font-mono text-sky-400">
+                    {typeof mem.confidence_score === 'number' ? `${mem.confidence_score}%` : 'Not available yet'}
+                  </div>
                 </div>
 
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '11px', color: '#6b7280', fontWeight: '600' }}>IMPORTANCE</div>
-                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#60a5fa' }}>{mem.importance_score}</div>
-                </div>
-
-                <ChevronRight size={20} style={{ color: '#6b7280' }} />
+                <ChevronRight size={18} className="text-[#92929A]" />
               </div>
             </div>
           ))}

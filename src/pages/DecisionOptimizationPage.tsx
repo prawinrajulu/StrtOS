@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { decisionOptimizationApi } from '../services/decisionOptimizationApi';
 import type { DecisionOverview, Recommendation } from '../services/decisionOptimizationApi';
-import { Compass, Cpu, Zap, Activity, CheckCircle } from 'lucide-react';
+import { GitFork, Activity, CheckCircle2, RefreshCw } from 'lucide-react';
 
 export const DecisionOptimizationPage: React.FC = () => {
   const [overview, setOverview] = useState<DecisionOverview | null>(null);
@@ -16,14 +16,15 @@ export const DecisionOptimizationPage: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const [overviewData, recData] = await Promise.all([
         decisionOptimizationApi.getOverview(),
         decisionOptimizationApi.getRecommendation().catch(() => null),
       ]);
       setOverview(overviewData);
       setRecommendation(recData);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load Decision Optimization data');
+    } catch {
+      setError('StrtOS decision engine is temporarily unavailable.');
     } finally {
       setLoading(false);
     }
@@ -31,115 +32,113 @@ export const DecisionOptimizationPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 text-cyan-400">
-        <Activity className="animate-spin mr-2" /> Loading Decision Optimization Dashboard...
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-slate-100 space-y-3">
+        <Activity className="w-6 h-6 text-sky-400 animate-spin" />
+        <p className="text-xs text-[#92929A] font-mono">Loading business decisions...</p>
       </div>
     );
   }
 
   return (
-    <div className="p-6 space-y-6 bg-slate-950 text-slate-100 min-h-screen">
+    <div className="p-8 max-w-7xl mx-auto text-slate-100 space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-center border-b border-slate-800 pb-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2 text-cyan-400">
-            <Compass className="h-6 w-6" /> Causal Decision Optimization & Action Planning
-          </h1>
-          <p className="text-sm text-slate-400">
-            Predictive action optimization, deterministic risk scoring, and governance-guarded planning.
+          <div className="flex items-center space-x-3">
+            <GitFork className="w-7 h-7 text-sky-400" />
+            <h1 className="text-2xl font-bold text-[#F5F5F5] tracking-tight">Decisions</h1>
+          </div>
+          <p className="text-[#92929A] mt-1 text-xs sm:text-sm">
+            StrtOS analyzes your business situation and recommends strategic decisions.
           </p>
         </div>
         <button
           onClick={fetchData}
-          className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm flex items-center gap-2 transition"
+          className="px-3 py-1.5 rounded-lg text-xs bg-[#151518] border border-white/10 hover:border-white/20 text-[#92929A] hover:text-[#F5F5F5] flex items-center space-x-2 transition"
         >
-          <Zap className="h-4 w-4" /> Re-Optimize Now
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Refresh</span>
         </button>
       </div>
 
       {error && (
-        <div className="p-4 bg-red-900/30 border border-red-500/50 rounded-lg text-red-300 text-sm">
+        <div className="p-4 bg-rose-950/60 border border-rose-800 rounded-xl text-xs text-rose-200">
           {error}
         </div>
       )}
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl backdrop-blur-md">
-          <div className="text-xs text-slate-400 flex items-center justify-between">
-            <span>Action Candidates</span>
-            <Cpu className="h-4 w-4 text-cyan-400" />
-          </div>
-          <div className="text-2xl font-bold text-slate-100 mt-2">{overview?.total_candidates || 0}</div>
+        <div className="p-5 bg-[#111113] border border-white/[0.06] rounded-xl">
+          <span className="text-xs text-[#92929A] font-mono uppercase">Evaluated Options</span>
+          <p className="text-2xl font-bold mt-1 text-sky-400">
+            {typeof overview?.total_candidates === 'number' ? overview.total_candidates : 'No current data'}
+          </p>
         </div>
 
-        <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl backdrop-blur-md">
-          <div className="text-xs text-slate-400 flex items-center justify-between">
-            <span>Recommended Actions</span>
-            <CheckCircle className="h-4 w-4 text-emerald-400" />
-          </div>
-          <div className="text-2xl font-bold text-slate-100 mt-2">{overview?.recommended_actions || 0}</div>
+        <div className="p-5 bg-[#111113] border border-white/[0.06] rounded-xl">
+          <span className="text-xs text-[#92929A] font-mono uppercase">Recommended Decisions</span>
+          <p className="text-2xl font-bold mt-1 text-emerald-400">
+            {typeof overview?.recommended_actions === 'number' ? overview.recommended_actions : 'No current data'}
+          </p>
         </div>
 
-        <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl backdrop-blur-md">
-          <div className="text-xs text-slate-400 flex items-center justify-between">
-            <span>Expected ROI</span>
-            <Activity className="h-4 w-4 text-indigo-400" />
-          </div>
-          <div className="text-2xl font-bold text-slate-100 mt-2">
-            {((overview?.expected_roi || 0) * 100).toFixed(1)}%
-          </div>
+        <div className="p-5 bg-[#111113] border border-white/[0.06] rounded-xl">
+          <span className="text-xs text-[#92929A] font-mono uppercase">Expected Outcome Value</span>
+          <p className="text-2xl font-bold mt-1 text-indigo-400">
+            {typeof overview?.expected_roi === 'number' ? `${(overview.expected_roi * 100).toFixed(0)}%` : 'No current data'}
+          </p>
         </div>
 
-        <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-xl backdrop-blur-md">
-          <div className="text-xs text-slate-400 flex items-center justify-between">
-            <span>Decision Confidence</span>
-            <Compass className="h-4 w-4 text-amber-400" />
-          </div>
-          <div className="text-2xl font-bold text-slate-100 mt-2">
-            {((overview?.decision_confidence || 0) * 100).toFixed(1)}%
-          </div>
+        <div className="p-5 bg-[#111113] border border-white/[0.06] rounded-xl">
+          <span className="text-xs text-[#92929A] font-mono uppercase">Confidence</span>
+          <p className="text-2xl font-bold mt-1 text-amber-400">
+            {typeof overview?.decision_confidence === 'number' ? `${(overview.decision_confidence * 100).toFixed(0)}%` : 'No current data'}
+          </p>
         </div>
       </div>
 
-      {/* Top Recommendation Section */}
-      {recommendation && (
-        <div className="p-6 bg-slate-900/80 border border-cyan-500/30 rounded-xl backdrop-blur-md space-y-4">
+      {/* Recommended Decision Section */}
+      {recommendation ? (
+        <div className="p-6 bg-[#111113] border border-white/[0.06] rounded-xl space-y-4">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-semibold px-3 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full">
-              OPTIMAL RECOMMENDATION
+            <span className="text-xs font-mono uppercase tracking-wider text-sky-400 font-semibold flex items-center space-x-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <span>Recommended Decision</span>
             </span>
-            <span className={`text-xs px-2.5 py-1 rounded font-semibold ${
-              recommendation.risk_level === 'LOW' ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-amber-950 text-amber-400 border border-amber-800'
-            }`}>
-              RISK: {recommendation.risk_level}
+            <span className="text-xs px-2.5 py-0.5 rounded font-mono bg-emerald-950/80 border border-emerald-800 text-emerald-300">
+              Risk: {recommendation.risk_level}
             </span>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold text-slate-100">{recommendation.recommended_action.action_type}</h2>
-            <p className="text-slate-400 text-sm mt-1">{recommendation.explanation}</p>
+            <h2 className="text-xl font-bold text-[#F5F5F5]">{recommendation.recommended_action.action_type}</h2>
+            <p className="text-[#92929A] text-xs mt-1 leading-relaxed">{recommendation.explanation}</p>
           </div>
 
-          {/* Score breakdown */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-950/60 p-4 rounded-lg border border-slate-800 text-xs">
+          {/* Breakdown */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-[#151518] p-4 rounded-lg border border-white/5 text-xs">
             <div>
-              <span className="text-slate-500">Total Score:</span>
-              <div className="font-bold text-cyan-400 text-base">{recommendation.score_breakdown.total_score?.toFixed(3)}</div>
+              <span className="text-[#92929A] block font-mono text-[10px]">TOTAL SCORE</span>
+              <div className="font-bold text-sky-400 text-sm mt-0.5">{recommendation.score_breakdown.total_score?.toFixed(2)}</div>
             </div>
             <div>
-              <span className="text-slate-500">Value Score:</span>
-              <div className="font-semibold text-slate-200">{recommendation.score_breakdown.value_score?.toFixed(3)}</div>
+              <span className="text-[#92929A] block font-mono text-[10px]">VALUE IMPACT</span>
+              <div className="font-semibold text-[#F5F5F5] text-sm mt-0.5">{recommendation.score_breakdown.value_score?.toFixed(2)}</div>
             </div>
             <div>
-              <span className="text-slate-500">Confidence Score:</span>
-              <div className="font-semibold text-slate-200">{recommendation.score_breakdown.confidence_score?.toFixed(3)}</div>
+              <span className="text-[#92929A] block font-mono text-[10px]">CONFIDENCE</span>
+              <div className="font-semibold text-emerald-400 text-sm mt-0.5">{recommendation.score_breakdown.confidence_score?.toFixed(2)}</div>
             </div>
             <div>
-              <span className="text-slate-500">Risk Penalty:</span>
-              <div className="font-semibold text-red-400">{recommendation.score_breakdown.risk_penalty?.toFixed(3)}</div>
+              <span className="text-[#92929A] block font-mono text-[10px]">RISK FACTOR</span>
+              <div className="font-semibold text-rose-400 text-sm mt-0.5">{recommendation.score_breakdown.risk_penalty?.toFixed(2)}</div>
             </div>
           </div>
+        </div>
+      ) : (
+        <div className="p-8 bg-[#111113] border border-white/[0.06] rounded-xl text-center space-y-2">
+          <p className="text-xs text-[#92929A]">No active decision recommendation required at this time.</p>
         </div>
       )}
     </div>
