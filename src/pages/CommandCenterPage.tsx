@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Compass, CheckCircle2, Circle, Activity, Play, Building2, ShieldCheck, RefreshCw, FileText, ChevronRight } from 'lucide-react';
+import { Compass, CheckCircle2, Circle, Activity, Play, Building2, ShieldCheck, RefreshCw, FileText, ChevronRight, AlertTriangle } from 'lucide-react';
 import { commandCenterApi } from '../services/commandCenterApi';
 import type { CommandCenterOverview } from '../services/commandCenterApi';
 import { workflowsApi } from '../services/workflowsApi';
@@ -22,6 +22,8 @@ export const CommandCenterPage: React.FC = () => {
   const [completedTasks, setCompletedTasks] = useState<UserFacingTask[]>([]);
   const [upcomingTasks, setUpcomingTasks] = useState<UserFacingTask[]>([]);
   const [selectedCompletedTask, setSelectedCompletedTask] = useState<UserFacingTask | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [startingWorkflow, setStartingWorkflow] = useState(false);
 
   useEffect(() => {
@@ -34,20 +36,14 @@ export const CommandCenterPage: React.FC = () => {
         setActiveTask(prev => {
           if (!prev) return null;
           if (prev.id === update.id || update.title === prev.title) {
-            const nextProgress = update.progress || prev.progress;
+            const nextProgress = update.progress !== undefined ? update.progress : prev.progress;
             if (update.status === 'COMPLETED') {
-              // Move active task to completed history
+              // Move completed task into history
               const finishedTask: UserFacingTask = { ...prev, ...update, progress: 100, status: 'COMPLETED' };
               setCompletedTasks(history => [finishedTask, ...history]);
-              // Move first upcoming to active
-              setUpcomingTasks(queue => {
-                if (queue.length > 0) {
-                  const [next, ...rest] = queue;
-                  setActiveTask({ ...next, status: 'ANALYZING', progress: 15 });
-                  return rest;
-                }
-                return [];
-              });
+
+              // Refetch next real queued task from backend
+              refreshTasksFromBackend();
               return null;
             }
             return { ...prev, ...update, progress: nextProgress };
@@ -62,7 +58,26 @@ export const CommandCenterPage: React.FC = () => {
     };
   }, []);
 
+  const refreshTasksFromBackend = async () => {
+    try {
+      const wfs = await workflowsApi.listWorkflows();
+      if (wfs.length > 0) {
+        const currentWf = wfs.find(w => w.status === 'RUNNING' || w.status === 'QUEUED') || wfs[0];
+        setActiveWorkflow(currentWf);
+        const tasks = await workflowsApi.getTasks(currentWf.id);
+        const translated = translateWorkflowToTasks(currentWf, tasks);
+        setActiveTask(translated.activeTask);
+        setCompletedTasks(translated.completedTasks);
+        setUpcomingTasks(translated.upcomingTasks);
+      }
+    } catch {
+      // Ignore background refresh errors
+    }
+  };
+
   const loadData = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const [ovData, cls, wfs] = await Promise.all([
         commandCenterApi.getOverview(),
@@ -76,8 +91,8 @@ export const CommandCenterPage: React.FC = () => {
         setSelectedClient(cls[0]);
       }
 
-      // Check active workflows & real backend tasks
-      if (wfs.length > 0) {
+      // Populate real tasks from real backend workflow & task records
+      if (wfs && wfs.length > 0) {
         const currentWf = wfs.find(w => w.status === 'RUNNING' || w.status === 'QUEUED') || wfs[0];
         setActiveWorkflow(currentWf);
         const tasks = await workflowsApi.getTasks(currentWf.id);
@@ -90,16 +105,19 @@ export const CommandCenterPage: React.FC = () => {
         setCompletedTasks([]);
         setUpcomingTasks([]);
       }
-    } catch (e) {
-      console.error('Failed loading Command Center data:', e);
+    } catch {
+      setError('StrtOS intelligence service is temporarily unavailable.');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleStartAnalysis = async () => {
     setStartingWorkflow(true);
+    setError(null);
     try {
       const client = selectedClient || (clients.length > 0 ? clients[0] : null);
-      let clientId = client ? client.id : 'default_org';
+      const clientId = client ? client.id : 'default_org';
 
       // Create and start real backend workflow
       const newWf = await workflowsApi.createWorkflow({
@@ -112,53 +130,51 @@ export const CommandCenterPage: React.FC = () => {
         await workflowsApi.startWorkflow(newWf.id);
         setActiveWorkflow(newWf);
 
-        // Populate real business tasks mapped from internal backend agents
-        const defaultTasks: UserFacingTask[] = [
-          {
-            id: 'task_1',
-            title: 'Business Performance Analysis',
-            status: 'ANALYZING',
-            progress: 35,
-            subSteps: ['Collecting verified business data', 'Evaluating current trends', 'Preparing strategic insights'],
-            currentStep: 'Collecting verified business data',
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            summary: 'Business performance analysis in progress using verified telemetry.'
-          },
-          {
-            id: 'task_2',
-            title: 'Market Intelligence',
-            status: 'EVALUATING',
-            progress: 0,
-            subSteps: ['Scanning industry dynamics', 'Evaluating competitor moves', 'Identifying market shifts'],
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          },
-          {
-            id: 'task_3',
-            title: 'Strategic Planning',
-            status: 'EVALUATING',
-            progress: 0,
-            subSteps: ['Synthesizing growth opportunities', 'Formulating multi-horizon targets'],
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          },
-          {
-            id: 'task_4',
-            title: 'Strategic Recommendation Validation',
-            status: 'EVALUATING',
-            progress: 0,
-            subSteps: ['Evaluating governance rules', 'Validating risk boundaries'],
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          }
-        ];
-
-        setActiveTask(defaultTasks[0]);
-        setUpcomingTasks(defaultTasks.slice(1));
+        // Fetch real tasks generated by backend workflow engine
+        const tasks = await workflowsApi.getTasks(newWf.id);
+        const translated = translateWorkflowToTasks(newWf, tasks);
+        setActiveTask(translated.activeTask);
+        setCompletedTasks(translated.completedTasks);
+        setUpcomingTasks(translated.upcomingTasks);
       }
-    } catch (e) {
-      console.error('Failed starting strategic analysis workflow:', e);
+    } catch {
+      setError('StrtOS intelligence service is temporarily unavailable.');
     } finally {
       setStartingWorkflow(false);
     }
   };
+
+  // Loading State (Requirement 14)
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-slate-100 space-y-4">
+        <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white shadow-[0_0_20px_rgba(99,102,241,0.6)] animate-pulse">
+          S
+        </div>
+        <div className="text-center space-y-1">
+          <h2 className="text-lg font-bold tracking-tight">STRtOS</h2>
+          <p className="text-xs text-slate-400 font-mono">Initializing intelligence workspace...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error State (Requirement 13)
+  if (error && !activeTask && completedTasks.length === 0) {
+    return (
+      <div className="p-8 max-w-xl mx-auto my-16 bg-slate-900 border border-slate-800 rounded-xl space-y-4 text-center">
+        <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto" />
+        <h2 className="text-lg font-bold text-slate-100">{error}</h2>
+        <p className="text-xs text-slate-400">Unable to establish telemetry with the STRtOS backend engine.</p>
+        <button
+          onClick={loadData}
+          className="px-4 py-2 rounded-lg text-xs font-mono font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition"
+        >
+          Retry Connection
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-7xl mx-auto text-slate-100 space-y-8">
@@ -190,11 +206,11 @@ export const CommandCenterPage: React.FC = () => {
 
       {/* Main 2-Column Grid Layout: CENTER = Task Execution, RIGHT = Business Info */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
+
         {/* CENTER COLUMN (Span 2): Live StrtOS Task Execution & Completed Work */}
         <div className="lg:col-span-2 space-y-6">
 
-          {/* Active / Current Task Card */}
+          {/* Active / Current Task Card (Requirement 4 & Requirement 7) */}
           <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-5 backdrop-blur-sm relative overflow-hidden">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -211,49 +227,42 @@ export const CommandCenterPage: React.FC = () => {
                 <div>
                   <h3 className="text-xl font-bold text-slate-100">{activeTask.title}</h3>
                   <div className="flex items-center justify-between text-xs font-mono text-slate-400 mt-2">
-                    <span>{activeTask.status}</span>
-                    <span>{activeTask.progress}%</span>
+                    <span>{activeTask.statusMessage || 'StrtOS is working'}</span>
+                    <span>{typeof activeTask.progress === 'number' ? `${activeTask.progress}%` : 'Working...'}</span>
                   </div>
-                  {/* Progress Bar */}
+                  {/* Progress Bar (Real % if available, else indeterminate pulsing bar) */}
                   <div className="w-full bg-slate-950 rounded-full h-2 mt-1.5 overflow-hidden border border-slate-800">
                     <div
                       className="bg-gradient-to-r from-cyan-500 to-indigo-500 h-2 rounded-full transition-all duration-500"
-                      style={{ width: `${activeTask.progress}%` }}
+                      style={{
+                        width: typeof activeTask.progress === 'number' ? `${activeTask.progress}%` : '100%',
+                        opacity: typeof activeTask.progress === 'number' ? 1 : 0.7
+                      }}
                     ></div>
                   </div>
                 </div>
 
-                {/* Sub-steps */}
-                <div className="space-y-2 pt-2 border-t border-slate-800/80">
-                  {activeTask.subSteps.map((step, idx) => {
-                    const isDone = idx === 0 && activeTask.progress > 50;
-                    const isCurrent = idx === 0 && activeTask.progress <= 50;
-                    return (
+                {/* Sub-steps / Telemetry Messages */}
+                {activeTask.subSteps && activeTask.subSteps.length > 0 && (
+                  <div className="space-y-2 pt-2 border-t border-slate-800/80">
+                    {activeTask.subSteps.map((step, idx) => (
                       <div key={idx} className="flex items-center space-x-3 text-xs">
-                        {isDone ? (
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                        ) : isCurrent ? (
-                          <Activity className="w-4 h-4 text-cyan-400 animate-spin shrink-0" />
-                        ) : (
-                          <Circle className="w-4 h-4 text-slate-600 shrink-0" />
-                        )}
-                        <span className={isDone ? 'text-slate-300' : isCurrent ? 'text-cyan-300 font-semibold' : 'text-slate-500'}>
-                          {step}
-                        </span>
+                        <Activity className="w-4 h-4 text-cyan-400 animate-spin shrink-0" />
+                        <span className="text-cyan-300 font-semibold">{step}</span>
                       </div>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
-              /* Clean Empty State when no active task */
+              /* Clean Empty State when no active task (Requirement 1) */
               <div className="py-8 text-center space-y-4">
                 <div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto text-cyan-400">
                   <Compass className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-slate-200">StrtOS is ready.</h3>
-                  <p className="text-xs text-slate-400 mt-1">Connect your business data to begin autonomous strategy execution.</p>
+                  <h3 className="text-lg font-bold text-slate-200">StrtOS is ready</h3>
+                  <p className="text-xs text-slate-400 mt-1">Waiting for the next intelligence workflow.</p>
                 </div>
                 <button
                   onClick={handleStartAnalysis}
@@ -267,15 +276,15 @@ export const CommandCenterPage: React.FC = () => {
             )}
           </div>
 
-          {/* Completed Task History */}
+          {/* Completed Task History (Requirement 8) */}
           <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
             <h2 className="text-sm font-semibold text-slate-100 uppercase font-mono tracking-wider flex items-center space-x-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Completed Activity & Report History</span>
+              <span>Completed Activity</span>
             </h2>
 
             {completedTasks.length === 0 ? (
-              <p className="text-xs text-slate-400 italic py-2">No completed tasks yet. Trigger an analysis to see task history.</p>
+              <p className="text-xs text-slate-400 italic py-2">No completed activities recorded.</p>
             ) : (
               <div className="space-y-3">
                 {completedTasks.map((t) => (
@@ -289,7 +298,7 @@ export const CommandCenterPage: React.FC = () => {
                         <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                         <span className="font-semibold text-slate-200 text-sm">{t.title}</span>
                       </div>
-                      <p className="text-xs text-slate-400 pl-6">{t.summary}</p>
+                      <p className="text-xs text-slate-400 pl-6">{t.summary || `${t.title} completed successfully.`}</p>
                     </div>
                     <div className="flex items-center space-x-2 text-xs font-mono text-slate-500 shrink-0">
                       <span>Completed {t.timestamp}</span>
@@ -301,12 +310,12 @@ export const CommandCenterPage: React.FC = () => {
             )}
           </div>
 
-          {/* Upcoming Tasks */}
-          {upcomingTasks.length > 0 && (
+          {/* Upcoming Tasks (Requirement 9: Only display if queued tasks actually exist!) */}
+          {upcomingTasks && upcomingTasks.length > 0 && (
             <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
               <h2 className="text-sm font-semibold text-slate-100 uppercase font-mono tracking-wider flex items-center space-x-2">
                 <Circle className="w-4 h-4 text-slate-500" />
-                <span>Upcoming Tasks Queue</span>
+                <span>Up Next</span>
               </h2>
               <div className="space-y-2">
                 {upcomingTasks.map((t) => (
@@ -324,19 +333,16 @@ export const CommandCenterPage: React.FC = () => {
 
         </div>
 
-        {/* RIGHT COLUMN (Span 1): Business Context & Governance Gate */}
+        {/* RIGHT COLUMN (Span 1): Real Business Information (Requirement 10) */}
         <div className="space-y-6">
 
-          {/* Connected Business Profile Card */}
+          {/* Active Business Account */}
           <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-slate-100 uppercase font-mono tracking-wider flex items-center space-x-2">
                 <Building2 className="w-4 h-4 text-cyan-400" />
-                <span>Active Business</span>
+                <span>Business Account</span>
               </h2>
-              <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 border border-emerald-800 text-emerald-300">
-                CONNECTED
-              </span>
             </div>
 
             {selectedClient ? (
@@ -350,52 +356,69 @@ export const CommandCenterPage: React.FC = () => {
               </div>
             ) : (
               <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-lg text-center space-y-2">
-                <p className="text-xs text-slate-400">Arcadia Ventures Enterprise</p>
-                <button
-                  onClick={handleStartAnalysis}
-                  className="w-full mt-2 py-1.5 rounded text-xs font-mono bg-slate-800 hover:bg-slate-700 text-cyan-300 transition"
-                >
-                  + Add Business Account
-                </button>
+                <p className="text-xs text-slate-400">Enterprise Account</p>
+                <span className="text-[10px] font-mono text-slate-500 block">No current data</span>
               </div>
             )}
           </div>
 
-          {/* Strategic Readiness & Governance Gate */}
+          {/* Business Health & Attention */}
           <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
             <h2 className="text-sm font-semibold text-slate-100 uppercase font-mono tracking-wider flex items-center space-x-2">
               <ShieldCheck className="w-4 h-4 text-indigo-400" />
-              <span>Governance & Readiness</span>
+              <span>Business Health</span>
             </h2>
 
             <div className="space-y-3 text-xs">
               <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg flex items-center justify-between">
-                <span className="text-slate-400">Overall Readiness</span>
-                <span className="font-mono text-emerald-400 font-bold">
-                  {overview?.executive_health?.overall_score || 88.7}% HEALTHY
-                </span>
+                <span className="text-slate-400">Overall Health</span>
+                {overview?.executive_health ? (
+                  <span className="font-mono text-emerald-400 font-bold">
+                    {overview.executive_health.overall_score} ({overview.executive_health.status})
+                  </span>
+                ) : (
+                  <span className="font-mono text-slate-500">No current data</span>
+                )}
               </div>
 
               <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg flex items-center justify-between">
-                <span className="text-slate-400">Strategy Alignment</span>
-                <span className="font-mono text-cyan-400 font-bold">
-                  {overview?.executive_health?.strategy_health || 90.0}%
-                </span>
-              </div>
-
-              <div className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg flex items-center justify-between">
-                <span className="text-slate-400">Governance Gate</span>
-                <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-950 border border-emerald-800 text-emerald-300">
-                  CLEARED
-                </span>
+                <span className="text-slate-400">Attention Required</span>
+                {overview?.active_decisions && overview.active_decisions.length > 0 ? (
+                  <span className="font-mono text-amber-400 font-bold">
+                    {overview.active_decisions.length} decisions require review
+                  </span>
+                ) : (
+                  <span className="font-mono text-emerald-400">0 pending reviews</span>
+                )}
               </div>
             </div>
+          </div>
+
+          {/* Strategic Priorities */}
+          <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-xl space-y-4">
+            <h2 className="text-sm font-semibold text-slate-100 uppercase font-mono tracking-wider flex items-center space-x-2">
+              <Compass className="w-4 h-4 text-cyan-400" />
+              <span>Strategic Priorities</span>
+            </h2>
+
+            {overview?.top_priorities && overview.top_priorities.length > 0 ? (
+              <div className="space-y-2">
+                {overview.top_priorities.map((p) => (
+                  <div key={p.id} className="p-3 bg-slate-950/80 border border-slate-800 rounded-lg space-y-1">
+                    <span className="text-xs font-semibold text-slate-200 block">{p.title}</span>
+                    <span className="text-[10px] text-slate-400 block">{p.why_it_matters}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 italic">No current data</p>
+            )}
           </div>
 
         </div>
       </div>
 
-      {/* Task Report Details Modal */}
+      {/* Task Report Details Modal (Requirement 8) */}
       {selectedCompletedTask && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-xl w-full space-y-4 text-slate-100">
@@ -411,9 +434,33 @@ export const CommandCenterPage: React.FC = () => {
                 ✕ CLOSE
               </button>
             </div>
-            <div className="p-4 bg-slate-950 border border-slate-800 rounded-lg text-xs space-y-2">
-              <p className="text-slate-300 font-semibold">{selectedCompletedTask.summary}</p>
-              <p className="text-slate-400">Completed at {selectedCompletedTask.timestamp} with 100% verified confidence telemetry.</p>
+            <div className="p-4 bg-slate-950 border border-slate-800 rounded-lg text-xs space-y-3">
+              <div>
+                <span className="text-[10px] font-mono text-slate-500 uppercase block">Summary</span>
+                <p className="text-slate-300 font-semibold mt-0.5">
+                  {selectedCompletedTask.summary || `${selectedCompletedTask.title} completed successfully.`}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
+                <div>
+                  <span className="text-[10px] font-mono text-slate-500 uppercase block">Completed Time</span>
+                  <span className="text-slate-300 font-mono">{selectedCompletedTask.timestamp}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-slate-500 uppercase block">Confidence</span>
+                  <span className="text-emerald-400 font-mono">
+                    {selectedCompletedTask.confidence ? `${selectedCompletedTask.confidence}%` : 'Verified telemetry'}
+                  </span>
+                </div>
+              </div>
+              {selectedCompletedTask.recommendedNextStep ? (
+                <div className="pt-2 border-t border-slate-800">
+                  <span className="text-[10px] font-mono text-slate-500 uppercase block">Recommended Next Step</span>
+                  <p className="text-cyan-300">{selectedCompletedTask.recommendedNextStep}</p>
+                </div>
+              ) : (
+                <p className="text-[10px] text-slate-500 italic pt-1">Additional details are not available.</p>
+              )}
             </div>
           </div>
         </div>

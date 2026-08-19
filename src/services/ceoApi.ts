@@ -1,4 +1,4 @@
-import type { StatusType } from '../components/StatusBadge';
+﻿import type { StatusType } from '../components/StatusBadge';
 
 export interface TaskData {
   task_id: string;
@@ -71,7 +71,7 @@ export class CEOApiService {
         body: JSON.stringify({
           directive,
           client_id: clientId,
-          client_name: clientName || 'Arcadia Ventures'
+          client_name: clientName || 'Enterprise Account'
         }),
       });
       const data = await res.json();

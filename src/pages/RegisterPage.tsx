@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Cpu, Building, User, Mail, Lock, ArrowRight } from 'lucide-react';
 
@@ -86,7 +86,7 @@ export const RegisterPage: React.FC = () => {
                 required
                 value={orgName}
                 onChange={(e) => setOrgName(e.target.value)}
-                placeholder="Arcadia Ventures"
+                placeholder="Acme Corp"
                 style={{ width: '100%', backgroundColor: '#0d0d12', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '10px 14px 10px 40px', fontSize: '13px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
@@ -116,7 +116,7 @@ export const RegisterPage: React.FC = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="jane@arcadia.com"
+                placeholder="jane@company.com"
                 style={{ width: '100%', backgroundColor: '#0d0d12', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', padding: '10px 14px 10px 40px', fontSize: '13px', color: '#ffffff', outline: 'none', boxSizing: 'border-box' }}
               />
             </div>

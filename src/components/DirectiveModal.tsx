@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { X, Sparkles } from 'lucide-react';
 
 interface DirectiveModalProps {
@@ -9,7 +9,7 @@ interface DirectiveModalProps {
 
 export const DirectiveModal: React.FC<DirectiveModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [directive, setDirective] = useState('');
-  const [clientName, setClientName] = useState('Arcadia Ventures');
+  const [clientName, setClientName] = useState('Enterprise Account');
 
   if (!isOpen) return null;
 
@@ -77,9 +77,9 @@ export const DirectiveModal: React.FC<DirectiveModalProps> = ({ isOpen, onClose,
             <Sparkles size={18} />
           </div>
           <div>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>New CEO Directive</h3>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#ffffff' }}>New Strategic Directive</h3>
             <div style={{ fontSize: '11px', fontFamily: "'JetBrains Mono', monospace", color: '#6b7280' }}>
-              ORCHESTRATE MULTI-AGENT WORKFLOW
+              ORCHESTRATE STRATEGIC WORKFLOW
             </div>
           </div>
         </div>
@@ -97,7 +97,7 @@ export const DirectiveModal: React.FC<DirectiveModalProps> = ({ isOpen, onClose,
                 marginBottom: '6px',
               }}
             >
-              CLIENT ACCOUNT
+              BUSINESS ACCOUNT
             </label>
             <input
               type="text"
@@ -134,7 +134,7 @@ export const DirectiveModal: React.FC<DirectiveModalProps> = ({ isOpen, onClose,
               rows={4}
               value={directive}
               onChange={(e) => setDirective(e.target.value)}
-              placeholder="e.g. I own a restaurant and need more online customers..."
+              placeholder="e.g. Expand digital presence and analyze market opportunities..."
               style={{
                 width: '100%',
                 padding: '12px',
@@ -181,7 +181,7 @@ export const DirectiveModal: React.FC<DirectiveModalProps> = ({ isOpen, onClose,
                 boxShadow: '0 0 16px rgba(168, 85, 247, 0.4)',
               }}
             >
-              Dispatch CEO Agent
+              Dispatch Directive
             </button>
           </div>
         </form>

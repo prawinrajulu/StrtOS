@@ -26,7 +26,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   const sections = [
     {
-      group: 'STRTOS ENGINE',
+      group: 'MAIN',
       items: [
         { id: 'command-center', label: 'Command Center', icon: Compass, badgeDot: true },
         { id: 'dashboard', label: 'Executive Dashboard', icon: BarChart3 },
@@ -36,9 +36,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       group: 'INTELLIGENCE',
       items: [
         { id: 'business-state', label: 'Business State', icon: Activity, badgeDot: true },
-        { id: 'forecasting', label: 'Strategic Forecasting', icon: TrendingUp },
         { id: 'strategy', label: 'Strategy Engine', icon: Target, badgeDot: true },
-        { id: 'decision-optimization', label: 'Decision Optimization', icon: GitFork, badgeDot: true },
+        { id: 'forecasting', label: 'Strategic Forecasting', icon: TrendingUp },
+        { id: 'decision-optimization', label: 'Decisions', icon: GitFork, badgeDot: true },
         { id: 'knowledge', label: 'Knowledge Graph', icon: Network, badgeDot: true },
       ],
     },
@@ -52,12 +52,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       ],
     },
     {
-      group: 'GOVERNANCE & AUDIT',
+      group: 'INSIGHTS',
+      items: [
+        { id: 'reports', label: 'Reports', icon: FileText },
+        { id: 'memory', label: 'Memory Engine', icon: Brain },
+        { id: 'outcomes', label: 'Outcomes', icon: FileText },
+      ],
+    },
+    {
+      group: 'GOVERNANCE',
       items: [
         { id: 'approvals', label: 'Approvals', icon: ShieldCheck },
         { id: 'policies', label: 'Policies', icon: ShieldCheck },
-        { id: 'memory', label: 'Memory Engine', icon: Brain },
-        { id: 'outcomes', label: 'Outcomes & Reports', icon: FileText },
       ],
     },
     {
@@ -82,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
               StrtOS
             </div>
             <div className="text-[9px] font-mono text-slate-500 tracking-widest uppercase">
-              STRATEGIC AI ENGINE • v2.6
+              INTELLIGENCE ENGINE • v2.6
             </div>
           </div>
         </div>
@@ -91,12 +97,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
         <div className="p-4 pb-2">
           <div className="bg-white/5 border border-white/10 rounded-lg p-2.5 flex items-center justify-between cursor-pointer hover:border-white/20 transition">
             <div className="flex items-center gap-2.5">
-              <div className="w-6 h-6 rounded bg-emerald-400 text-black text-xs font-bold flex items-center justify-center">
-                AV
+              <div className="w-6 h-6 rounded bg-indigo-500 text-white text-xs font-bold flex items-center justify-center">
+                EA
               </div>
               <div>
-                <div className="text-xs font-semibold text-slate-200">Arcadia Ventures</div>
-                <div className="text-[9px] text-slate-500 font-mono">ENTERPRISE</div>
+                <div className="text-xs font-semibold text-slate-200">Enterprise Account</div>
+                <div className="text-[9px] text-slate-500 font-mono">ORGANIZATION</div>
               </div>
             </div>
             <ChevronDown size={14} className="text-slate-500" />
