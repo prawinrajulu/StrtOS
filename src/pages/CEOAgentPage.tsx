@@ -72,7 +72,7 @@ export const CEOAgentPage: React.FC = () => {
         <div className="flex items-center space-x-3">
           <button
             onClick={() => setIsDirectiveOpen(true)}
-            className="px-4 py-2 rounded-lg text-xs font-mono font-bold bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-black flex items-center space-x-2 transition shadow-lg shadow-cyan-500/20"
+            className="px-4 py-2 rounded-lg text-xs font-mono font-bold bg-linear-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-black flex items-center space-x-2 transition shadow-lg shadow-cyan-500/20"
           >
             <Plus className="w-4 h-4" />
             <span>NEW DIRECTIVE</span>

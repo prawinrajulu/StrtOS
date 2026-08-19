@@ -150,7 +150,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
   // Minimal Contextual Loading
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[450px] text-slate-100 space-y-3">
+      <div className="flex flex-col items-center justify-center min-h-112.5 text-slate-100 space-y-3">
         <div className="w-8 h-8 rounded-full border-2 border-sky-500 border-t-transparent animate-spin"></div>
         <div className="text-center space-y-1">
           <h2 className="text-sm font-semibold tracking-wider text-slate-300">STRtOS</h2>
@@ -270,7 +270,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
                       </div>
                       <div className="w-full bg-[#151518] rounded-full h-1.5 overflow-hidden border border-white/10">
                         <div
-                          className="bg-gradient-to-r from-sky-400 to-indigo-500 h-1.5 rounded-full transition-all duration-500"
+                          className="bg-linear-to-r from-sky-400 to-indigo-500 h-1.5 rounded-full transition-all duration-500"
                           style={{ width: `${activeTask.progress}%` }}
                         ></div>
                       </div>
@@ -321,7 +321,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
               <p>Completed intelligence will appear here.</p>
             </div>
           ) : (
-            <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
+            <div className="space-y-3 max-h-85 overflow-y-auto pr-1">
               {completedTasks.map((t) => (
                 <div
                   key={t.id}
@@ -401,7 +401,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
             value={askQuery}
             onChange={(e) => setAskQuery(e.target.value)}
             placeholder="Ask StrtOS anything... e.g. Analyze my business performance, Find growth opportunities"
-            className="flex-1 bg-[#151518] border border-white/10 rounded-lg px-4 py-2.5 text-xs text-[#F5F5F5] outline-none placeholder:text-[#92929A]"
+            className="flex-1 bg-[#151518] border border-white/10 rounded-lg px-4 py-2.5 text-xs outline-none text-[#F5F5F5] placeholder:text-[#92929A]"
           />
           <button
             type="submit"
@@ -414,7 +414,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
         </form>
       </div>
 
-      {/* Result Details Report Modal (Optional view if modal pattern is triggered) */}
+      {/* Result Details Report Modal */}
       {selectedCompletedTask && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#111113] border border-white/10 rounded-xl p-6 max-w-lg w-full space-y-4 text-slate-100">
