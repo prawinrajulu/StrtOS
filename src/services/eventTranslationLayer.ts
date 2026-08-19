@@ -11,6 +11,11 @@ export type UserTaskStatus =
   | 'FAILED'
   | 'DEGRADED';
 
+export interface SubStepItem {
+  title: string;
+  status: 'COMPLETED' | 'RUNNING' | 'UPCOMING';
+}
+
 export interface UserFacingTask {
   id: string;
   title: string;
@@ -18,6 +23,7 @@ export interface UserFacingTask {
   statusMessage?: string;
   progress?: number;
   subSteps: string[];
+  subStepDetails?: SubStepItem[];
   currentStep?: string;
   timestamp: string;
   summary?: string;
@@ -153,6 +159,7 @@ export function translateBackendTaskToUserTask(task: TaskItem): UserFacingTask {
     statusMessage: statusMsg,
     progress,
     subSteps: [],
+    subStepDetails: [],
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     summary: task.status === 'COMPLETED' ? `${title} completed successfully.` : undefined
   };
