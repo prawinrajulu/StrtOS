@@ -1,14 +1,15 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { dashboardApi } from '../services/dashboardApi';
 import type { DashboardOverview, AgentPerformanceItem, RecentActivityItem } from '../services/dashboardApi';
-import { BarChart3, Sparkles, Activity, Users, ListChecks, Award, BarChart2 } from 'lucide-react';
+import { BarChart3, Sparkles, Activity, Users, ListChecks, Award, CheckCircle2, ArrowRight } from 'lucide-react';
 import { mapInternalExecutionToBusinessLanguage } from '../services/eventTranslationLayer';
 
 interface DashboardPageProps {
   onOpenCEO?: () => void;
+  onNavigateToReports?: () => void;
 }
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenCEO }) => {
+export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenCEO, onNavigateToReports }) => {
   const [data, setData] = useState<DashboardOverview | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -48,7 +49,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenCEO }) => {
             className="px-4 py-2 rounded-lg text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-slate-950 flex items-center space-x-2 transition"
           >
             <Sparkles className="w-4 h-4" />
-            <span>Strategic Workspace</span>
+            <span>Command Center</span>
           </button>
         )}
       </div>
@@ -118,55 +119,74 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ onOpenCEO }) => {
             </div>
           )}
 
-          {/* Grid Layout: Execution Performance & Audit Events */}
+          {/* Grid Layout: Business Activity & Recent Results */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Operational Execution Performance */}
+            {/* Business Activity */}
             <div className="p-6 bg-[#111113] border border-white/[0.06] rounded-xl space-y-4">
               <h3 className="text-sm font-semibold text-[#F5F5F5] flex items-center space-x-2">
-                <BarChart2 className="w-4 h-4 text-sky-400" />
-                <span>Operational Execution Performance</span>
+                <Activity className="w-4 h-4 text-sky-400" />
+                <span>Business Activity</span>
               </h3>
 
               {data.agent_performance.length === 0 ? (
                 <p className="text-xs text-[#92929A] italic">No current data.</p>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {data.agent_performance.map((agent: AgentPerformanceItem) => (
                     <div key={agent.agent_name} className="p-3 bg-[#151518] border border-white/5 rounded-lg flex items-center justify-between text-xs">
-                      <div>
-                        <div className="font-semibold text-[#F5F5F5]">{mapInternalExecutionToBusinessLanguage(agent.agent_name)}</div>
-                        <div className="text-[10px] text-[#92929A] font-mono">{agent.completed_executions} Completed / {agent.total_executions} Total</div>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span className="font-semibold text-[#F5F5F5]">
+                            {mapInternalExecutionToBusinessLanguage(agent.agent_name)}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-[#92929A] pl-5">Completed successfully</p>
                       </div>
-                      <div className="text-right font-mono">
-                        <div className="font-bold text-emerald-400">{agent.success_rate}% Success</div>
-                        <div className="text-[10px] text-sky-400">{agent.average_confidence}% Conf.</div>
-                      </div>
+                      <span className="text-[10px] font-mono text-[#92929A]">
+                        {agent.success_rate}% Success
+                      </span>
                     </div>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Recent Audit Trail Events */}
+            {/* Recent Results */}
             <div className="p-6 bg-[#111113] border border-white/[0.06] rounded-xl space-y-4">
               <h3 className="text-sm font-semibold text-[#F5F5F5] flex items-center space-x-2">
-                <Activity className="w-4 h-4 text-emerald-400" />
-                <span>Recent Audit Trail Events</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>Recent Results</span>
               </h3>
 
               {data.recent_activities.length === 0 ? (
-                <p className="text-xs text-[#92929A] italic">No current data.</p>
+                <p className="text-xs text-[#92929A] italic">No recent results.</p>
               ) : (
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {data.recent_activities.map((act: RecentActivityItem) => (
-                    <div key={act.id} className="p-3 bg-[#151518] border border-white/5 rounded-lg flex items-center justify-between text-xs">
-                      <div>
-                        <div className="font-semibold text-sky-400">{mapInternalExecutionToBusinessLanguage(act.event_type)}</div>
-                        <div className="text-[10px] text-[#92929A] font-mono">Workflow ID: {act.workflow_id}</div>
+                    <div
+                      key={act.id}
+                      onClick={() => onNavigateToReports ? onNavigateToReports() : null}
+                      className="p-3 bg-[#151518] border border-white/5 hover:border-white/15 rounded-lg flex items-center justify-between cursor-pointer transition text-xs"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="font-semibold text-[#F5F5F5]">
+                          {mapInternalExecutionToBusinessLanguage(act.event_type)}
+                        </div>
+                        <p className="text-[10px] text-[#92929A]">
+                          Completed {new Date(act.created_at).toLocaleTimeString()}
+                        </p>
                       </div>
-                      <div className="text-[10px] font-mono text-[#92929A]">
-                        {new Date(act.created_at).toLocaleTimeString()}
-                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onNavigateToReports) onNavigateToReports();
+                        }}
+                        className="flex items-center space-x-1 text-[10px] font-mono text-sky-400 hover:underline"
+                      >
+                        <span>View Result</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
                     </div>
                   ))}
                 </div>

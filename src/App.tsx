@@ -282,7 +282,7 @@ const MainLayout: React.FC = () => {
         return <ReportsPage onSelectReport={(rep) => setSelectedReport(rep)} />;
       case 'settings':
       case 'profile':
-        return <ProfilePage onNavigateDiagnostics={(tab) => setActiveTab(tab)} />;
+        return <ProfilePage  />;
       default:
         return <CommandCenterPage onNavigateToReports={() => setActiveTab('reports')} onNavigateToDecisions={() => setActiveTab('decision-optimization')} />;
     }
