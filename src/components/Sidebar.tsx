@@ -1,20 +1,21 @@
-import React from 'react';
+﻿import React from 'react';
 import {
-  LayoutDashboard,
-  GitFork,
+  Compass,
+  BarChart3,
+  Activity,
   TrendingUp,
   Target,
-  FileText,
-  Settings,
-  ChevronDown,
+  GitFork,
+  Network,
+  Briefcase,
+  Zap,
+  Server,
   ShieldCheck,
   Brain,
-  Zap,
-  Network,
-  Activity,
-  Compass,
-  Briefcase,
-  Server,
+  FileText,
+  Building2,
+  Settings,
+  ChevronDown,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -25,18 +26,18 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => {
   const sections = [
     {
-      group: 'MAIN',
+      group: 'STRTOS ENGINE',
       items: [
         { id: 'command-center', label: 'Command Center', icon: Compass, badgeDot: true },
-        { id: 'dashboard', label: 'Executive Dashboard', icon: LayoutDashboard },
+        { id: 'dashboard', label: 'Executive Dashboard', icon: BarChart3 },
       ],
     },
     {
       group: 'INTELLIGENCE',
       items: [
         { id: 'business-state', label: 'Business State', icon: Activity, badgeDot: true },
-        { id: 'forecasting', label: 'Strategic Forecasting', icon: TrendingUp, badgeDot: true },
-        { id: 'strategy', label: 'Strategy Engine', icon: Compass, badgeDot: true },
+        { id: 'forecasting', label: 'Strategic Forecasting', icon: TrendingUp },
+        { id: 'strategy', label: 'Strategy Engine', icon: Target, badgeDot: true },
         { id: 'decision-optimization', label: 'Decision Optimization', icon: GitFork, badgeDot: true },
         { id: 'knowledge', label: 'Knowledge Graph', icon: Network, badgeDot: true },
       ],
@@ -46,161 +47,70 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       items: [
         { id: 'missions', label: 'Missions', icon: Target, badgeDot: true },
         { id: 'portfolio', label: 'Portfolio Control', icon: Briefcase },
-        { id: 'workflows', label: 'Execution & Workflows', icon: Zap },
+        { id: 'workflows', label: 'Workflows', icon: Zap },
         { id: 'resources', label: 'Resource Intelligence', icon: Server, badgeDot: true },
       ],
     },
     {
-      group: 'GOVERNANCE',
+      group: 'GOVERNANCE & AUDIT',
       items: [
         { id: 'approvals', label: 'Approvals', icon: ShieldCheck },
         { id: 'policies', label: 'Policies', icon: ShieldCheck },
-      ],
-    },
-    {
-      group: 'INSIGHTS',
-      items: [
-        { id: 'memory', label: 'Memory', icon: Brain },
+        { id: 'memory', label: 'Memory Engine', icon: Brain },
         { id: 'outcomes', label: 'Outcomes & Reports', icon: FileText },
       ],
     },
     {
       group: 'SYSTEM',
       items: [
-        { id: 'settings', label: 'Settings & Diagnostics', icon: Settings },
+        { id: 'clients', label: 'Business Accounts', icon: Building2 },
+        { id: 'settings', label: 'Settings', icon: Settings },
       ],
     },
   ];
 
   return (
-    <aside
-      style={{
-        width: '260px',
-        backgroundColor: '#0b0b0e',
-        borderRight: '1px solid rgba(255, 255, 255, 0.06)',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        height: '100vh',
-        position: 'sticky',
-        top: 0,
-        zIndex: 20,
-        userSelect: 'none',
-      }}
-    >
+    <aside className="w-64 bg-[#0b0b0e] border-r border-white/10 flex flex-col justify-between h-screen sticky top-0 z-20 select-none">
       <div>
         {/* Top Logo */}
-        <div
-          style={{
-            padding: '20px 24px',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-          }}
-        >
-          <div
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              backgroundColor: '#6366f1',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 'bold',
-              color: '#ffffff',
-              fontSize: '14px',
-              boxShadow: '0 0 16px rgba(99, 102, 241, 0.5)',
-            }}
-          >
+        <div className="p-5 border-b border-white/5 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-sm shadow-[0_0_16px_rgba(99,102,241,0.5)]">
             S
           </div>
           <div>
-            <div style={{ fontSize: '15px', fontWeight: 700, color: '#f3f4f6', letterSpacing: '-0.02em' }}>
+            <div className="text-base font-bold text-slate-100 tracking-tight">
               StrtOS
             </div>
-            <div
-              style={{
-                fontSize: '9px',
-                fontFamily: "'JetBrains Mono', monospace",
-                color: '#6b7280',
-                letterSpacing: '0.1em',
-              }}
-            >
-              STRATEGIC AI OS • V2.6
+            <div className="text-[9px] font-mono text-slate-500 tracking-widest uppercase">
+              STRATEGIC AI ENGINE • v2.6
             </div>
           </div>
         </div>
 
         {/* Enterprise Selector */}
-        <div style={{ padding: '16px 16px 8px 16px' }}>
-          <div
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.06)',
-              borderRadius: '8px',
-              padding: '10px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              cursor: 'pointer',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div
-                style={{
-                  width: '24px',
-                  height: '24px',
-                  borderRadius: '6px',
-                  backgroundColor: '#00e599',
-                  color: '#000000',
-                  fontSize: '10px',
-                  fontWeight: 'bold',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
+        <div className="p-4 pb-2">
+          <div className="bg-white/5 border border-white/10 rounded-lg p-2.5 flex items-center justify-between cursor-pointer hover:border-white/20 transition">
+            <div className="flex items-center gap-2.5">
+              <div className="w-6 h-6 rounded bg-emerald-400 text-black text-xs font-bold flex items-center justify-center">
                 AV
               </div>
               <div>
-                <div style={{ fontSize: '12px', fontWeight: 600, color: '#e5e7eb' }}>Arcadia Ventures</div>
-                <div style={{ fontSize: '9px', color: '#6b7280', fontFamily: "'JetBrains Mono', monospace" }}>
-                  ENTERPRISE
-                </div>
+                <div className="text-xs font-semibold text-slate-200">Arcadia Ventures</div>
+                <div className="text-[9px] text-slate-500 font-mono">ENTERPRISE</div>
               </div>
             </div>
-            <ChevronDown size={14} color="#6b7280" />
+            <ChevronDown size={14} className="text-slate-500" />
           </div>
         </div>
 
         {/* Navigation Sections */}
-        <div
-          style={{
-            padding: '12px 16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px',
-            maxHeight: 'calc(100vh - 210px)',
-            overflowY: 'auto',
-          }}
-        >
+        <div className="p-4 space-y-5 max-h-[calc(100vh-210px)] overflow-y-auto">
           {sections.map((sec) => (
             <div key={sec.group}>
-              <div
-                style={{
-                  fontSize: '9px',
-                  fontFamily: "'JetBrains Mono', monospace",
-                  color: '#4b5563',
-                  letterSpacing: '0.12em',
-                  marginBottom: '8px',
-                  paddingLeft: '8px',
-                }}
-              >
+              <div className="text-[9px] font-mono text-slate-500 tracking-widest mb-2 pl-2">
                 {sec.group}
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <div className="space-y-0.5">
                 {sec.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
@@ -208,37 +118,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
                     <button
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        width: '100%',
-                        padding: '9px 12px',
-                        borderRadius: '8px',
-                        fontSize: '13px',
-                        fontWeight: isActive ? 600 : 400,
-                        color: isActive ? '#ffffff' : '#9ca3af',
-                        backgroundColor: isActive ? 'rgba(255, 255, 255, 0.08)' : 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        transition: 'all 0.15s ease',
-                      }}
+                      className={`flex items-center justify-between w-full px-3 py-2 rounded-lg text-xs font-medium transition ${
+                        isActive
+                          ? 'bg-white/10 text-white font-semibold'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                      }`}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Icon size={16} color={isActive ? '#ffffff' : '#6b7280'} />
+                      <div className="flex items-center gap-2.5">
+                        <Icon size={16} className={isActive ? 'text-cyan-400' : 'text-slate-500'} />
                         <span>{item.label}</span>
                       </div>
                       {item.badgeDot && (
-                        <span
-                          style={{
-                            width: '6px',
-                            height: '6px',
-                            borderRadius: '50%',
-                            backgroundColor: '#a855f7',
-                            boxShadow: '0 0 8px #a855f7',
-                          }}
-                        />
+                        <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_#a855f7]" />
                       )}
                     </button>
                   );
@@ -250,26 +141,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       </div>
 
       {/* Bottom Health Bar */}
-      <div
-        style={{
-          padding: '16px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.04)',
-          backgroundColor: 'rgba(0, 0, 0, 0.2)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-          <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#00e599' }} />
-          <span style={{ fontSize: '11px', fontWeight: 500, color: '#e5e7eb' }}>StrtOS Engine Operational</span>
+      <div className="p-4 border-t border-white/5 bg-black/20">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs font-medium text-slate-200">StrtOS Engine Operational</span>
         </div>
-        <div
-          style={{
-            fontSize: '9px',
-            fontFamily: "'JetBrains Mono', monospace",
-            color: '#4b5563',
-            letterSpacing: '0.05em',
-            paddingLeft: '14px',
-          }}
-        >
+        <div className="text-[9px] font-mono text-slate-500 tracking-wide pl-3.5">
           INTELLIGENCE ENGINE • 128K CTX
         </div>
       </div>
