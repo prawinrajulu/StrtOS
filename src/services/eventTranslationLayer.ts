@@ -34,7 +34,6 @@ export interface UserFacingTask {
   id: string;
   workflowId: string;
   title: string;
-  agentName: string;
   status: UserTaskStatus;
   statusMessage?: string;
   progress?: number;
@@ -97,25 +96,25 @@ const KNOWN_BUSINESS_MAP: Record<string, string> = {
   'CLIENT BRIEF': 'Business Onboarding'
 };
 
-export function mapInternalExecutionToBusinessLanguage(agentName?: string): string {
-  if (!agentName) return 'Business Intelligence Task';
-  if (KNOWN_BUSINESS_MAP[agentName]) {
-    return KNOWN_BUSINESS_MAP[agentName];
+export function mapInternalExecutionToBusinessLanguage(rawName?: string): string {
+  if (!rawName) return 'Business Performance Analysis';
+  if (KNOWN_BUSINESS_MAP[rawName]) {
+    return KNOWN_BUSINESS_MAP[rawName];
   }
-  const cleaned = agentName
+  const cleaned = rawName
     .replace(/Agent$/i, '')
     .replace(/_/g, ' ')
     .replace(/([A-Z])/g, ' $1')
     .trim();
-  return cleaned || 'Business Intelligence Task';
+  return cleaned || 'Business Performance Analysis';
 }
 
-export function mapAgentToBusinessTitle(agentName?: string): string {
-  return mapInternalExecutionToBusinessLanguage(agentName);
+export function mapAgentToBusinessTitle(rawName?: string): string {
+  return mapInternalExecutionToBusinessLanguage(rawName);
 }
 
 export function mapTechnicalEventToUserMessage(eventType: string, defaultMsg?: string): string {
-  if (defaultMsg && !defaultMsg.includes('Agent') && !defaultMsg.includes('LLM') && !defaultMsg.includes('Swarm')) {
+  if (defaultMsg && !defaultMsg.includes('Agent') && !defaultMsg.includes('LLM') && !defaultMsg.includes('Swarm') && !defaultMsg.includes('tool')) {
     return defaultMsg;
   }
   switch (eventType) {
@@ -123,12 +122,21 @@ export function mapTechnicalEventToUserMessage(eventType: string, defaultMsg?: s
       return 'Waiting to begin';
     case 'task.started':
     case 'agent.started':
-      return 'StrtOS is working';
+      return 'StrtOS is analyzing your business';
+    case 'tool.started':
+    case 'agent.tool.started':
+      return 'StrtOS is collecting verified information';
+    case 'llm.started':
+    case 'agent.llm.started':
+      return 'StrtOS is evaluating the information';
     case 'task.progress':
       return 'Analyzing verified business telemetry';
     case 'task.completed':
     case 'agent.completed':
-      return 'Completed successfully';
+      return 'Business analysis completed';
+    case 'swarm.started':
+    case 'swarm.completed':
+      return 'Recommendation validation completed';
     case 'task.failed':
     case 'agent.failed':
       return 'Analysis could not be completed';
@@ -223,7 +231,6 @@ export function translateBackendTaskToUserTask(task: TaskItem): UserFacingTask |
     id: task.id,
     workflowId: task.workflow_id || '',
     title,
-    agentName: task.agent_name || task.title || '',
     status,
     statusMessage: statusMsg,
     progress,
@@ -296,8 +303,8 @@ export function translateSSEEventToTaskUpdate(event: RealtimeEventData): {
     return {};
   }
 
-  const agentName = event.agent_name || (event.metadata ? event.metadata.agent_name : undefined);
-  const title = mapInternalExecutionToBusinessLanguage(agentName || event.message);
+  const rawName = event.agent_name || (event.metadata ? event.metadata.agent_name : undefined);
+  const title = mapInternalExecutionToBusinessLanguage(rawName || event.message);
 
   let status: UserTaskStatus = 'RUNNING';
 
@@ -321,7 +328,6 @@ export function translateSSEEventToTaskUpdate(event: RealtimeEventData): {
       id: event.task_id,
       workflowId: event.workflow_id || '',
       title,
-      agentName: agentName || title,
       status,
       statusMessage: statusMsg,
       progress: typeof event.progress === 'number' ? event.progress : (status === 'COMPLETED' ? 100 : undefined),

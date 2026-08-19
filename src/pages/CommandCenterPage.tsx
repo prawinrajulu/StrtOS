@@ -57,7 +57,6 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
               id: taskUpdate.id!,
               title: taskUpdate.title || prev?.title || 'Business Performance Analysis',
               status: 'RUNNING',
-              agentName: taskUpdate.agentName || prev?.agentName || '',
               subSteps: [],
               timestamp: taskUpdate.timestamp || prev?.timestamp || 'Time unavailable'
             } as UserFacingTask;
@@ -67,7 +66,6 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
             id: taskUpdate.id,
             workflowId: taskUpdate.workflowId || '',
             title: taskUpdate.title || 'Business Performance Analysis',
-            agentName: taskUpdate.agentName || '',
             status: 'COMPLETED',
             statusMessage: 'Completed successfully',
             progress: 100,
@@ -92,7 +90,6 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
             id: taskUpdate.id,
             workflowId: taskUpdate.workflowId || '',
             title: taskUpdate.title || 'Business Performance Analysis',
-            agentName: taskUpdate.agentName || '',
             status: 'FAILED',
             statusMessage: 'Analysis could not be completed',
             errorReason: taskUpdate.errorReason || 'StrtOS could not complete this analysis.',
@@ -293,7 +290,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
         </div>
       </div>
 
-      {/* Final Strategic Result Banner (Requirement 12) */}
+      {/* Final Strategic Result Banner */}
       {finalResult && (
         <div className="p-6 bg-[#111113] border border-emerald-500/30 rounded-xl space-y-4 shadow-xl">
           <div className="flex items-center justify-between border-b border-white/5 pb-3">
@@ -352,7 +349,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
           {activeTask ? (
             <div className="space-y-4">
               {activeTask.status === 'FAILED' ? (
-                /* Failure Handling View (Requirement 10) */
+                /* Failure Handling View */
                 <div className="p-4 bg-rose-950/40 border border-rose-800/60 rounded-lg space-y-2">
                   <span className="text-[10px] font-mono text-rose-400 font-bold uppercase block">
                     ANALYSIS COULD NOT BE COMPLETED
@@ -368,7 +365,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
                   </p>
                 </div>
               ) : activeTask.status === 'BLOCKED' ? (
-                /* Dependency Blocked View (Requirement 11) */
+                /* Dependency Blocked View */
                 <div className="p-4 bg-amber-950/40 border border-amber-800/60 rounded-lg space-y-2">
                   <span className="text-[10px] font-mono text-amber-400 font-bold uppercase block">
                     DEPENDENCY WAITING
@@ -381,7 +378,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
                   </p>
                 </div>
               ) : (
-                /* Normal Active Task View (Requirement 3 & 5) */
+                /* Normal Active Task View */
                 <div>
                   <h3 className="text-xl font-bold text-[#F5F5F5] tracking-tight">
                     {mapInternalExecutionToBusinessLanguage(activeTask.title)}
@@ -484,7 +481,7 @@ export const CommandCenterPage: React.FC<CommandCenterPageProps> = ({
 
       </div>
 
-      {/* Task Result Detail Modal (Requirement 7) */}
+      {/* Task Result Detail Modal */}
       {selectedTaskResult && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#111113] border border-white/10 rounded-xl p-6 max-w-xl w-full space-y-4 text-slate-100 shadow-2xl">

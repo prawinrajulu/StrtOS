@@ -1,5 +1,50 @@
 ﻿from typing import Dict, Any, List, Optional
 
+KNOWN_BUSINESS_MAP = {
+    "BusinessAnalysisAgent": "Business Performance Analysis",
+    "BusinessAnalysis": "Business Performance Analysis",
+    "Business Performance Analysis": "Business Performance Analysis",
+    "BUSINESS ANALYSIS": "Business Performance Analysis",
+    "BUSINESS": "Business Performance Analysis",
+    "SEOAuditAgent": "Website Performance Analysis",
+    "SEO Audit Agent": "Website Performance Analysis",
+    "SEOAudit": "Website Performance Analysis",
+    "SEO": "Website Performance Analysis",
+    "CompetitorResearchAgent": "Market Intelligence",
+    "Competitor Research Agent": "Market Intelligence",
+    "CompetitorResearch": "Market Intelligence",
+    "COMPETITOR RESEARCH": "Market Intelligence",
+    "COMPETITOR": "Market Intelligence",
+    "MarketingStrategyAgent": "Strategic Planning",
+    "Marketing Strategy Agent": "Strategic Planning",
+    "MarketingStrategy": "Strategic Planning",
+    "MARKETING STRATEGY": "Strategic Planning",
+    "MARKETING": "Strategic Planning",
+    "CampaignPlannerAgent": "Strategic Forecast",
+    "Campaign Planner Agent": "Strategic Forecast",
+    "CampaignPlanner": "Strategic Forecast",
+    "CAMPAIGN PLANNER": "Strategic Forecast",
+    "PredictionAgent": "Strategic Forecast",
+    "ExecutionAgent": "Mission Execution",
+    "SwarmConsensus": "Recommendation Validation",
+    "SwarmAgent": "Recommendation Validation",
+    "CEOAgent": "Executive Alignment",
+    "CEO Agent": "Executive Alignment",
+    "CEO AGENT": "Executive Alignment",
+    "AnalyticsAgent": "Intelligence Reporting",
+    "ANALYTICS": "Intelligence Reporting",
+    "ReportGeneratorAgent": "Intelligence Reporting",
+    "ClientOnboardingAgent": "Business Onboarding"
+}
+
+def map_internal_execution_to_business_language(raw_name: Optional[str]) -> str:
+    if not raw_name:
+        return "Business Performance Analysis"
+    if raw_name in KNOWN_BUSINESS_MAP:
+        return KNOWN_BUSINESS_MAP[raw_name]
+    cleaned = raw_name.replace("Agent", "").replace("_", " ").strip()
+    return KNOWN_BUSINESS_MAP.get(cleaned, cleaned or "Business Performance Analysis")
+
 def extract_task_result_data(output: Any, title: str) -> Dict[str, Any]:
     if not output or not isinstance(output, dict):
         return {
@@ -42,19 +87,21 @@ def translate_backend_task_to_user_task(task: Any) -> Optional[Dict[str, Any]]:
     elif status_raw in ["BLOCKED", "SKIPPED"]:
         status = "BLOCKED"
 
-    task_title = getattr(task, "title", "Business Task")
+    raw_agent = getattr(task, "agent_name", None)
+    raw_title = getattr(task, "title", None)
+    title = map_internal_execution_to_business_language(raw_agent or raw_title)
+
     status_msg = "StrtOS is working"
     if status == "COMPLETED":
         status_msg = "Completed successfully"
     elif status == "FAILED":
-        status_msg = f"{task_title} could not be completed"
+        status_msg = f"{title} could not be completed"
     elif status == "BLOCKED":
         status_msg = "Waiting for required analysis"
 
     output = getattr(task, "output", None)
-    result = extract_task_result_data(output, task_title) if status == "COMPLETED" and output else None
+    result = extract_task_result_data(output, title) if status == "COMPLETED" and output else None
 
-    agent_name = getattr(task, "agent_name", None) or task_title
     completed_at = getattr(task, "completed_at", None)
     started_at = getattr(task, "started_at", None)
     created_at = getattr(task, "created_at", None)
@@ -63,8 +110,7 @@ def translate_backend_task_to_user_task(task: Any) -> Optional[Dict[str, Any]]:
     return {
         "id": getattr(task, "id", None),
         "workflowId": getattr(task, "workflow_id", None),
-        "title": task_title,
-        "agentName": agent_name,
+        "title": title,
         "status": status,
         "statusMessage": status_msg,
         "timestamp": timestamp_str,
