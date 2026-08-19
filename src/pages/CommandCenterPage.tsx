@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Compass, CheckCircle2, Circle, Activity, Play, Building2, ShieldCheck, RefreshCw, FileText, ChevronRight, AlertCircle } from 'lucide-react';
+import { Compass, CheckCircle2, Circle, Activity, Play, Building2, ShieldCheck, RefreshCw, FileText, ChevronRight, AlertCircle, Sparkles, Send, ShieldAlert } from 'lucide-react';
 import { commandCenterApi } from '../services/commandCenterApi';
 import type { CommandCenterOverview } from '../services/commandCenterApi';
 import { workflowsApi } from '../services/workflowsApi';
@@ -26,6 +26,7 @@ export const CommandCenterPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [startingWorkflow, setStartingWorkflow] = useState(false);
+  const [askQuery, setAskQuery] = useState('');
 
   useEffect(() => {
     loadData();
@@ -112,9 +113,43 @@ export const CommandCenterPage: React.FC = () => {
         setUpcomingTasks([]);
       }
     } catch {
-      setError('StrtOS is temporarily unable to connect.');
+      setError('StrtOS couldn\'t complete this request.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAskSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!askQuery.trim()) return;
+    const queryText = askQuery;
+    setAskQuery('');
+    setStartingWorkflow(true);
+    setError(null);
+    try {
+      const client = selectedClient || (clients.length > 0 ? clients[0] : null);
+      const clientId = client ? client.id : 'default_org';
+
+      const newWf = await workflowsApi.createWorkflow({
+        client_id: clientId,
+        title: queryText,
+        directive: queryText
+      });
+
+      if (newWf) {
+        await workflowsApi.startWorkflow(newWf.id);
+        setActiveWorkflow(newWf);
+
+        const tasks = await workflowsApi.getTasks(newWf.id);
+        const translated = translateWorkflowToTasks(newWf, tasks);
+        setActiveTask(translated.activeTask);
+        setCompletedTasks(translated.completedTasks);
+        setUpcomingTasks(translated.upcomingTasks);
+      }
+    } catch {
+      setError('StrtOS couldn\'t complete this request.');
+    } finally {
+      setStartingWorkflow(false);
     }
   };
 
@@ -142,33 +177,33 @@ export const CommandCenterPage: React.FC = () => {
         setUpcomingTasks(translated.upcomingTasks);
       }
     } catch {
-      setError('StrtOS is temporarily unable to connect.');
+      setError('StrtOS couldn\'t complete this request.');
     } finally {
       setStartingWorkflow(false);
     }
   };
 
-  // Minimal Loading State (Requirement 9)
+  // Minimal Loading State
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[450px] text-slate-100 space-y-3">
-        <div className="w-8 h-8 rounded-full border-2 border-cyan-500 border-t-transparent animate-spin"></div>
+        <div className="w-8 h-8 rounded-full border-2 border-sky-500 border-t-transparent animate-spin"></div>
         <div className="text-center space-y-1">
           <h2 className="text-sm font-semibold tracking-wider text-slate-300">STRtOS</h2>
-          <p className="text-xs text-slate-500 font-mono">Connecting to intelligence engine...</p>
+          <p className="text-xs text-[#92929A] font-mono">Loading business data...</p>
         </div>
       </div>
     );
   }
 
-  // Minimal Error State (Requirement 10)
+  // Minimal Error State
   if (error && !activeTask && completedTasks.length === 0) {
     return (
       <div className="p-8 max-w-md mx-auto my-16 bg-[#111113] border border-white/10 rounded-xl space-y-4 text-center text-slate-100">
         <AlertCircle className="w-8 h-8 text-amber-400 mx-auto" />
         <div>
-          <h2 className="text-sm font-semibold text-slate-200">StrtOS is temporarily unable to connect.</h2>
-          <p className="text-xs text-slate-500 mt-1">Check your network or server status.</p>
+          <h2 className="text-sm font-semibold text-slate-200">{error}</h2>
+          <p className="text-xs text-[#92929A] mt-1">Check your network or server connection.</p>
         </div>
         <button
           onClick={loadData}
@@ -180,8 +215,37 @@ export const CommandCenterPage: React.FC = () => {
     );
   }
 
+  const pendingDecision = overview?.active_decisions && overview.active_decisions.length > 0
+    ? overview.active_decisions[0]
+    : null;
+
   return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto text-slate-100 space-y-8">
+    <div className="p-6 lg:p-8 max-w-7xl mx-auto text-slate-100 space-y-6">
+      {/* Ask StrtOS Entry Bar (Requirement 1 & Requirement 3) */}
+      <div className="p-4 bg-[#111113] border border-white/10 rounded-xl space-y-3 shadow-lg">
+        <div className="flex items-center space-x-2 text-xs font-mono text-sky-400 font-semibold">
+          <Sparkles className="w-4 h-4" />
+          <span>Ask StrtOS Anything...</span>
+        </div>
+        <form onSubmit={handleAskSubmit} className="flex items-center space-x-3">
+          <input
+            type="text"
+            value={askQuery}
+            onChange={(e) => setAskQuery(e.target.value)}
+            placeholder="e.g. Analyze my business performance, Find growth opportunities, or Prepare a 90-day plan..."
+            className="flex-1 bg-[#151518] border border-white/10 rounded-lg px-4 py-2.5 text-xs text-[#F5F5F5] outline-none placeholder:text-[#92929A]"
+          />
+          <button
+            type="submit"
+            disabled={startingWorkflow || !askQuery.trim()}
+            className="px-4 py-2.5 rounded-lg text-xs font-semibold bg-sky-500 hover:bg-sky-400 text-slate-950 flex items-center space-x-2 transition disabled:opacity-50"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>{startingWorkflow ? 'Starting...' : 'Ask StrtOS'}</span>
+          </button>
+        </form>
+      </div>
+
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -208,13 +272,46 @@ export const CommandCenterPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Approval Interrupt Banner (Requirement 8) */}
+      {pendingDecision && (
+        <div className="p-5 bg-amber-950/40 border border-amber-500/40 rounded-xl space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-xs font-mono text-amber-400 font-bold uppercase tracking-wider">
+              <ShieldAlert className="w-4 h-4" />
+              <span>YOUR ATTENTION IS REQUIRED</span>
+            </div>
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-900/60 border border-amber-700 text-amber-300">
+              Governance Approval Pending
+            </span>
+          </div>
+          <div className="space-y-1 text-xs">
+            <h3 className="font-bold text-[#F5F5F5] text-sm">{pendingDecision.title}</h3>
+            <p className="text-slate-300">{pendingDecision.problem_statement || 'Decision requires executive approval before execution.'}</p>
+          </div>
+          <div className="flex items-center space-x-3 pt-1">
+            <button
+              onClick={() => alert(`Approved: ${pendingDecision.title}`)}
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition"
+            >
+              Approve
+            </button>
+            <button
+              onClick={() => alert(`Rejected: ${pendingDecision.title}`)}
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-950 border border-rose-800 text-rose-300 hover:bg-rose-900 transition"
+            >
+              Reject
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main 12-Column Responsive Layout: Left/Center 68% (span 8), Right 32% (span 4) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         {/* LEFT / CENTER COLUMN (Span 8): Primary Work Workspace */}
         <div className="lg:col-span-8 space-y-6">
 
-          {/* Hero Currently Working Card (Requirement 1 & 6) */}
+          {/* Hero Currently Working Card (Requirement 2, 4 & 5) */}
           <div className="p-6 bg-[#111113] border border-white/10 rounded-xl space-y-5 relative overflow-hidden shadow-lg">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -273,7 +370,7 @@ export const CommandCenterPage: React.FC = () => {
                 )}
               </div>
             ) : (
-              /* Calm Empty State (Requirement 8) */
+              /* Calm Empty State (Requirement 13) */
               <div className="py-8 text-center space-y-4">
                 <div className="w-10 h-10 rounded-full bg-[#151518] border border-white/10 flex items-center justify-center mx-auto text-sky-400">
                   <Compass className="w-5 h-5" />
@@ -294,7 +391,7 @@ export const CommandCenterPage: React.FC = () => {
             )}
           </div>
 
-          {/* Recent Results (Requirement 3) */}
+          {/* Recent Results (Requirement 6) */}
           <div className="p-6 bg-[#111113] border border-white/10 rounded-xl space-y-4">
             <h2 className="text-xs font-mono uppercase tracking-wider text-[#92929A] font-semibold flex items-center space-x-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -356,7 +453,7 @@ export const CommandCenterPage: React.FC = () => {
 
         </div>
 
-        {/* RIGHT COLUMN (Span 4): Supporting Business Context (Requirement 4 & 6) */}
+        {/* RIGHT COLUMN (Span 4): Supporting Business Context */}
         <div className="lg:col-span-4 space-y-6">
 
           {/* Business Account Profile */}
@@ -441,7 +538,7 @@ export const CommandCenterPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Result Details Report Modal (Requirement 3) */}
+      {/* Result Details Report Modal */}
       {selectedCompletedTask && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#111113] border border-white/10 rounded-xl p-6 max-w-lg w-full space-y-4 text-slate-100">
